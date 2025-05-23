@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "baseUrl": "./",
+        "paths": {
+            "@root/*": ["/*"],
+            "@public/*": ["/public/*"],
+            "@src/*": ["src/*"],
+            "@components/*": ["src/components/*"],
+            "@utils/*": ["src/utils/*"]
+        }
+    },
+    "include": ["src/**/*", "vite-plugin-generate-route-utils.js"],
+    "exclude": ["node_modules", "dist"]
+}
