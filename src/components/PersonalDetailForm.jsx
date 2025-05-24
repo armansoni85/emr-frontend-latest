@@ -13,8 +13,8 @@ import { validateForm } from "./../utils/validateForm";
 
 // import { useSelector } from "react-redux";
 
-const PersonalDetailForm = ({ isReadOnly = true, wrapperClassName = "" }) => {
-    const { isSubmitted, isReset } = useSelector((state) => state.submission);
+const PersonalDetailForm = ({ wrapperClassName = "" }) => {
+    const { isSubmitted, isReset, isReadOnly } = useSelector((state) => state.submission);
     const { user } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
 

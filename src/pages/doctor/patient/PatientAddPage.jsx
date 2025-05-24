@@ -4,24 +4,54 @@ import { RoleId } from "@src/constant/enumRole";
 import { registerAction } from "@src/redux/actions/auth/authAction";
 import ROUTES from "@src/routes";
 import { AddPatient } from "@src/schema/UserSchema";
-import { getUsers } from "@src/services/userService";
+import { getUsers, getUserById, updateUser } from "@src/services/userService";
 import { handleFormChange } from "@src/utils/handleForm";
 import { validateForm } from "@src/utils/validateForm";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 const PatientAddPage = () => {
+    const { patientId } = useParams();
     const [form, setForm] = useState({
-        patient: import.meta.env.VITE_PATIENT_UUID,
         gender: "male",
-    }); // State to manage form data
+    });
     const { isSubmitted } = useSelector((state) => state.submission);
-    const [doctorList, setDoctorList] = useState([]); // Single state for doctor list
+    const [doctorList, setDoctorList] = useState([]);
     const dispatch = useDispatch();
     const navigate = useNavigate();
+
+    const { data: patientData } = useQuery({
+        queryKey: ["patient", patientId],
+        queryFn: () => getUserById(patientId),
+        enabled: !!patientId,
+        onError: (error) => {
+            console.log("Error: ", error);
+        },
+    });
+
+    useEffect(() => {
+        if (patientData?.success) {
+            const patient = patientData.data;
+            setForm({
+                patientName: patient.first_name,
+                email: patient.email,
+                mobileNumber: patient.mobile_number,
+                dob: patient.dob,
+                gender: patient.gender,
+                doctor: patient.doctor,
+                bloodGroup: patient.blood_group,
+                heightFeet: patient.height_feet,
+                heightInches: patient.height_inches,
+                weightFeet: patient.weight_feet,
+                weightInches: patient.weight_inches,
+                patientAddress: patient.address,
+                disease: patient.disease
+            });
+        }
+    }, [patientData]);
 
     const { data, isSuccess } = useQuery({
         queryKey: ["doctors"],
@@ -30,12 +60,11 @@ const PatientAddPage = () => {
         refetchOnReconnect: false,
     });
 
-    // Define a mutation to search doctors
     const { mutate: searchDoctor } = useMutation({
         mutationFn: getUsers,
         onSuccess: (data) => {
             if (data.status && data.data.results) {
-                setDoctorList(data.data.results); // Update doctor list with search results
+                setDoctorList(data.data.results);
             }
         },
     });
@@ -55,7 +84,6 @@ const PatientAddPage = () => {
     };
 
     const handleOnSubmit = () => {
-        dispatch({ type: "SUBMISSION/SUBMIT" });
         const data = validateForm(AddPatient, {
             patient: form.patient,
             patientName: form.patientName,
@@ -72,35 +100,56 @@ const PatientAddPage = () => {
             weightInches: form.weightInches ? Number(form.weightInches) : undefined,
             patientAddress: form.patientAddress,
             disease: form.disease,
-            hospital: "93b2ebf5-72dd-4e10-8997-b6d48007b42f",
+            hospital: import.meta.env.VITE_HOSPITAL_UUID,
             password: form.password,
             confirmPassword: form.confirmPassword,
             role: 3,
             country: "IN",
         });
 
-        // if (!data) {
-        //     dispatch({ type: "SUBMISSION/CANCEL" });
-        //     return;
-        // }
-
-        dispatch(registerAction({
-            email: data.email,
-            password: data.password,
-            confirmPassword: data.confirmPassword,
-            fullName: data.patientName,
-            role: 3,
-            country: "IN",
-            // dob: form.dob ? new Date(form.dob) : undefined,
-        }))
-            .unwrap()
-            .then(() => {
-                toast("Add Patient successful", { type: "success" });
-                navigate(ROUTES.private.doctor.childRoutes.patients.childRoutes.list.path);
-            })
-            .catch((error) => {
-                toast(error, { type: "error" });
-            });
+        if (data) {
+            dispatch({ type: "SUBMISSION/SUBMIT" });
+            if (patientId) {
+                updateUser(patientId, {
+                    email: data.email,
+                    first_name: data.patientName,
+                    role: 3,
+                    country: "IN",
+                    gender: data.gender
+                })
+                    .then(() => {
+                        toast("Update Patient successful", { type: "success" });
+                        navigate(getRoutePath("doctor.patients.detail", { patientId }));
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                        toast(error, { type: "error" });
+                    }).finally(() => {
+                        dispatch({ type: "SUBMISSION/RESET" });
+                    });
+            } else {
+                dispatch(registerAction({
+                    email: data.email,
+                    password: data.password,
+                    confirmPassword: data.confirmPassword,
+                    fullName: data.patientName,
+                    role: 3,
+                    country: "IN",
+                    gender: data.gender,
+                }))
+                    .unwrap()
+                    .then(() => {
+                        toast("Add Patient successful", { type: "success" });
+                        navigate(getRoutePath("doctor.patients.list"));
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                        toast(error, { type: "error" });
+                    }).finally(() => {
+                        dispatch({ type: "SUBMISSION/RESET" });
+                    });
+            }
+        }
     };
 
     return (
@@ -124,13 +173,13 @@ const PatientAddPage = () => {
                             className="mr-2"
                         />
                     ) : (
-                        "Save"
+                        patientId ? "Update" : "Save"
                     )}
                 </Button>
             </div>
             <div className="bg-white shadow-md rounded-2xl pb-4">
                 <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
-                    <h2 className="text-lg font-medium">Add New Patient</h2>
+                    <h2 className="text-lg font-medium">{patientId ? "Edit Patient" : "Add New Patient"}</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2">
                     <InputWithLabel
@@ -178,7 +227,6 @@ const PatientAddPage = () => {
                                     name="gender"
                                     defaultValue="male"
                                     className="hidden"
-                                    onclick="document.querySelectorAll('input[name=gender]').forEach(el => el.parentElement.classList.remove('bg-primary', 'text-white')); this.parentElement.classList.toggle('bg-primary', this.checked); this.parentElement.classList.toggle('text-white', this.checked);"
                                 />
                                 Male
                             </label>
@@ -192,7 +240,6 @@ const PatientAddPage = () => {
                                     name="gender"
                                     defaultValue="female"
                                     className="hidden"
-                                    onclick="document.querySelectorAll('input[name=gender]').forEach(el => el.parentElement.classList.remove('bg-primary', 'text-white')); this.parentElement.classList.toggle('bg-primary', this.checked); this.parentElement.classList.toggle('text-white', this.checked);"
                                 />
                                 Female
                             </label>
@@ -206,7 +253,6 @@ const PatientAddPage = () => {
                                     name="gender"
                                     defaultValue="other"
                                     className="hidden"
-                                    onclick="document.querySelectorAll('input[name=gender]').forEach(el => el.parentElement.classList.remove('bg-primary', 'text-white')); this.parentElement.classList.toggle('bg-primary', this.checked); this.parentElement.classList.toggle('text-white', this.checked);"
                                 />
                                 Other
                             </label>
@@ -322,24 +368,26 @@ const PatientAddPage = () => {
                         onChange={(e) => handleFormChange("patientAddress", e, setForm)}
                         wrapperClassName="p-4"
                     />
-                    <div>
-                        <InputWithLabel
-                            label={"Password:"}
-                            id={"password"}
-                            type={"password"}
-                            value={form.password || ""}
-                            onChange={(e) => handleFormChange("password", e, setForm)}
-                            wrapperClassName="p-4"
-                        />
-                        <InputWithLabel
-                            label={"Confirm Password:"}
-                            id={"confirmPassword"}
-                            type={"password"}
-                            value={form.confirmPassword || ""}
-                            onChange={(e) => handleFormChange("confirmPassword", e, setForm)}
-                            wrapperClassName="p-4"
-                        />
-                    </div>
+                    {!patientId && (
+                        <div>
+                            <InputWithLabel
+                                label={"Password:"}
+                                id={"password"}
+                                type={"password"}
+                                value={form.password || ""}
+                                onChange={(e) => handleFormChange("password", e, setForm)}
+                                wrapperClassName="p-4"
+                            />
+                            <InputWithLabel
+                                label={"Confirm Password:"}
+                                id={"confirmPassword"}
+                                type={"password"}
+                                value={form.confirmPassword || ""}
+                                onChange={(e) => handleFormChange("confirmPassword", e, setForm)}
+                                wrapperClassName="p-4"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
         </>

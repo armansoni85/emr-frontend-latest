@@ -29,10 +29,10 @@ export const AddPatient = z
         // weightInches: z.number().min( 1, "weight inches is required" ),
         // patientAddress: z.string().min( 1, "Patient Address is required" ),
         // disease: z.string().min( 1, "disease is required" ),
-        password: z.string().min(1, "Password is required"),
-        confirmPassword: z.string().min(1, "Confirm Password is required"),
+        // password: z.string().min(1, "Password is required"),
+        // confirmPassword: z.string().min(1, "Confirm Password is required"),
     })
-    .refine((data) => data.password === data.confirmPassword, {
-        message: "Passwords do not match",
-        path: ["confirmPassword"],
-    });
+// .refine((data) => data.password === data.confirmPassword, {
+//     message: "Passwords do not match",
+//     path: ["confirmPassword"],
+// });

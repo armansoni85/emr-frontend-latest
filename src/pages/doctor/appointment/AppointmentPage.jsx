@@ -11,6 +11,8 @@ import { useShowModalAppointment } from "../components/ModalAppointment";
 import { useEffect, useState } from "react";
 import { createConsultation } from "@src/services/consultation.service";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { getRoutePath } from "@src/utils/routeUtils";
 
 const AppointmentPage = () => {
     const { paginationMeta } = useSelector((state) => state.fetch);
@@ -29,7 +31,7 @@ const AppointmentPage = () => {
         queryKey: ["appointments", user.id, debounceSearchTerm, filter.disease, filter.date, paginationMeta.currentPage],
         queryFn: async () => {
             const data = await getAppointments({
-                doctor: user.id,
+                // doctor: user.id,
                 search: debounceSearchTerm,
                 disease: filter.disease,
                 appointment_date: filter.date,
@@ -93,15 +95,25 @@ const AppointmentPage = () => {
 
     const navigate = useNavigate();
     const startConsultation = (item) => {
+        const activeConsultationId = localStorage.getItem('consultationId');
+        const consultationFinished = localStorage.getItem('consultationFinished');
+
+        if (activeConsultationId && !consultationFinished) {
+            toast("You already have an active consultation, please complete it first", { type: "warning" });
+            return;
+        }
+
         createConsultation({
             appointment: item.id,
         }).then((res) => {
-            navigate("/doctor/recordings");
-            // if (res.data.success) {
-            //     navigate("/recordings");
-            // }
+            console.log("res", res);
+            if (res.success) {
+                localStorage.setItem('consultationId', res.data.id);
+                navigate(getRoutePath("doctor.recordings"));
+                toast("Consultation created successfully", { type: "success" });
+            }
         }).catch((err) => {
-            navigate("/doctor/recordings");
+            toast("Error creating consultation", { type: "error" });
         });
     };
 

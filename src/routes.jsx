@@ -154,6 +154,10 @@ const privateRoutes = {
                         path: "add",
                         element: <PatientAddPage />,
                     },
+                    edit: {
+                        path: "edit/:patientId",
+                        element: <PatientAddPage />,
+                    },
                     detail: {
                         path: ":patientId",
                         element: <PatientDetailLayout />,

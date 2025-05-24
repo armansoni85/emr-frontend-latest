@@ -15,58 +15,64 @@ import { useNavigate } from "react-router-dom";
 import { validateForm } from "@src/utils/validateForm";
 
 const AppointmentAddPage = () => {
-    const [form, setForm] = useState({
-        // patient: import.meta.env.VITE_PATIENT_ID,
-        patient: "f1c72ab8-9db1-4d1a-ab1b-bb3df792ad14",
-    }); // State to manage form data
+    const [form, setForm] = useState({});
     const { isSubmitted } = useSelector((state) => state.submission);
-    const [doctorList, setDoctorList] = useState([]); // Single state for doctor list
+    const [patientList, setPatientList] = useState([]);
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
     const { data, isSuccess } = useQuery({
-        queryKey: ["doctors"],
-        queryFn: () => getUsers({ role: RoleId.DOCTOR }),
+        queryKey: ["patients"],
+        queryFn: () => getUsers({ role: RoleId.PATIENT }),
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
     });
 
-    // Define a mutation to search doctors
-    const { mutate: searchDoctor } = useMutation({
+    const { mutate: searchPatient } = useMutation({
         mutationFn: getUsers,
         onSuccess: (data) => {
             if (data.status && data.data.results) {
-                setDoctorList(data.data.results); // Update doctor list with search results
+                setPatientList(data.data.results);
             }
         },
     });
 
     useEffect(() => {
         if (isSuccess && data.success) {
-            setDoctorList(data.data.results);
+            setPatientList(data.data.results);
         } else {
-            setDoctorList([]);
+            setPatientList([]);
         }
     }, [data, isSuccess]);
 
-    const memoizedDoctorList = useMemo(() => doctorList, [doctorList]);
+    const memoizedPatientList = useMemo(() => patientList, [patientList]);
 
-    const handleGetDoctorList = (search) => {
-        searchDoctor({ search, role: RoleId.DOCTOR });
+    const handleGetPatientList = (search) => {
+        searchPatient({ search, role: RoleId.PATIENT });
+    };
+
+    const handlePatientSelect = (patientId) => {
+        const selectedPatient = patientList.find(p => p.id === patientId);
+        if (selectedPatient) {
+            setForm(prev => ({
+                ...prev,
+                patient: patientId,
+                mobileNumber: selectedPatient.mobile_number || '',
+                email: selectedPatient.email || '',
+                dob: selectedPatient.date_of_birth || ''
+            }));
+        }
     };
 
     const handleOnSubmit = () => {
         dispatch({ type: "SUBMISSION/SUBMIT" });
-        const data = validateForm(AddAppointmentSchema, {
+        const data = {
             patient: form.patient,
-            email: form.email,
-            mobileNumber: form.mobileNumber,
             date: new Date(form.date),
             time: form.time,
             disease: form.disease,
-            // doctor: 'hadeh',
             reasonOfVisit: form.reasonOfVisit,
-        });
+        }
 
         if (!data) {
             dispatch({ type: "SUBMISSION/CANCEL" });
@@ -75,13 +81,9 @@ const AppointmentAddPage = () => {
 
         const combinedDateTime = `${data.date.toISOString().split("T")[0]} ${data.time}`;
         createAppointment({
-            // doctor: data.doctor,
             appointment_datetime: combinedDateTime,
-            disease: data.disease,
             reason_of_visit: data.reasonOfVisit,
             patient: data.patient,
-            email: data.email,
-            mobile_number: data.mobileNumber
         })
             .then((response) => {
                 if (response.success) {
@@ -155,11 +157,17 @@ const AppointmentAddPage = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2">
                     <InputWithLabel
-                        label={"Patient Name:"}
-                        id={"patientName"}
-                        type={"text"}
-                        value={form.patientName || ""}
-                        onChange={(e) => handleFormChange("patientName", e, setForm)}
+                        label={"Patient:"}
+                        id={"patient"}
+                        type={"searchable-select"}
+                        onSearch={(search) => handleGetPatientList(search)}
+                        options={memoizedPatientList}
+                        defaultValue={form.patient || ""}
+                        onChange={(option) => handlePatientSelect(option.id)}
+                        keyValue={"id"}
+                        keyLabel={(option) => option.first_name && option.last_name ?
+                            `${option.first_name} ${option.last_name}` :
+                            option.email}
                         wrapperClassName="p-4"
                     />
                     <InputWithLabel
@@ -167,7 +175,7 @@ const AppointmentAddPage = () => {
                         id={"mobileNumber"}
                         type={"text"}
                         value={form.mobileNumber || ""}
-                        onChange={(e) => handleFormChange("mobileNumber", e, setForm)}
+                        readOnly
                         wrapperClassName="p-4"
                     />
                     <InputWithLabel
@@ -175,7 +183,7 @@ const AppointmentAddPage = () => {
                         id={"email"}
                         type={"email"}
                         value={form.email || ""}
-                        onChange={(e) => handleFormChange("email", e, setForm)}
+                        readOnly
                         wrapperClassName="p-4"
                     />
                     <InputWithLabel
@@ -183,7 +191,7 @@ const AppointmentAddPage = () => {
                         id={"dob"}
                         type={"date"}
                         value={form.dob || ""}
-                        onChange={(e) => handleFormChange("dob", e, setForm)}
+                        readOnly
                         wrapperClassName="p-4"
                     />
                     <InputWithLabel
@@ -219,18 +227,6 @@ const AppointmentAddPage = () => {
                         <option value="Iatrogenic">Iatrogenic</option>
                         <option value="Idiopathic">Idiopathic</option>
                     </InputWithLabel>
-                    <InputWithLabel
-                        label={"Doctor Name:"}
-                        id={"doctor"}
-                        type={"searchable-select"}
-                        onSearch={(search) => handleGetDoctorList(search)}
-                        options={memoizedDoctorList}
-                        defaultValue={form.doctor || ""}
-                        onChange={(option) => handleFormChange("doctor", option.id, setForm)}
-                        keyValue={"id"}
-                        keyLabel={(option) => option.first_name + " " + option.last_name}
-                        wrapperClassName="p-4"
-                    />
                     <InputWithLabel
                         label={"Reason of Visit:"}
                         id={"reasonOfVisit"}

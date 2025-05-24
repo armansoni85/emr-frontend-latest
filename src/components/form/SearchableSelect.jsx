@@ -58,7 +58,7 @@ const SearchableSelect = ({
         setFilteredOptions(options);
         if (onChange) {
             onChange(option);
-        }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+        }
     };
 
     // Toggle dropdown visibility
@@ -68,6 +68,7 @@ const SearchableSelect = ({
     };
 
     const getValueLabelOption = useCallback((option, isValue = true) => {
+        console.log("option", option);
         if (!option) return null; // Return null if option is not provided
 
         if (typeof keyValue === "function" && isValue) {
@@ -131,11 +132,11 @@ const SearchableSelect = ({
             window.removeEventListener("scroll", handleScroll);
         };
     }, [isOpen]);
-    
+
     useEffect(() => {
         setFilteredOptions(options);
     }, [options]);
-    
+
     useEffect(() => {
         if (defaultValue) {
             const defaultOption = options.find(
@@ -179,7 +180,7 @@ const SearchableSelect = ({
             {isOpen && (
                 <div
                     ref={dropdownContainer}
-                    className={`absolute w-full bg-white shadow-lg rounded-md ${dropdownPosition === "bottom" ? "mt-2" : ``}`}
+                    className={`absolute w-full bg-white shadow-lg rounded-md z-10 ${dropdownPosition === "bottom" ? "mt-2" : ``}`}
                     style={{
                         marginTop: dropdownPosition === "bottom" ? "0" : `-${currentDropdownHeight}px`,
                     }}>
@@ -200,11 +201,10 @@ const SearchableSelect = ({
                             render={(option, index) => (
                                 <li
                                     key={getValueLabelOption(option, true)}
-                                    className={`px-4 py-2 ${
-                                        selectedOption?.value === getValueLabelOption(option, true)
-                                            ? "bg-gray-200"
-                                            : "hover:bg-gray-100 cursor-pointer"
-                                    }`}
+                                    className={`px-4 py-2 ${selectedOption?.value === getValueLabelOption(option, true)
+                                        ? "bg-gray-200"
+                                        : "hover:bg-gray-100 cursor-pointer"
+                                        }`}
                                     onClick={() => handleOptionSelect(option)}>
                                     {getValueLabelOption(option, false)}
                                 </li>

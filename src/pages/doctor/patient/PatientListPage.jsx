@@ -25,9 +25,9 @@ const PatientListPage = () => {
         queryKey: ["patientList", filter.doctor, debounceSearchTerm, paginationMeta.currentPage],
         queryFn: async () => {
             const data = await getUsers({
-                doctor: filter.doctor ? filter.doctor : undefined,
+                doctor: filter.doctor ? filter.doctor : "56e3ec55-bcc8-4223-97c7-27e323ea3f9c",
                 search: debounceSearchTerm,
-                role: RoleId.PATIENT,
+                // role: RoleId.PATIENT,
                 limit: paginationMeta.limitPerPage,
                 offset: paginationMeta.currentPage,
             });
@@ -167,7 +167,7 @@ const PatientListPage = () => {
                                                 <p>
                                                     {item?.patient?.first_name} {item?.patient?.last_name}{" "}
                                                 </p>
-                                                <span className="text-muted">#12345678</span>
+                                                {/* <span className="text-muted">#12345678</span> */}
                                             </div>
                                         </div>
                                     </Td>
@@ -181,9 +181,9 @@ const PatientListPage = () => {
                                             "-"
                                         )}
                                     </Td>
-                                    <Td>{item?.gender}</Td>
+                                    <Td>{item?.gender ?? '-'}</Td>
                                     <Td>
-                                        <Badge color="info">{item?.disease}</Badge>
+                                        <Badge color="info">{item?.disease ?? 'Empty'}</Badge>
                                     </Td>
                                     <Td>089782</Td>
                                     <Td>

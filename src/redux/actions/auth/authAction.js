@@ -50,18 +50,18 @@ export const loginAction = createAsyncThunk(
 
 export const registerAction = createAsyncThunk(
     "auth/register",
-    async ({ email, password, confirmPassword, fullName, role, dob = "1993-10-14" }, { rejectWithValue }) => {
+    async ({ email, password, confirmPassword, fullName, role = 3, dob = "1993-10-14", gender = "male" }, { rejectWithValue }) => {
         try {
             const formData = new FormData();
             formData.append("email", email);
             formData.append("password", password);
             formData.append("confirm_password", confirmPassword);
-            formData.append("full_name", fullName);
+            formData.append("first_name", fullName);
             formData.append("hospital", import.meta.env.VITE_HOSPITAL_UUID);
             formData.append("role", role);
             formData.append("country", "IN");
             formData.append("work_email", "work3@grr.la");
-            formData.append("gender", "male");
+            formData.append("gender", gender);
             formData.append("dob", dob);
 
             // Check if a token is already logged in, otherwise use SUPERADMIN token

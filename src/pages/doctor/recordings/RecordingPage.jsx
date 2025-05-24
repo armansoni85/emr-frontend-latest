@@ -3,8 +3,11 @@ import { analyzeRecording, getConsultation, updateConsultation, uploadRecording 
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import { getRoutePath } from "@src/utils/routeUtils";
 
 const RecordingPage = () => {
+    const navigate = useNavigate();
     const [isRecording, setIsRecording] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [mediaRecorder, setMediaRecorder] = useState(null);
@@ -15,8 +18,15 @@ const RecordingPage = () => {
 
     const chunksRef = useRef([]);
 
-    // const { consultationId } = useParams();
-    const consultationId = "8c2e8b3b-b3cb-4b56-8d05-b3e4d363b900";
+    const consultationId = localStorage.getItem('consultationId');
+
+    useEffect(() => {
+        if (!consultationId) {
+            toast("No active consultation found", { type: "warning" });
+            navigate(getRoutePath("doctor.appointments.list"));
+            return;
+        }
+    }, [consultationId, navigate]);
 
     const { data: consultation, refetch } = useQuery({
         queryKey: ["consultation"],
@@ -135,6 +145,7 @@ const RecordingPage = () => {
                 follow_up_date: new Date().toLocaleDateString('en-CA'),
             });
             toast.success("Consultation finished successfully");
+            localStorage.setItem('consultationFinished', true);
             refetch();
         } catch (error) {
             toast.error("Failed to finish consultation");
@@ -169,27 +180,30 @@ const RecordingPage = () => {
                                 <div className="flex gap-3 lg:flex-row flex-col">
                                     <div className="text-center">
                                         <img
-                                            src="./assets/images/johnson.png"
+                                            src={consultation?.appointment?.patient?.profile_image || "./assets/images/johnson.png"}
                                             className="rounded-xl h-16"
                                             alt=""
                                         />
                                     </div>
                                     <div className="text-start w-full">
                                         <div className="flex justify-between flex-wrap w-full">
-                                            <h6 className="2xl:text-xl text-sm text-darkBlue font-medium">Henry Johnson</h6>
-                                            <a
+                                            <h6 className="2xl:text-xl text-sm text-darkBlue font-medium">
+                                                {consultation?.appointment?.patient?.first_name} {consultation?.appointment?.patient?.last_name}
+                                            </h6>
+                                            <Button
+                                                color="link"
                                                 className="2xl:text-xl text-sm text-darkBlue"
-                                                href="">
+                                                onClick={() => navigate(getRoutePath("doctor.patients.detail", { patientId: consultation?.appointment?.patient?.id }))}>
                                                 View Profile
-                                            </a>
+                                            </Button>
                                         </div>
                                         <div className="flex gap-1 text-xs">
                                             <span>Date of Birth :</span>
-                                            <span className="text-muted">May 20, 2000</span>
+                                            <span className="text-muted">{consultation?.appointment?.patient?.dob || '-'}</span>
                                         </div>
                                         <div className="flex gap-1 text-xs">
                                             <span>Appointment Date &amp; Time :</span>
-                                            <span className="text-muted">August 12, 2025 - 2:00PM</span>
+                                            <span className="text-muted">{consultation?.appointment?.appointment_datetime || '-'}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -204,11 +218,11 @@ const RecordingPage = () => {
                                                 <th className="font-medium">Blood Group</th>
                                             </tr>
                                             <tr>
-                                                <td className="text-muted text-center">Male</td>
-                                                <td className="text-muted text-center">26 Years</td>
-                                                <td className="text-muted text-center">68Kg</td>
-                                                <td className="text-muted text-center">5ft 9in</td>
-                                                <td className="text-muted text-center">O+</td>
+                                                <td className="text-muted text-center">{consultation?.appointment?.patient?.gender || '-'}</td>
+                                                <td className="text-muted text-center">{consultation?.appointment?.patient?.age || '-'} Years</td>
+                                                <td className="text-muted text-center">{consultation?.appointment?.patient?.weight || '-'}Kg</td>
+                                                <td className="text-muted text-center">{consultation?.appointment?.patient?.height || '-'}</td>
+                                                <td className="text-muted text-center">{consultation?.appointment?.patient?.blood_group || '-'}</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -276,88 +290,94 @@ const RecordingPage = () => {
                             Update Data in Profile
                         </a>
                     </div>
-                    <div className="p-4">
-                        <div className="mb-3">
-                            <h3 className="2xl:text-md text-sm font-medium bg-grey px-3 py-2 rounded-lg mb-2">Subjective</h3>
-                            <p className="text-body px-2">
-                                Patient John Doe, a 35-year-old male, reports experiencing persistent headaches for the past two weeks. He describes
-                                the pain as a throbbing sensation on the left side of his head, which worsens with physical activity. He also notes
-                                symptoms of nausea and sensitivity to light. He rates the pain as 7 out of 10.
-                            </p>
+                    {!consultation?.is_finished ? (
+                        <div className="my-32 text-center">
+                            <h1 className="text-muted text-2xl font-bold my-auto">No Analysis Data Available</h1>
                         </div>
-                        <div className="mb-3">
-                            <h3 className="2xl:text-md text-sm font-medium bg-grey px-3 py-2 rounded-lg mb-2">Subjective</h3>
-                            <div className="px-2">
-                                <table className="w-full">
-                                    <tbody>
-                                        <tr>
-                                            <th className="font-medium text-start">Vitals:</th>
-                                            <th className="font-medium text-start">Exam:</th>
-                                        </tr>
-                                        <tr>
-                                            <td className="text-body">
-                                                <ul className="ps-5 list-disc">
-                                                    <li>BP: [e.g., 120/80 mmHg]</li>
-                                                    <li>HR: [e.g., 72 bpm]</li>
-                                                    <li>RR: [e.g., 16 breaths/min]</li>
-                                                    <li>Temp: [e.g., 98.6°F]</li>
-                                                </ul>
-                                            </td>
-                                            <td className="text-body">
-                                                <ul className="ps-5 list-disc">
-                                                    <li>BP: [e.g., 120/80 mmHg]</li>
-                                                    <li>HR: [e.g., 72 bpm]</li>
-                                                    <li>RR: [e.g., 16 breaths/min]</li>
-                                                    <li>Temp: [e.g., 98.6°F]</li>
-                                                </ul>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                    ) : (
+                        <div className="p-4">
+                            <div className="mb-3">
+                                <h3 className="2xl:text-md text-sm font-medium bg-grey px-3 py-2 rounded-lg mb-2">Subjective</h3>
+                                <p className="text-body px-2">
+                                    Patient John Doe, a 35-year-old male, reports experiencing persistent headaches for the past two weeks. He describes
+                                    the pain as a throbbing sensation on the left side of his head, which worsens with physical activity. He also notes
+                                    symptoms of nausea and sensitivity to light. He rates the pain as 7 out of 10.
+                                </p>
+                            </div>
+                            <div className="mb-3">
+                                <h3 className="2xl:text-md text-sm font-medium bg-grey px-3 py-2 rounded-lg mb-2">Subjective</h3>
+                                <div className="px-2">
+                                    <table className="w-full">
+                                        <tbody>
+                                            <tr>
+                                                <th className="font-medium text-start">Vitals:</th>
+                                                <th className="font-medium text-start">Exam:</th>
+                                            </tr>
+                                            <tr>
+                                                <td className="text-body">
+                                                    <ul className="ps-5 list-disc">
+                                                        <li>BP: [e.g., 120/80 mmHg]</li>
+                                                        <li>HR: [e.g., 72 bpm]</li>
+                                                        <li>RR: [e.g., 16 breaths/min]</li>
+                                                        <li>Temp: [e.g., 98.6°F]</li>
+                                                    </ul>
+                                                </td>
+                                                <td className="text-body">
+                                                    <ul className="ps-5 list-disc">
+                                                        <li>BP: [e.g., 120/80 mmHg]</li>
+                                                        <li>HR: [e.g., 72 bpm]</li>
+                                                        <li>RR: [e.g., 16 breaths/min]</li>
+                                                        <li>Temp: [e.g., 98.6°F]</li>
+                                                    </ul>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div className="mb-3">
+                                <h3 className="2xl:text-md text-sm font-medium bg-grey px-3 py-2 rounded-lg mb-2">Assessment</h3>
+                                <div className="px-2 text-body">
+                                    <ul className="ps-5 list-disc">
+                                        <li>Likely diagnosis: Migraine without aura</li>
+                                        <li>Other possible diagnoses: None</li>
+                                        <li>ICD 10 = G43.0</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div className="mb-3">
+                                <h3 className="2xl:text-md text-sm font-medium bg-grey px-3 py-2 rounded-lg mb-2">Plan</h3>
+                                <div className="px-2">
+                                    <table className="w-full">
+                                        <tbody>
+                                            <tr>
+                                                <th className="font-medium text-start">Medications:</th>
+                                            </tr>
+                                            <tr>
+                                                <td className="text-body">
+                                                    <ul className="ps-8 list-disc">
+                                                        <li>Sumatriptan 100mg: take at the onset of headache</li>
+                                                        <li>Consider preventive medication: Propranolol or Topiramate if headache is frequent</li>
+                                                    </ul>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th className="font-medium text-start">Lifestyle Modifications:</th>
+                                            </tr>
+                                            <tr>
+                                                <td className="text-body">
+                                                    <ul className="ps-8 list-disc">
+                                                        <li>Sumatriptan 100mg: take at the onset of headache</li>
+                                                        <li>Consider preventive medication: Propranolol or Topiramate if headache is frequent</li>
+                                                    </ul>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
-                        <div className="mb-3">
-                            <h3 className="2xl:text-md text-sm font-medium bg-grey px-3 py-2 rounded-lg mb-2">Assessment</h3>
-                            <div className="px-2 text-body">
-                                <ul className="ps-5 list-disc">
-                                    <li>Likely diagnosis: Migraine without aura</li>
-                                    <li>Other possible diagnoses: None</li>
-                                    <li>ICD 10 = G43.0</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div className="mb-3">
-                            <h3 className="2xl:text-md text-sm font-medium bg-grey px-3 py-2 rounded-lg mb-2">Plan</h3>
-                            <div className="px-2">
-                                <table className="w-full">
-                                    <tbody>
-                                        <tr>
-                                            <th className="font-medium text-start">Medications:</th>
-                                        </tr>
-                                        <tr>
-                                            <td className="text-body">
-                                                <ul className="ps-8 list-disc">
-                                                    <li>Sumatriptan 100mg: take at the onset of headache</li>
-                                                    <li>Consider preventive medication: Propranolol or Topiramate if headache is frequent</li>
-                                                </ul>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th className="font-medium text-start">Lifestyle Modifications:</th>
-                                        </tr>
-                                        <tr>
-                                            <td className="text-body">
-                                                <ul className="ps-8 list-disc">
-                                                    <li>Sumatriptan 100mg: take at the onset of headache</li>
-                                                    <li>Consider preventive medication: Propranolol or Topiramate if headache is frequent</li>
-                                                </ul>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </>
