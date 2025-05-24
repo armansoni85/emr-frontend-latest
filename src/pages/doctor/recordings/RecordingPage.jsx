@@ -1,12 +1,14 @@
 import { Button } from "@src/components";
-import { getConsultation } from "@src/services/consultation.service";
+import { analyzeRecording, getConsultation, updateConsultation, uploadRecording } from "@src/services/consultation.service";
 import { useQuery } from "@tanstack/react-query";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 
 const RecordingPage = () => {
     const [isRecording, setIsRecording] = useState(false);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [mediaRecorder, setMediaRecorder] = useState(null);
-    const [recordings, setRecordings] = useState([]);
+    const [recording, setRecording] = useState({});
     const [recordingStartTime, setRecordingStartTime] = useState(null);
     const [recordingDuration, setRecordingDuration] = useState(0);
     const [timerInterval, setTimerInterval] = useState(null);
@@ -16,7 +18,7 @@ const RecordingPage = () => {
     // const { consultationId } = useParams();
     const consultationId = "8c2e8b3b-b3cb-4b56-8d05-b3e4d363b900";
 
-    const { data: consultation } = useQuery({
+    const { data: consultation, refetch } = useQuery({
         queryKey: ["consultation"],
         queryFn: () => getConsultation(consultationId),
         enabled: !!consultationId,
@@ -60,23 +62,36 @@ const RecordingPage = () => {
                 }
             };
             recorder.onstop = async () => {
-                // Save as wav if possible, else fallback to webm
-                const usedMimeType = recorder.mimeType || mimeType || "audio/webm";
-                const ext = usedMimeType === "audio/wav" ? "wav" : "webm";
-                const blob = new Blob(chunksRef.current, { type: usedMimeType });
+                // Save as webm
+                const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+                const ext = "webm";
                 const url = URL.createObjectURL(blob);
                 const now = new Date();
-                setRecordings((prev) => [
-                    {
-                        name: `Recording ${prev.length + 1}`,
-                        url,
-                        blob,
-                        ext,
-                        time: now,
-                        duration: Math.floor((Date.now() - recordingStartTime) / 1000),
-                    },
-                    ...prev,
-                ]);
+                const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
+
+                // Upload the recording
+                const formData = new FormData();
+                formData.append("consultation", consultationId);
+                formData.append("recording_audio", new File([blob], "recording.webm", { type: "audio/webm" }));
+
+                try {
+                    const response = await uploadRecording(formData);
+                    if (response) {
+                        toast.success("Recording uploaded successfully");
+                    } else {
+                        toast.error("Failed to upload recording");
+                    }
+                } catch (err) {
+                    toast.error("Error uploading recording");
+                }
+
+                setRecording({
+                    url,
+                    blob,
+                    ext,
+                    time: now,
+                    duration
+                });
             };
             recorder.start();
             setMediaRecorder(recorder);
@@ -96,7 +111,7 @@ const RecordingPage = () => {
     };
 
     // Stop recording
-    const handleStopRecording = () => {
+    const handleStopRecording = async () => {
         if (mediaRecorder && isRecording) {
             mediaRecorder.stop();
             setIsRecording(false);
@@ -109,13 +124,35 @@ const RecordingPage = () => {
         }
     };
 
-    // Download recording as wav (or webm fallback)
-    const handleDownload = (rec) => {
-        const a = document.createElement("a");
-        a.href = rec.url;
-        a.download = `${rec.name}.${rec.ext || "wav"}`;
-        a.click();
-    };
+    const handleFinishConsultation = async () => {
+        if (isRecording) {
+            toast.error("Please stop recording before finishing consultation");
+            return;
+        }
+        try {
+            const response = await updateConsultation(consultationId, {
+                is_finished: true,
+                follow_up_date: new Date().toLocaleDateString('en-CA'),
+            });
+            toast.success("Consultation finished successfully");
+            refetch();
+        } catch (error) {
+            toast.error("Failed to finish consultation");
+        }
+    }
+
+    const handleAnalyzeRecording = async () => {
+        try {
+            setIsAnalyzing(true);
+            const response = await analyzeRecording(consultationId);
+            console.log(response);
+            toast.success("Recording analyzed successfully");
+        } catch (error) {
+            toast.error("Failed to analyze recording");
+        } finally {
+            setIsAnalyzing(false);
+        }
+    }
 
     return (
         <>
@@ -177,7 +214,7 @@ const RecordingPage = () => {
                                     </table>
                                 </div>
                                 <div className="text-end mt-4 space-y-2 gap-2">
-                                    <Button disabled={consultation?.is_finished} isOutline color="primary" size="small" onClick={handleStopRecording}>Finish Consultation</Button>
+                                    <Button disabled={consultation?.is_finished} isOutline color="primary" size="small" onClick={handleFinishConsultation}>Finish Consultation</Button>
                                     &nbsp;
                                     {!isRecording ? (
                                         <Button disabled={consultation?.is_finished} color="primary" size="small" onClick={handleStartRecording}>Start Recording</Button>
@@ -195,15 +232,14 @@ const RecordingPage = () => {
                             <h2 className="text-lg font-medium">Time</h2>
                         </div>
                         <div className="relative">
-
-                            {consultation?.recordings?.length === 0 && (
+                            {!consultation?.is_finished && (
 
                                 <div class="my-32 text-center">
                                     <h1 class="text-muted text-2xl font-bold my-auto">No Recordings to Show</h1>
                                 </div>
                             )}
 
-                            {consultation?.recordings?.map((rec, idx) => (
+                            {consultation?.is_finished && consultation?.recordings?.map((rec, idx) => (
                                 <div key={idx} className="flex justify-content-between border-b px-3 pt-4 pb-2">
                                     <div className="flex gap-2 w-full">
                                         <span
@@ -224,8 +260,8 @@ const RecordingPage = () => {
                             ))}
                         </div>
                         <div className="text-end mt-4 space-y-2 p-3">
-                            <Button color="primary" size="small" disabled={consultation?.recordings?.length === 0}>
-                                Analyze &amp; Generate
+                            <Button color="primary" size="small" disabled={consultation?.recordings?.length === 0 || isAnalyzing} onClick={handleAnalyzeRecording}>
+                                {isAnalyzing ? "Analyzing..." : "Analyze & Generate"}
                             </Button>
                         </div>
                     </div>
