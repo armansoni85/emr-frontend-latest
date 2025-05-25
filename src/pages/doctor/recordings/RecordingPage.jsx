@@ -274,7 +274,7 @@ const RecordingPage = () => {
                             ))}
                         </div>
                         <div className="text-end mt-4 space-y-2 p-3">
-                            <Button color="primary" size="small" disabled={consultation?.recordings?.length === 0 || isAnalyzing} onClick={handleAnalyzeRecording}>
+                            <Button color="primary" size="small" disabled={consultation?.recordings?.length === 0 || isAnalyzing || consultation?.recording_ai_voice_note} onClick={handleAnalyzeRecording}>
                                 {isAnalyzing ? "Analyzing..." : "Analyze & Generate"}
                             </Button>
                         </div>
@@ -290,92 +290,12 @@ const RecordingPage = () => {
                             Update Data in Profile
                         </a>
                     </div>
-                    {!consultation?.is_finished ? (
+                    {!consultation?.is_finished && !consultation?.recording_ai_voice_note ? (
                         <div className="my-32 text-center">
                             <h1 className="text-muted text-2xl font-bold my-auto">No Analysis Data Available</h1>
                         </div>
                     ) : (
-                        <div className="p-4">
-                            <div className="mb-3">
-                                <h3 className="2xl:text-md text-sm font-medium bg-grey px-3 py-2 rounded-lg mb-2">Subjective</h3>
-                                <p className="text-body px-2">
-                                    Patient John Doe, a 35-year-old male, reports experiencing persistent headaches for the past two weeks. He describes
-                                    the pain as a throbbing sensation on the left side of his head, which worsens with physical activity. He also notes
-                                    symptoms of nausea and sensitivity to light. He rates the pain as 7 out of 10.
-                                </p>
-                            </div>
-                            <div className="mb-3">
-                                <h3 className="2xl:text-md text-sm font-medium bg-grey px-3 py-2 rounded-lg mb-2">Subjective</h3>
-                                <div className="px-2">
-                                    <table className="w-full">
-                                        <tbody>
-                                            <tr>
-                                                <th className="font-medium text-start">Vitals:</th>
-                                                <th className="font-medium text-start">Exam:</th>
-                                            </tr>
-                                            <tr>
-                                                <td className="text-body">
-                                                    <ul className="ps-5 list-disc">
-                                                        <li>BP: [e.g., 120/80 mmHg]</li>
-                                                        <li>HR: [e.g., 72 bpm]</li>
-                                                        <li>RR: [e.g., 16 breaths/min]</li>
-                                                        <li>Temp: [e.g., 98.6°F]</li>
-                                                    </ul>
-                                                </td>
-                                                <td className="text-body">
-                                                    <ul className="ps-5 list-disc">
-                                                        <li>BP: [e.g., 120/80 mmHg]</li>
-                                                        <li>HR: [e.g., 72 bpm]</li>
-                                                        <li>RR: [e.g., 16 breaths/min]</li>
-                                                        <li>Temp: [e.g., 98.6°F]</li>
-                                                    </ul>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div className="mb-3">
-                                <h3 className="2xl:text-md text-sm font-medium bg-grey px-3 py-2 rounded-lg mb-2">Assessment</h3>
-                                <div className="px-2 text-body">
-                                    <ul className="ps-5 list-disc">
-                                        <li>Likely diagnosis: Migraine without aura</li>
-                                        <li>Other possible diagnoses: None</li>
-                                        <li>ICD 10 = G43.0</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div className="mb-3">
-                                <h3 className="2xl:text-md text-sm font-medium bg-grey px-3 py-2 rounded-lg mb-2">Plan</h3>
-                                <div className="px-2">
-                                    <table className="w-full">
-                                        <tbody>
-                                            <tr>
-                                                <th className="font-medium text-start">Medications:</th>
-                                            </tr>
-                                            <tr>
-                                                <td className="text-body">
-                                                    <ul className="ps-8 list-disc">
-                                                        <li>Sumatriptan 100mg: take at the onset of headache</li>
-                                                        <li>Consider preventive medication: Propranolol or Topiramate if headache is frequent</li>
-                                                    </ul>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th className="font-medium text-start">Lifestyle Modifications:</th>
-                                            </tr>
-                                            <tr>
-                                                <td className="text-body">
-                                                    <ul className="ps-8 list-disc">
-                                                        <li>Sumatriptan 100mg: take at the onset of headache</li>
-                                                        <li>Consider preventive medication: Propranolol or Topiramate if headache is frequent</li>
-                                                    </ul>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                        <div className="p-4" dangerouslySetInnerHTML={{ __html: consultation?.recording_ai_voice_note }}>
                         </div>
                     )}
                 </div>

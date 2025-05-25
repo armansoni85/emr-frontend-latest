@@ -8,26 +8,26 @@ import { thunk } from 'redux-thunk';
 
 // Function to clear the persisted state
 export const clearPersistedState = () => {
-    storage.removeItem( 'persist:root' );
+    storage.removeItem('persist:root');
 };
 
 // clearPersistedState();
 const persistConfig = {
     key: 'root',
     storage,
-    whitelist: [ 'auth', 'params' ],
+    whitelist: ['auth', 'params'],
 };
 
-const persistedReducer = persistReducer( persistConfig, rootReducer );
+const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 
-export const store = configureStore( {
+export const store = configureStore({
     reducer: persistedReducer,
-    middleware: ( getDefaultMiddleware ) =>
-        getDefaultMiddleware( {
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
             serializableCheck: false,
-        } ).concat( thunk ),
+        }),
     devTools: composeWithDevTools(),
-} );
+});
 
-export const persistor = persistStore( store );
+export const persistor = persistStore(store);

@@ -28,6 +28,9 @@
     "redux-devtools-extension": "^2.13.9",
     "redux-persist": "^6.0.0",
     "redux-thunk": "^3.1.0",
+    "stream-browserify": "^3.0.0",
+    "util": "^0.12.5",
+    "vite-plugin-node-polyfills": "^0.23.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
