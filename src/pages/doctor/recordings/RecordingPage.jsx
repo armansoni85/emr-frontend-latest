@@ -295,7 +295,7 @@ const RecordingPage = () => {
                             <h1 className="text-muted text-2xl font-bold my-auto">No Analysis Data Available</h1>
                         </div>
                     ) : (
-                        <div className="p-4" dangerouslySetInnerHTML={{ __html: consultation?.recording_ai_voice_note }}>
+                        <div className="p-4" dangerouslySetInnerHTML={{ __html: consultation?.recording_ai_voice_note?.replace(/\n/g, '<br/>') }}>
                         </div>
                     )}
                 </div>
