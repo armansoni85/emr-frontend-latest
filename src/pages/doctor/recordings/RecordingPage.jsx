@@ -19,6 +19,7 @@ const RecordingPage = () => {
     const chunksRef = useRef([]);
 
     const consultationId = localStorage.getItem('consultationId');
+    // const consultationId = "144839ac-1c87-4fb2-b720-9d22ba3a72f3";
 
     useEffect(() => {
         if (!consultationId) {
@@ -33,6 +34,52 @@ const RecordingPage = () => {
         queryFn: () => getConsultation(consultationId),
         enabled: !!consultationId,
     });
+
+    // const consultation = {
+    //     "id": "144839ac-1c87-4fb2-b720-9d22ba3a72f3",
+    //     "appointment": {
+    //         "id": "5dace8eb-eef5-4478-a170-23c65301ef03",
+    //         "doctor": {
+    //             "id": "db0a9534-d52a-4a49-b49d-a899db467cc3",
+    //             "date_joined": "2025-05-21T18:03:25Z",
+    //             "first_name": "akhil",
+    //             "profile_picture": null,
+    //             "last_name": "sharma",
+    //             "email": "akhil123@gmail.com",
+    //             "role": "2",
+    //             "country": "India",
+    //             "flag": "/static/flags/in.gif",
+    //             "last_login": null,
+    //             "is_active": true,
+    //             "is_blocked": false
+    //         },
+    //         "patient": {
+    //             "id": "ae600115-96fc-476e-9504-f8a4943ce889",
+    //             "date_joined": "2025-05-24T14:01:12.439720Z",
+    //             "first_name": "",
+    //             "profile_picture": null,
+    //             "last_name": "",
+    //             "email": "yaelahman0810+1@gmail.com",
+    //             "role": "3",
+    //             "country": "India",
+    //             "flag": "/static/flags/in.gif",
+    //             "last_login": null,
+    //             "is_active": true,
+    //             "is_blocked": false
+    //         },
+    //         "reason_of_visit": "111",
+    //         "appointment_datetime": "2025-06-04T18:13:00Z",
+    //         "disease": null,
+    //         "appointment_status": "DONE"
+    //     },
+    //     "recording_ai_voice_note": "Hello! It seems like you might be describing some discomfort or pain. Can you please provide more information about your symptoms and how you are feeling?\n\nSubjective:\nThe patient is expressing discomfort and is making a sound \"짝짝 뾰로롱\"\n\nVitals:\n- Heart rate: Not recorded\n- Blood pressure: Not recorded\n- Respiratory rate: Not recorded\n- Temperature: Not recorded\n\nAssessment:\nThe patient seems to be experiencing some form of discomfort or pain but specific details are not provided. Further exploration and assessment are needed to determine the exact nature and severity of the symptoms.\n\nPlan:\n1. Detailed Assessment: It is important to gather more information about the location, quality, intensity, and any associated symptoms of the discomfort or pain the patient is experiencing.\n2. Physical Examination: A thorough physical examination may be necessary to help identify any underlying issues or causes of the symptoms.\n3. Diagnostic Tests: Depending on the findings from the assessment and physical examination, additional tests such as blood tests, imaging studies, or others may be recommended.\n4. Symptom Management: In the meantime, over-the-counter pain relief medications such as acetaminophen or ibuprofen may help alleviate any immediate discomfort. Heat or cold therapy may also be beneficial depending on the type of pain.\n5. Follow-up: The patient should follow up with a healthcare provider for further evaluation and management of their symptoms.\n\nIt is important to consult with a healthcare provider to receive a proper diagnosis and appropriate treatment based on a thorough evaluation of the patient's symptoms and clinical findings.",
+    //     "recording_ai_voice_note_status": "REJECTED",
+    //     "is_started": true,
+    //     "is_finished": true,
+    //     "follow_up_date": "2025-05-25"
+    // }
+
+
 
     // Helper to format duration in mm:ss
     const formatDuration = (seconds) => {

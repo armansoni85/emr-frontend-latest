@@ -38,7 +38,12 @@ export const updateConsultation = async (id, data) => {
 export const uploadRecording = async (data) => {
     try {
         // const formData = convertToFormData(data)
-        const response = await apiClient.post(`/consultations/recordings/`, data)
+        const response = await apiClient.post(`/consultations/recordings/`, data, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
+            timeout: 60000 // 60 seconds timeout for large file uploads
+        })
         return response.data.data
     } catch (error) {
         console.error("Error getting consultation:", error)
