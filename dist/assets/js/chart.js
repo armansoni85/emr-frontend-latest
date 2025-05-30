@@ -1,4 +1,3 @@
-
 var ctx = document.getElementById('analyticsChart').getContext('2d');
 var chart; // Store chart instance
 
@@ -110,7 +109,6 @@ document.getElementById('newPatientsBtn').addEventListener('click', function () 
 
 // Initial load of the total patients chart
 loadTotalPatientsData();
-
 
 var diseasesCtx = document.getElementById('diseasesChartCanvas').getContext('2d');
 var diseasesChart; // Store chart instance here
