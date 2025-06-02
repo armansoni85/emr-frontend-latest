@@ -174,6 +174,7 @@ const RecordingPage = () => {
             setIsRecording(false);
             setRecordingStartTime(null);
             setRecordingDuration(0);
+            refetch()
             if (timerInterval) {
                 clearInterval(timerInterval);
                 setTimerInterval(null);
@@ -203,11 +204,11 @@ const RecordingPage = () => {
         try {
             setIsAnalyzing(true);
             const response = await analyzeRecording(consultationId);
-            console.log(response);
             toast.success("Recording analyzed successfully");
         } catch (error) {
             toast.error("Failed to analyze recording");
         } finally {
+            refetch()
             setIsAnalyzing(false);
         }
     }
@@ -293,14 +294,14 @@ const RecordingPage = () => {
                             <h2 className="text-lg font-medium">Time</h2>
                         </div>
                         <div className="relative">
-                            {!consultation?.is_finished && (
+                            {consultation?.recordings?.length === 0 && (
 
                                 <div class="my-32 text-center">
                                     <h1 class="text-muted text-2xl font-bold my-auto">No Recordings to Show</h1>
                                 </div>
                             )}
 
-                            {consultation?.is_finished && consultation?.recordings?.map((rec, idx) => (
+                            {consultation?.recordings?.map((rec, idx) => (
                                 <div key={idx} className="flex justify-content-between border-b px-3 pt-4 pb-2">
                                     <div className="flex gap-2 w-full">
                                         <span
@@ -321,7 +322,7 @@ const RecordingPage = () => {
                             ))}
                         </div>
                         <div className="text-end mt-4 space-y-2 p-3">
-                            <Button color="primary" size="small" disabled={consultation?.recordings?.length === 0 || isAnalyzing || consultation?.recording_ai_voice_note} onClick={handleAnalyzeRecording}>
+                            <Button color="primary" size="small" disabled={!consultation?.is_finished || isAnalyzing || consultation?.recording_ai_voice_note} onClick={handleAnalyzeRecording}>
                                 {isAnalyzing ? "Analyzing..." : "Analyze & Generate"}
                             </Button>
                         </div>

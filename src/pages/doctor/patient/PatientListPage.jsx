@@ -159,13 +159,13 @@ const PatientListPage = () => {
                                     <Td>
                                         <div className="flex items-center cursor-pointer">
                                             <CircleAvatar
-                                                src={item?.patient?.profile_picture}
+                                                src={item?.profile_picture}
                                                 alt="profile"
                                                 className="mr-3"
                                             />
                                             <div className="text-start">
                                                 <p>
-                                                    {item?.patient?.first_name} {item?.patient?.last_name}{" "}
+                                                    {item?.first_name} {item?.last_name}{" "}
                                                 </p>
                                                 {/* <span className="text-muted">#12345678</span> */}
                                             </div>
