@@ -14,6 +14,16 @@ export const createConsultation = async (data) => {
     }
 }
 
+export const getConsultations = async (params) => {
+    try {
+        const response = await apiClient.get("/consultations/", { params })
+        return response.data.data
+    } catch (error) {
+        console.error("Error getting consultations:", error)
+        throw error
+    }
+}
+
 export const getConsultation = async (id) => {
     try {
         const response = await apiClient.get(`/consultations/${id}`)
