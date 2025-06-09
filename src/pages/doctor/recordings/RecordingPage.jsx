@@ -134,6 +134,7 @@ const RecordingPage = () => {
                 try {
                     const response = await uploadRecording(formData);
                     if (response) {
+                        refetch()
                         toast.success("Recording uploaded successfully");
                     } else {
                         toast.error("Failed to upload recording");
