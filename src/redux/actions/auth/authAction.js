@@ -139,3 +139,84 @@ export const updatePasswordAction = createAsyncThunk(
         }
     }
 )
+
+export const registerPatientAction = createAsyncThunk(
+    "auth/registerPatient",
+    async (payload, { rejectWithValue }) => {
+        try {
+            const formData = new FormData();
+            formData.append("email", payload.email);
+            formData.append("password", payload.password);
+            formData.append("confirm_password", payload.confirmPassword);
+            formData.append("first_name", payload.first_name);
+            formData.append("last_name", payload.last_name || "");
+            formData.append("hospital", payload.hospital);
+            formData.append("role", payload.role || 3);
+            formData.append("country", payload.country || "IN");
+            
+            // Hanya append jika ada value yang valid
+            if (payload.work_email && payload.work_email.trim()) {
+                formData.append("work_email", payload.work_email);
+            }
+            if (payload.gender && payload.gender.trim()) {
+                formData.append("gender", payload.gender);
+            }
+            if (payload.address && payload.address.trim() && payload.address !== "-") {
+                formData.append("address", payload.address);
+            }
+            
+            formData.append("dob", payload.dob);
+            
+            if (payload.phone_number && payload.phone_number.trim()) {
+                formData.append("phone_number", payload.phone_number);
+            }
+            if (payload.blood_group && payload.blood_group.trim()) {
+                formData.append("blood_group", payload.blood_group);
+            }
+            if (payload.height_feet !== undefined && payload.height_feet !== "") {
+                formData.append("height_feet", payload.height_feet);
+            }
+            if (payload.height_inches !== undefined && payload.height_inches !== "") {
+                formData.append("height_inches", payload.height_inches);
+            }
+            if (payload.weight_kilo !== undefined && payload.weight_kilo !== "") {
+                formData.append("weight_kilo", payload.weight_kilo);
+            }
+            if (payload.weight_grams !== undefined && payload.weight_grams !== "") {
+                formData.append("weight_grams", payload.weight_grams);
+            }
+            if (payload.disease && payload.disease.trim() && payload.disease !== "-") {
+                formData.append("disease", payload.disease);
+            }
+
+            let token;
+            const state = typeof window !== "undefined" && window.store
+                ? window.store.getState()
+                : undefined;
+            if (state && state.auth && state.auth.token) {
+                token = state.auth.token;
+            } else if (import.meta.env.VITE_SUPERADMIN_TOKEN) {
+                token = import.meta.env.VITE_SUPERADMIN_TOKEN;
+            }
+
+            const response = await apiClient.post("/users/", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            if (response.status !== 201) {
+                throw new Error("Registration failed");
+            }
+
+            if (!response.data.success) {
+                return rejectWithValue(response.data.message || "Registration failed");
+            }
+
+            return response.data.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || "Registration failed");
+        }
+    }
+);

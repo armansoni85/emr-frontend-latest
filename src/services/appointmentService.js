@@ -48,7 +48,7 @@ export const updateAppointment = async ( id, data ) => {
 export const deleteAppointment = async ( id ) => {
     try {
         const response = await apiClient.delete( `/appointments/${ id }/` )
-        return response.data
+        return response
     } catch ( error ) {
         console.error( "Error deleting appointment:", error )
         throw error

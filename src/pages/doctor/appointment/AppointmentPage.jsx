@@ -14,7 +14,10 @@ import { useDispatch, useSelector } from "react-redux";
 
 import Moment from "react-moment";
 import StatusText from "../components/StatusText";
-import { getAppointments } from "@src/services/appointmentService";
+import {
+  getAppointments,
+  deleteAppointment,
+} from "@src/services/appointmentService";
 import { useDebounce } from "@src/utils/useDebounce";
 import { useQuery } from "@tanstack/react-query";
 import { useShowDialog } from "@src/utils/dialog";
@@ -94,8 +97,6 @@ const AppointmentPage = () => {
   };
 
   const handleDeleteAppointment = (appointmentId) => {
-    console.log("Deleting appointment with ID:", appointmentId);
-
     showDialog({
       title: "Delete Appointment",
       message: "Are you sure you want to delete this appointment?",
@@ -107,9 +108,22 @@ const AppointmentPage = () => {
       confirmButtonClass: "!border-none",
       isReverseButton: true,
     }).then((result) => {
-      console.log(result);
+      if (result.isConfirmed) {
+        deleteAppointment(appointmentId)
+          .then((res) => {
+            if (res.success || res.status === 204) {
+              toast("Appointment deleted successfully", { type: "success" });
+              refetch();
+            } else {
+              toast("Failed to delete appointment", { type: "error" });
+            }
+          })
+          .catch((err) => {
+            console.error("Error deleting appointment:", err);
+            toast("Error deleting appointment", { type: "error" });
+          });
+      }
     });
-    return;
   };
 
   const handleOpenModalAppointment = (item) => {
@@ -136,7 +150,6 @@ const AppointmentPage = () => {
       appointment: item.id,
     })
       .then((res) => {
-        console.log("res", res);
         if (res.success) {
           localStorage.setItem("consultationId", res.data.id);
           navigate(getRoutePath("doctor.recordings"));
@@ -152,9 +165,17 @@ const AppointmentPage = () => {
     refetch();
   }, []);
 
+  const handleClearFilter = () => {
+    setFilter({
+      search: "",
+      disease: "",
+      date: "",
+    });
+  };
+
   return (
     <>
-      <div className="mb-3 grid grid-cols-1 md:grid-cols-3 md:gap-4">
+      <div className="mb-3 grid grid-cols-1 md:grid-cols-2 md:gap-4">
         <InputWithLabel
           label={"Search"}
           name={"search"}
@@ -181,27 +202,6 @@ const AppointmentPage = () => {
           onChange={handleChangeFilter}
         />
         <InputWithLabel
-          label={"Search by Disease"}
-          type={"select"}
-          name={"disease"}
-          labelOnTop={true}
-          wrapperClassName="mb-3"
-          inputClassName="bg-white"
-          value={filter.disease}
-          onChange={handleChangeFilter}
-        >
-          <option value="Acquired">Acquired</option>
-          <option value="Acute">Acute</option>
-          <option value="Chronic condition">Chronic condition</option>
-          <option value="Congenital disorder">Congenital disorder</option>
-          <option value="Genetic">Genetic</option>
-          <option value="Hereditary or inherited">
-            Hereditary or inherited
-          </option>
-          <option value="Iatrogenic">Iatrogenic</option>
-          <option value="Idiopathic">Idiopathic</option>
-        </InputWithLabel>
-        <InputWithLabel
           label={"Select Date"}
           type={"date"}
           name={"date"}
@@ -210,6 +210,16 @@ const AppointmentPage = () => {
           value={filter.date}
           onChange={handleChangeFilter}
         />
+      </div>
+      <div className="mb-3 flex justify-end">
+        <Button
+          color="secondary"
+          size="small"
+          onClick={handleClearFilter}
+          className="px-4"
+        >
+          Clear Filters
+        </Button>
       </div>
       <div className="bg-white shadow-md rounded-2xl pb-4">
         <div className="flex justify-between p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
@@ -244,15 +254,19 @@ const AppointmentPage = () => {
                   <Td>
                     <div className="flex items-center cursor-pointer">
                       <CircleAvatar
-                        src={item?.patient?.profile_picture}
+                        src={item?.patient?.flag}
                         alt="profile"
                         className="mr-3"
                       />
                       <div className="text-start">
                         <p>
-                          {item?.patient?.first_name} {item?.patient?.last_name}{" "}
+                          {!item?.patient?.first_name &&
+                          !item?.patient?.last_name
+                            ? "Unknown"
+                            : `${item?.patient?.first_name || ""} ${
+                                item?.patient?.last_name || ""
+                              }`.trim()}
                         </p>
-                        <span className="text-muted">#12345678</span>
                       </div>
                     </div>
                   </Td>
@@ -285,30 +299,44 @@ const AppointmentPage = () => {
                   </Td>
                   <Td>
                     <div className="flex justify-between">
-                      {/* <Button
-                                                color="primary"
-                                                size="small"
-                                                isOutline={true}
-                                                className="px-3"
-                                                onClick={() => handleOpenModalAppointment(item)}>
-                                                View
-                                            </Button> */}
                       <Button
                         color="warning"
                         size="small"
                         className="px-3"
-                        onClick={() => startConsultation(item)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          startConsultation(item);
+                        }}
                       >
                         Start
                       </Button>
-                      <MoreVertical>
-                        <MoreVerticalItem>Edit</MoreVerticalItem>
-                        <MoreVerticalItem
-                          onClick={() => handleDeleteAppointment(item.id)}
-                        >
-                          Delete
-                        </MoreVerticalItem>
-                      </MoreVertical>
+                      <div className="relative">
+                        <MoreVertical>
+                          <MoreVerticalItem
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              navigate(
+                                getRoutePath("doctor.appointments.edit", {
+                                  id: item.id,
+                                })
+                              );
+                            }}
+                          >
+                            Edit
+                          </MoreVerticalItem>
+                          <MoreVerticalItem
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDeleteAppointment(item.id);
+                            }}
+                          >
+                            Delete
+                          </MoreVerticalItem>
+                        </MoreVertical>
+                      </div>
                     </div>
                   </Td>
                 </tr>

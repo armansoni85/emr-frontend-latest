@@ -1,4 +1,5 @@
 import { Button, InputWithLabel, VoiceRecorder } from "@src/components";
+import SpinnerComponent from "@src/components/SpinnerComponent";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { RoleId } from "@src/constant/enumRole";
@@ -8,12 +9,15 @@ import { handleFormChange } from "@src/utils/handleForm";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { getRoutePath } from "@src/utils/routeUtils";
+import { getUserById } from "@src/services/userService";
 
 const PrescriptionAddPage = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({});
   const [patientList, setPatientList] = useState([]);
   const [medicationList, setMedicationList] = useState([]);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [isLoadingPatientDetail, setIsLoadingPatientDetail] = useState(false); // Loading state
 
   // Get logged-in doctor data from localStorage
   const getLoggedInDoctor = () => {
@@ -53,6 +57,40 @@ const PrescriptionAddPage = () => {
       if (data.status && data.data.results) {
         setPatientList(data.data.results);
       }
+    },
+  });
+
+  // Tambahkan mutation untuk get user by ID dengan loading state
+  const { mutate: getPatientDetail } = useMutation({
+    mutationFn: getUserById,
+    onMutate: () => {
+      // Set loading to true when mutation starts
+      setIsLoadingPatientDetail(true);
+    },
+    onSuccess: (data) => {
+      if (data.success && data.data) {
+        const patient = data.data;
+        setSelectedPatient(patient);
+
+        // Autofill form dengan data patient
+        setForm((prevForm) => ({
+          ...prevForm,
+          dob: patient.dob || "",
+          disease: patient.disease || "",
+        }));
+
+        toast.success(
+          `Patient details loaded: ${patient.first_name} ${patient.last_name}`
+        );
+      }
+    },
+    onError: (error) => {
+      console.error("Error fetching patient details:", error);
+      toast.error("Failed to load patient details");
+    },
+    onSettled: () => {
+      // Set loading to false when mutation completes (success or error)
+      setIsLoadingPatientDetail(false);
     },
   });
 
@@ -166,6 +204,13 @@ const PrescriptionAddPage = () => {
     setMedicationList((prev) => prev.filter((med) => med.id !== medicationId));
   };
 
+  // Handler untuk ketika patient dipilih
+  const handlePatientSelect = (option) => {
+    handleFormChange("patient", option.id, setForm);
+    // Fetch detail patient untuk autofill
+    getPatientDetail(option.id);
+  };
+
   return (
     <>
       <div className="flex justify-end mb-4 gap-2">
@@ -192,12 +237,11 @@ const PrescriptionAddPage = () => {
             onSearch={(search) => handleGetPatientList(search)}
             options={memoizedPatientList}
             defaultValue={form.patient || ""}
-            onChange={(option) =>
-              handleFormChange("patient", option.id, setForm)
-            }
+            onChange={handlePatientSelect}
             keyValue={"id"}
             keyLabel={(option) => option.first_name + " " + option.last_name}
             wrapperClassName="p-5 z-20"
+            disabled={isLoadingPatientDetail} // Disable saat loading
           />
           <InputWithLabel
             label={"Doctor's Name:"}
@@ -207,36 +251,78 @@ const PrescriptionAddPage = () => {
             readOnly={true}
             wrapperClassName="p-4"
           />
-          <InputWithLabel
-            label={"Date of Birth:"}
-            id={"dob"}
-            type={"date"}
-            value={form.dob || ""}
-            onChange={(e) => handleFormChange("dob", e, setForm)}
-            wrapperClassName="p-4 z-10"
-          />
-          <InputWithLabel
-            label={"Disease:"}
-            id={"disease"}
-            type={"select"}
-            value={form.disease || ""}
-            onChange={(e) => handleFormChange("disease", e, setForm)}
-            wrapperClassName="p-4"
-          >
-            <option value="" disabled>
-              Select Disease
-            </option>
-            <option value="Acquired">Acquired</option>
-            <option value="Acute">Acute</option>
-            <option value="Chronic condition">Chronic condition</option>
-            <option value="Congenital disorder">Congenital disorder</option>
-            <option value="Genetic">Genetic</option>
-            <option value="Hereditary or inherited">
-              Hereditary or inherited
-            </option>
-            <option value="Iatrogenic">Iatrogenic</option>
-            <option value="Idiopathic">Idiopathic</option>
-          </InputWithLabel>
+          <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
+            <label className="block text-nowrap my-auto">Date of Birth:</label>
+            <div className="flex items-center w-full col-span-2">
+              {isLoadingPatientDetail ? (
+                <div className="flex items-center justify-center w-full mt-1 px-5 py-3 bg-grey border rounded-full">
+                  <SpinnerComponent size="sm" className="mr-2" />
+                  <span className="text-muted">Loading patient data...</span>
+                </div>
+              ) : (
+                <input
+                  id="dob"
+                  type="date"
+                  value={form.dob || ""}
+                  onChange={(e) => handleFormChange("dob", e, setForm)}
+                  className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey border rounded-full"
+                  readOnly={true}
+                />
+              )}
+            </div>
+          </div>
+          <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
+            <label className="block text-nowrap my-auto">Disease:</label>
+            <div className="flex items-center w-full col-span-2">
+              {isLoadingPatientDetail ? (
+                <div className="flex items-center justify-center w-full mt-1 px-5 py-3 bg-grey border rounded-full">
+                  <SpinnerComponent size="sm" className="mr-2" />
+                  <span className="text-muted">Loading disease info...</span>
+                </div>
+              ) : (
+                <select
+                  id="disease"
+                  value={form.disease || ""}
+                  onChange={(e) => handleFormChange("disease", e, setForm)}
+                  className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey border rounded-full"
+                >
+                  <option value="" disabled>
+                    Select Disease
+                  </option>
+                  <option value="Acquired">Acquired</option>
+                  <option value="Acute">Acute</option>
+                  <option value="Chronic condition">Chronic condition</option>
+                  <option value="Congenital disorder">
+                    Congenital disorder
+                  </option>
+                  <option value="Genetic">Genetic</option>
+                  <option value="Hereditary or inherited">
+                    Hereditary or inherited
+                  </option>
+                  <option value="Iatrogenic">Iatrogenic</option>
+                  <option value="Idiopathic">Idiopathic</option>
+                  {/* Dynamic option for custom disease */}
+                  {selectedPatient &&
+                    selectedPatient.disease &&
+                    ![
+                      "Acquired",
+                      "Acute",
+                      "Chronic condition",
+                      "Congenital disorder",
+                      "Genetic",
+                      "Hereditary or inherited",
+                      "Iatrogenic",
+                      "Idiopathic",
+                    ].includes(selectedPatient.disease) && (
+                      <option value={selectedPatient.disease}>
+                        {selectedPatient.disease}
+                      </option>
+                    )}
+                </select>
+              )}
+            </div>
+          </div>
+
           <div className="bg-grey rounded-2xl mx-3">
             <div className="rounded-t-2xl py-3 px-5 border-b flex gap-2">
               <h6 className="text-xl">Add Medication</h6>
@@ -346,8 +432,15 @@ const PrescriptionAddPage = () => {
                 <button
                   onClick={handleSavePrescription}
                   disabled={isSavingPrescription || medicationList.length === 0}
-                  className="px-6 py-3 text-sm bg-success border border-success rounded-full text-white hover:bg-opacity-[0.9] transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 text-sm bg-success border border-success rounded-full text-white hover:bg-opacity-[0.9] transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                 >
+                  {isSavingPrescription && (
+                    <SpinnerComponent
+                      size="sm"
+                      color="white"
+                      className="mr-2"
+                    />
+                  )}
                   {isSavingPrescription
                     ? "Saving Prescription..."
                     : "Save Prescription"}

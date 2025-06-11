@@ -1,7 +1,7 @@
 import { Button, InputWithLabel, VoiceRecorder } from "@src/components";
 import SpinnerComponent from "@src/components/SpinnerComponent";
 import { RoleId } from "@src/constant/enumRole";
-import { registerAction } from "@src/redux/actions/auth/authAction";
+import { registerPatientAction } from "@src/redux/actions/auth/authAction";
 import ROUTES from "@src/routes";
 import { AddPatient } from "@src/schema/UserSchema";
 import { getUsers, getUserById, updateUser } from "@src/services/userService";
@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import { getRoutePath } from "@src/utils/routeUtils";
 
 const PatientAddPage = () => {
   const { patientId } = useParams();
@@ -23,7 +24,6 @@ const PatientAddPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Get logged in doctor information
   const getLoggedInDoctor = () => {
     try {
       const authData = localStorage.getItem("persist:root");
@@ -61,19 +61,21 @@ const PatientAddPage = () => {
     if (patientData?.success) {
       const patient = patientData.data;
       setForm({
-        patientName: patient.first_name,
-        email: patient.email,
-        mobileNumber: patient.mobile_number,
-        dob: patient.dob,
-        gender: patient.gender,
-        doctor: patient.doctor,
-        bloodGroup: patient.blood_group,
-        heightFeet: patient.height_feet,
-        heightInches: patient.height_inches,
-        weightFeet: patient.weight_feet,
-        weightInches: patient.weight_inches,
-        patientAddress: patient.address,
-        disease: patient.disease,
+        patientName: `${patient.first_name || ""} ${
+          patient.last_name || ""
+        }`.trim(),
+        email: patient.email || "",
+        mobileNumber: patient.phone_number || "",
+        dob: patient.dob || "",
+        gender: patient.gender || "male",
+        doctor: patient.doctor || "",
+        bloodGroup: patient.blood_group || "",
+        heightFeet: patient.height_feet || "",
+        heightInches: patient.height_inches || "",
+        weightFeet: patient.weight_kilo || "",
+        weightInches: patient.weight_grams || "",
+        patientAddress: patient.address || "",
+        disease: patient.disease || "",
       });
     }
   }, [patientData]);
@@ -110,75 +112,61 @@ const PatientAddPage = () => {
 
   const handleOnSubmit = () => {
     const data = validateForm(AddPatient, {
-      patient: form.patient,
       patientName: form.patientName,
-      first_name: form.patientName,
       email: form.email,
       mobileNumber: form.mobileNumber,
-      dob: form.dob ? new Date(form.dob) : undefined,
-      gender: form.gender,
-      doctor: doctorLoggedIn?.id || form.doctor, // Use logged in doctor's ID
-      bloodGroup: form.bloodGroup,
-      heightFeet: form.heightFeet ? Number(form.heightFeet) : undefined,
-      heightInches: form.heightInches ? Number(form.heightInches) : undefined,
-      weightFeet: form.weightFeet ? Number(form.weightFeet) : undefined,
-      weightInches: form.weightInches ? Number(form.weightInches) : undefined,
-      patientAddress: form.patientAddress,
-      disease: form.disease,
-      hospital:
-        doctorLoggedIn?.hospital?.id || import.meta.env.VITE_HOSPITAL_UUID, // Use logged in doctor's hospital ID
+      dob: form.dob ? new Date(form.dob) : new Date("1993-10-14"),
+      gender: form.gender || "male",
+      doctor: doctorLoggedIn?.id || form.doctor || "",
+      bloodGroup: form.bloodGroup || "A+",
+      heightFeet: form.heightFeet ? Number(form.heightFeet) : 1,
+      heightInches: form.heightInches ? Number(form.heightInches) : 0,
+      weightFeet: form.weightFeet ? Number(form.weightFeet) : 1,
+      weightInches: form.weightInches ? Number(form.weightInches) : 0,
+      patientAddress: form.patientAddress || "-",
+      disease: form.disease || "-",
       password: form.password,
       confirmPassword: form.confirmPassword,
-      role: 3,
-      country: "IN",
     });
 
     if (data) {
       dispatch({ type: "SUBMISSION/SUBMIT" });
-      if (patientId) {
-        updateUser(patientId, {
+      dispatch(
+        registerPatientAction({
           email: data.email,
-          first_name: data.patientName,
+          password: data.password,
+          confirmPassword: data.confirmPassword,
+          first_name: data.patientName?.split(" ")[0] || data.patientName,
+          last_name: data.patientName?.split(" ").slice(1).join(" ") || "",
           role: 3,
           country: "IN",
           gender: data.gender,
+          dob: data.dob.toISOString().split("T")[0],
+          blood_group: data.bloodGroup,
+          phone_number: data.mobileNumber || "",
+          address: data.patientAddress || "",
+          height_feet: data.heightFeet,
+          height_inches: data.heightInches,
+          weight_kilo: data.weightFeet,
+          weight_grams: data.weightInches,
+          disease: data.disease,
+          hospital:
+            doctorLoggedIn?.hospital?.id || import.meta.env.VITE_HOSPITAL_UUID,
+          work_email: form.workEmail || data.email,
         })
-          .then(() => {
-            toast("Update Patient successful", { type: "success" });
-            navigate(getRoutePath("doctor.patients.detail", { patientId }));
-          })
-          .catch((error) => {
-            console.log(error);
-            toast(error, { type: "error" });
-          })
-          .finally(() => {
-            dispatch({ type: "SUBMISSION/RESET" });
-          });
-      } else {
-        dispatch(
-          registerAction({
-            email: data.email,
-            password: data.password,
-            confirmPassword: data.confirmPassword,
-            fullName: data.patientName,
-            role: 3,
-            country: "IN",
-            gender: data.gender,
-          })
-        )
-          .unwrap()
-          .then(() => {
-            toast("Add Patient successful", { type: "success" });
-            navigate(getRoutePath("doctor.patients.list"));
-          })
-          .catch((error) => {
-            console.log(error);
-            toast(error, { type: "error" });
-          })
-          .finally(() => {
-            dispatch({ type: "SUBMISSION/RESET" });
-          });
-      }
+      )
+        .unwrap()
+        .then(() => {
+          toast("Add Patient successful", { type: "success" });
+          navigate(getRoutePath("doctor.patients.list"));
+        })
+        .catch((error) => {
+          console.log(error);
+          toast(error, { type: "error" });
+        })
+        .finally(() => {
+          dispatch({ type: "SUBMISSION/RESET" });
+        });
     }
   };
 
