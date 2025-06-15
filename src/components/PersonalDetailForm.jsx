@@ -11,26 +11,43 @@ import { toast } from "react-toastify";
 import { updateUser } from "@src/services/userService";
 import { validateForm } from "./../utils/validateForm";
 
-// import { useSelector } from "react-redux";
-
-const PersonalDetailForm = ({ wrapperClassName = "" }) => {
+const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
   const { isSubmitted, isReset, isReadOnly } = useSelector(
     (state) => state.submission
   );
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
 
-  // const user = {};
+  // Use provided userData or fallback to logged-in user
+  const activeUser = userData || user;
+
   const [forms, setForms] = useState({
-    firstName: user.first_name,
-    lastName: user.last_name,
-    gender: "male",
-    dob: "2024-11-20",
-    email: user.email,
-    country: user.country,
-    residentalAddress: user?.residential_address || "",
-    mobileNumber: user?.mobile_number || "",
+    firstName: activeUser?.first_name || "",
+    lastName: activeUser?.last_name || "",
+    gender: activeUser?.gender || "male",
+    dob: activeUser?.dob || "2024-11-20",
+    email: activeUser?.email || "",
+    country: activeUser?.country || "",
+    residentalAddress: activeUser?.residential_address || "",
+    mobileNumber: activeUser?.mobile_number || activeUser?.phone_number || "",
   });
+
+  // Update forms when userData changes
+  useEffect(() => {
+    if (activeUser) {
+      setForms({
+        firstName: activeUser.first_name || "",
+        lastName: activeUser.last_name || "",
+        gender: activeUser.gender || "male",
+        dob: activeUser.dob || "2024-11-20",
+        email: activeUser.email || "",
+        country: activeUser.country || "",
+        residentalAddress:
+          activeUser.residential_address || activeUser.address || "",
+        mobileNumber: activeUser.mobile_number || activeUser.phone_number || "",
+      });
+    }
+  }, [activeUser]);
 
   const onSubmit = useCallback(() => {
     const validatedForm = validateForm(UpdateUserSchema, forms);
@@ -41,7 +58,7 @@ const PersonalDetailForm = ({ wrapperClassName = "" }) => {
     }
 
     console.log("Validated Form: ", validatedForm);
-    updateUser(user.id, {
+    updateUser(activeUser.id, {
       first_name: validatedForm.firstName,
       last_name: validatedForm.lastName,
       gender: validatedForm.gender,
@@ -54,7 +71,10 @@ const PersonalDetailForm = ({ wrapperClassName = "" }) => {
       .then((response) => {
         if (response.success) {
           toast.success("User updated successfully!");
-          dispatch(getUserDetail());
+          // Only update logged-in user data if we're editing the logged-in user
+          if (!userData) {
+            dispatch(getUserDetail());
+          }
         }
       })
       .catch((error) => {
@@ -65,7 +85,7 @@ const PersonalDetailForm = ({ wrapperClassName = "" }) => {
       .finally(() => {
         dispatch({ type: "SUBMISSION/CANCEL" });
       });
-  }, [dispatch, forms, user]);
+  }, [dispatch, forms, activeUser, userData]);
 
   useEffect(() => {
     if (isSubmitted) {
@@ -76,17 +96,19 @@ const PersonalDetailForm = ({ wrapperClassName = "" }) => {
   useEffect(() => {
     if (isReset && !isSubmitted) {
       setForms({
-        firstName: user.first_name,
-        lastName: user.last_name,
-        gender: "male",
-        dob: "2024-11-20",
-        email: user.email,
-        country: user.country,
-        residentalAddress: user?.residential_address || "",
-        mobileNumber: user?.mobile_number || "",
+        firstName: activeUser?.first_name || "",
+        lastName: activeUser?.last_name || "",
+        gender: activeUser?.gender || "male",
+        dob: activeUser?.dob || "2024-11-20",
+        email: activeUser?.email || "",
+        country: activeUser?.country || "",
+        residentalAddress:
+          activeUser?.residential_address || activeUser?.address || "",
+        mobileNumber:
+          activeUser?.mobile_number || activeUser?.phone_number || "",
       });
     }
-  }, [isReset, user, isSubmitted]);
+  }, [isReset, activeUser, isSubmitted]);
 
   return (
     <div

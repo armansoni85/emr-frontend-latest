@@ -22,7 +22,7 @@ import { useDebounce } from "@src/utils/useDebounce";
 import { useQuery } from "@tanstack/react-query";
 import { useShowDialog } from "@src/utils/dialog";
 import { useShowModalAppointment } from "../components/ModalAppointment";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { createConsultation } from "@src/services/consultation.service";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -44,6 +44,7 @@ const AppointmentPage = () => {
   });
   const debounceSearchTerm = useDebounce(filter.search, 500);
 
+  // Fetch ALL appointments without date filtering
   const { data, isSuccess, isError, error, isPending, isFetching, refetch } =
     useQuery({
       queryKey: [
@@ -51,21 +52,23 @@ const AppointmentPage = () => {
         user.id,
         debounceSearchTerm,
         filter.disease,
-        filter.date,
         paginationMeta.currentPage,
       ],
       queryFn: async () => {
-        const data = await getAppointments({
+        const params = {
           // doctor: user.id,
           search: debounceSearchTerm,
           disease: filter.disease,
-          appointment_date: filter.date,
-          limit: paginationMeta.limitPerPage,
-          offset:
-            (paginationMeta.currentPage - 1) * paginationMeta.limitPerPage, // Calculate proper offset
-        });
+          limit: 1000, // Fetch a large number to get all appointments
+          offset: 0, // Start from beginning
+        };
+
+        console.log("Fetching ALL appointments with params:", params);
+
+        const data = await getAppointments(params);
 
         if (data.success) {
+          console.log("Total appointments fetched:", data.data.results.length);
           dispatch({
             type: "FETCH_SET_PAGINATION",
             payload: {
@@ -82,6 +85,70 @@ const AppointmentPage = () => {
       refetchOnReconnect: false,
     });
 
+  // Filter appointments by date on the frontend
+  const filteredAppointments = useMemo(() => {
+    if (!data?.data?.results) return [];
+
+    let appointments = data.data.results;
+
+    // Filter by date if date is selected
+    if (filter.date) {
+      appointments = appointments.filter((appointment) => {
+        if (!appointment.appointment_datetime) return false;
+
+        // Extract date part from appointment datetime
+        const appointmentDate = new Date(appointment.appointment_datetime);
+        const selectedDate = new Date(filter.date);
+
+        // Compare dates (ignore time)
+        return (
+          appointmentDate.getFullYear() === selectedDate.getFullYear() &&
+          appointmentDate.getMonth() === selectedDate.getMonth() &&
+          appointmentDate.getDate() === selectedDate.getDate()
+        );
+      });
+
+      console.log(
+        `Filtered appointments for date ${filter.date}:`,
+        appointments.length
+      );
+      console.log(
+        "Appointments on this date:",
+        appointments.map((apt) => ({
+          id: apt.id,
+          datetime: apt.appointment_datetime,
+          patient: `${apt.patient?.first_name || ""} ${
+            apt.patient?.last_name || ""
+          }`.trim(),
+        }))
+      );
+    }
+
+    return appointments;
+  }, [data?.data?.results, filter.date]);
+
+  // Paginate the filtered results
+  const paginatedAppointments = useMemo(() => {
+    const startIndex =
+      (paginationMeta.currentPage - 1) * paginationMeta.limitPerPage;
+    const endIndex = startIndex + paginationMeta.limitPerPage;
+    return filteredAppointments.slice(startIndex, endIndex);
+  }, [
+    filteredAppointments,
+    paginationMeta.currentPage,
+    paginationMeta.limitPerPage,
+  ]);
+
+  // Update pagination meta when filtered results change
+  useEffect(() => {
+    dispatch({
+      type: "FETCH_SET_PAGINATION",
+      payload: {
+        totalData: filteredAppointments.length,
+      },
+    });
+  }, [filteredAppointments.length, dispatch]);
+
   const handleChangeFilter = (e) => {
     const { name, value } = e.target;
     setFilter((prev) => {
@@ -90,6 +157,9 @@ const AppointmentPage = () => {
         [name]: value,
       };
     });
+
+    // Reset to first page when filter changes
+    dispatch({ type: "FETCH_SET_PAGINATION", payload: { currentPage: 1 } });
   };
 
   const handlePageChange = (page) => {
@@ -171,6 +241,7 @@ const AppointmentPage = () => {
       disease: "",
       date: "",
     });
+    dispatch({ type: "FETCH_SET_PAGINATION", payload: { currentPage: 1 } });
   };
 
   return (
@@ -211,7 +282,28 @@ const AppointmentPage = () => {
           onChange={handleChangeFilter}
         />
       </div>
-      <div className="mb-3 flex justify-end">
+      <div className="mb-3 flex justify-between items-center">
+        <div className="text-sm text-gray-600">
+          {filter.date && (
+            <span>
+              Showing appointments for:{" "}
+              <strong>
+                {new Date(filter.date).toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </strong>
+              {` (${filteredAppointments.length} appointments)`}
+            </span>
+          )}
+          {!filter.date && (
+            <span>
+              Showing all appointments ({filteredAppointments.length} total)
+            </span>
+          )}
+        </div>
         <Button
           color="secondary"
           size="small"
@@ -232,13 +324,13 @@ const AppointmentPage = () => {
         </div>
         <Table
           countCoulumn={7}
-          dataList={data?.data?.results || []}
+          dataList={paginatedAppointments}
           isLoading={isPending}
           theadChildren={
             <>
               <tr>
                 <Th>Patient Name</Th>
-                <Th>Date of Birh</Th>
+                <Th>Date of Birth</Th>
                 <Th>Mobile Number</Th>
                 <Th>Disease</Th>
                 <Th>Date &amp; Time</Th>
@@ -271,16 +363,13 @@ const AppointmentPage = () => {
                     </div>
                   </Td>
                   <Td>
-                    {item.appointment_datetime ? (
-                      <Moment
-                        date={item?.appointment_datetime}
-                        format="MMMM D, YYYY - h:mmA"
-                      />
+                    {item?.patient?.dob ? (
+                      <Moment date={item?.patient?.dob} format="MMMM D, YYYY" />
                     ) : (
                       "-"
                     )}
                   </Td>
-                  <Td>089782</Td>
+                  <Td>{item?.patient?.phone_number || "089782"}</Td>
                   <Td>
                     <Badge color="info">{item?.disease ?? "Empty"}</Badge>
                   </Td>
@@ -346,7 +435,7 @@ const AppointmentPage = () => {
         />
         <Pagination
           limitPerPage={paginationMeta.limitPerPage}
-          countData={paginationMeta.totalData}
+          countData={filteredAppointments.length}
           onChangePage={handlePageChange}
         />
       </div>

@@ -7,7 +7,7 @@ import { AddPatient } from "@src/schema/UserSchema";
 import { getUsers, getUserById, updateUser } from "@src/services/userService";
 import { handleFormChange } from "@src/utils/handleForm";
 import { validateForm } from "@src/utils/validateForm";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
@@ -23,6 +23,9 @@ const PatientAddPage = () => {
   const [doctorList, setDoctorList] = useState([]);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const isEditMode = !!patientId;
 
   const getLoggedInDoctor = () => {
     try {
@@ -48,7 +51,7 @@ const PatientAddPage = () => {
     ? `${doctorLoggedIn.first_name} ${doctorLoggedIn.last_name}`
     : "Unknown Doctor";
 
-  const { data: patientData } = useQuery({
+  const { data: patientData, isLoading: isLoadingPatient } = useQuery({
     queryKey: ["patient", patientId],
     queryFn: () => getUserById(patientId),
     enabled: !!patientId,
@@ -96,6 +99,24 @@ const PatientAddPage = () => {
     },
   });
 
+  const updatePatientMutation = useMutation({
+    mutationFn: ({ patientId, userData }) => updateUser(patientId, userData),
+    onSuccess: () => {
+      toast.success("Patient updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["patientList"] });
+      queryClient.invalidateQueries({ queryKey: ["patients"] });
+      queryClient.invalidateQueries({ queryKey: ["patient", patientId] });
+      navigate(getRoutePath("doctor.patients.list"));
+    },
+    onError: (error) => {
+      console.error("Update error:", error);
+      toast.error(error.message || "Failed to update patient");
+    },
+    onSettled: () => {
+      dispatch({ type: "SUBMISSION/RESET" });
+    },
+  });
+
   useEffect(() => {
     if (isSuccess && data.success) {
       setDoctorList(data.data.results);
@@ -111,64 +132,103 @@ const PatientAddPage = () => {
   };
 
   const handleOnSubmit = () => {
-    const data = validateForm(AddPatient, {
-      patientName: form.patientName,
-      email: form.email,
-      mobileNumber: form.mobileNumber,
-      dob: form.dob ? new Date(form.dob) : new Date("1993-10-14"),
-      gender: form.gender || "male",
-      doctor: doctorLoggedIn?.id || form.doctor || "",
-      bloodGroup: form.bloodGroup || "A+",
-      heightFeet: form.heightFeet ? Number(form.heightFeet) : 1,
-      heightInches: form.heightInches ? Number(form.heightInches) : 0,
-      weightFeet: form.weightFeet ? Number(form.weightFeet) : 1,
-      weightInches: form.weightInches ? Number(form.weightInches) : 0,
-      patientAddress: form.patientAddress || "-",
-      disease: form.disease || "-",
-      password: form.password,
-      confirmPassword: form.confirmPassword,
-    });
+    if (isEditMode) {
+      const updateData = {
+        first_name: form.patientName?.split(" ")[0] || form.patientName,
+        last_name: form.patientName?.split(" ").slice(1).join(" ") || "",
+        email: form.email,
+        phone_number: form.mobileNumber,
+        dob: form.dob,
+        gender: form.gender,
+        blood_group: form.bloodGroup,
+        height_feet: form.heightFeet ? Number(form.heightFeet) : 0,
+        height_inches: form.heightInches ? Number(form.heightInches) : 0,
+        weight_kilo: form.weightFeet ? Number(form.weightFeet) : 0,
+        weight_grams: form.weightInches ? Number(form.weightInches) : 0,
+        address: form.patientAddress,
+        disease: form.disease,
+      };
 
-    if (data) {
       dispatch({ type: "SUBMISSION/SUBMIT" });
-      dispatch(
-        registerPatientAction({
-          email: data.email,
-          password: data.password,
-          confirmPassword: data.confirmPassword,
-          first_name: data.patientName?.split(" ")[0] || data.patientName,
-          last_name: data.patientName?.split(" ").slice(1).join(" ") || "",
-          role: 3,
-          country: "IN",
-          gender: data.gender,
-          dob: data.dob.toISOString().split("T")[0],
-          blood_group: data.bloodGroup,
-          phone_number: data.mobileNumber || "",
-          address: data.patientAddress || "",
-          height_feet: data.heightFeet,
-          height_inches: data.heightInches,
-          weight_kilo: data.weightFeet,
-          weight_grams: data.weightInches,
-          disease: data.disease,
-          hospital:
-            doctorLoggedIn?.hospital?.id || import.meta.env.VITE_HOSPITAL_UUID,
-          work_email: form.workEmail || data.email,
-        })
-      )
-        .unwrap()
-        .then(() => {
-          toast("Add Patient successful", { type: "success" });
-          navigate(getRoutePath("doctor.patients.list"));
-        })
-        .catch((error) => {
-          console.log(error);
-          toast(error, { type: "error" });
-        })
-        .finally(() => {
-          dispatch({ type: "SUBMISSION/RESET" });
-        });
+      updatePatientMutation.mutate({ patientId, userData: updateData });
+    } else {
+      const data = validateForm(AddPatient, {
+        patientName: form.patientName,
+        email: form.email,
+        mobileNumber: form.mobileNumber,
+        dob: form.dob ? new Date(form.dob) : new Date("1993-10-14"),
+        gender: form.gender || "male",
+        doctor: doctorLoggedIn?.id || form.doctor || "",
+        bloodGroup: form.bloodGroup || "A+",
+        heightFeet: form.heightFeet ? Number(form.heightFeet) : 1,
+        heightInches: form.heightInches ? Number(form.heightInches) : 0,
+        weightFeet: form.weightFeet ? Number(form.weightFeet) : 1,
+        weightInches: form.weightInches ? Number(form.weightInches) : 0,
+        patientAddress: form.patientAddress || "-",
+        disease: form.disease || "-",
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+      });
+
+      if (data) {
+        dispatch({ type: "SUBMISSION/SUBMIT" });
+        dispatch(
+          registerPatientAction({
+            email: data.email,
+            password: data.password,
+            confirmPassword: data.confirmPassword,
+            first_name: data.patientName?.split(" ")[0] || data.patientName,
+            last_name: data.patientName?.split(" ").slice(1).join(" ") || "",
+            role: 3,
+            country: "IN",
+            gender: data.gender,
+            dob: data.dob.toISOString().split("T")[0],
+            blood_group: data.bloodGroup,
+            phone_number: data.mobileNumber || "",
+            address: data.patientAddress || "",
+            height_feet: data.heightFeet,
+            height_inches: data.heightInches,
+            weight_kilo: data.weightFeet,
+            weight_grams: data.weightInches,
+            disease: data.disease,
+            hospital:
+              doctorLoggedIn?.hospital?.id ||
+              import.meta.env.VITE_HOSPITAL_UUID,
+            work_email: form.workEmail || data.email,
+          })
+        )
+          .unwrap()
+          .then(() => {
+            toast("Add Patient successful", { type: "success" });
+
+            queryClient.invalidateQueries({ queryKey: ["patientList"] });
+            queryClient.invalidateQueries({ queryKey: ["patients"] });
+
+            navigate(getRoutePath("doctor.patients.list"));
+          })
+          .catch((error) => {
+            console.log(error);
+            toast(error, { type: "error" });
+          })
+          .finally(() => {
+            dispatch({ type: "SUBMISSION/RESET" });
+          });
+      }
     }
   };
+
+  const handleCancel = () => {
+    dispatch({ type: "SUBMISSION/RESET" });
+    navigate(getRoutePath("doctor.patients.list"));
+  };
+
+  if (isEditMode && isLoadingPatient) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <SpinnerComponent />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -178,14 +238,19 @@ const PatientAddPage = () => {
           color="danger"
           isOutline={true}
           className="px-8"
-          onClick={() => isSubmitted && dispatch({ type: "SUBMISSION/RESET" })}
+          onClick={handleCancel}
         >
           Cancel
         </Button>
-        <Button color="primary" className="px-8" onClick={handleOnSubmit}>
-          {isSubmitted ? (
+        <Button
+          color="primary"
+          className="px-8"
+          onClick={handleOnSubmit}
+          disabled={isSubmitted || updatePatientMutation.isPending}
+        >
+          {isSubmitted || updatePatientMutation.isPending ? (
             <SpinnerComponent color="white" className="mr-2" />
-          ) : patientId ? (
+          ) : isEditMode ? (
             "Update"
           ) : (
             "Save"
@@ -195,7 +260,7 @@ const PatientAddPage = () => {
       <div className="bg-white shadow-md rounded-2xl pb-4">
         <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
           <h2 className="text-lg font-medium">
-            {patientId ? "Edit Patient" : "Add New Patient"}
+            {isEditMode ? "Edit Patient" : "Add New Patient"}
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2">
@@ -371,7 +436,6 @@ const PatientAddPage = () => {
             wrapperClassName="p-4"
           />
 
-          {/* Display logged in doctor name as read-only field */}
           <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
             <label className="block text-nowrap my-auto">Doctor Name:</label>
             <div className="flex items-center w-full col-span-2">
@@ -392,7 +456,7 @@ const PatientAddPage = () => {
             onChange={(e) => handleFormChange("patientAddress", e, setForm)}
             wrapperClassName="p-4"
           />
-          {!patientId && (
+          {!isEditMode && (
             <div>
               <InputWithLabel
                 label={"Password:"}
