@@ -22,6 +22,7 @@ const AppointmentEditPage = () => {
   const [patientList, setPatientList] = useState([]);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [search, setSearch] = useState("");
 
   const {
     data: appointmentData,
@@ -36,8 +37,8 @@ const AppointmentEditPage = () => {
   });
 
   const { data, isSuccess } = useQuery({
-    queryKey: ["patients"],
-    queryFn: () => getUsers({ role: RoleId.PATIENT }),
+    queryKey: ["patients", { search }],
+    queryFn: () => getUsers({ role: RoleId.PATIENT, search }),
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
@@ -85,7 +86,7 @@ const AppointmentEditPage = () => {
   const memoizedPatientList = useMemo(() => patientList, [patientList]);
 
   const handleGetPatientList = (search) => {
-    searchPatient({ search, role: RoleId.PATIENT });
+    setSearch(search);
   };
 
   const handlePatientSelect = (patientId) => {
@@ -94,9 +95,9 @@ const AppointmentEditPage = () => {
       setForm((prev) => ({
         ...prev,
         patient: patientId,
-        mobileNumber: selectedPatient.mobile_number || "",
+        mobileNumber: selectedPatient.phone_number || "",
         email: selectedPatient.email || "",
-        dob: selectedPatient.date_of_birth || "",
+        dob: selectedPatient.dob || "",
       }));
     }
   };
@@ -116,9 +117,8 @@ const AppointmentEditPage = () => {
       return;
     }
 
-    const combinedDateTime = `${data.date.toISOString().split("T")[0]} ${
-      data.time
-    }`;
+    const combinedDateTime = `${data.date.toISOString().split("T")[0]} ${data.time
+      }`;
     updateAppointment(id, {
       appointment_datetime: combinedDateTime,
       reason_of_visit: data.reasonOfVisit,
@@ -162,8 +162,8 @@ const AppointmentEditPage = () => {
         }
         toast.error(
           messages.join(", ") ||
-            data.message ||
-            "An error occurred while updating the appointment"
+          data.message ||
+          "An error occurred while updating the appointment"
         );
 
         dispatch({ type: "SUBMISSION/RESET" });
@@ -220,7 +220,7 @@ const AppointmentEditPage = () => {
             id={"mobileNumber"}
             type={"text"}
             value={form.mobileNumber || ""}
-            readOnly
+
             wrapperClassName="p-4"
           />
           <InputWithLabel
@@ -228,7 +228,7 @@ const AppointmentEditPage = () => {
             id={"email"}
             type={"email"}
             value={form.email || ""}
-            readOnly
+
             wrapperClassName="p-4"
           />
           <InputWithLabel
