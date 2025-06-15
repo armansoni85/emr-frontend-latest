@@ -1,101 +1,146 @@
 import { Button, InputWithLabel, VoiceRecorder } from "@src/components";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
+import { AddAppointmentSchema } from "@src/schema/AddAppointmentSchema";
+import { RoleId } from "@src/constant/enumRole";
 import SpinnerComponent from "@src/components/SpinnerComponent";
+import { createAppointment } from "@src/services/appointmentService";
 import { getRoutePath } from "@src/utils/routeUtils";
+import { getUsers } from "@src/services/userService";
 import { handleFormChange } from "@src/utils/handleForm";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { validateForm } from "@src/utils/validateForm";
 
 const AppointmentAddPage = () => {
-  const [form, setForm] = useState({
-    patientName: "",
-    mobileNumber: "",
-    email: "",
-    dob: "",
-    date: "",
-    time: "",
-    disease: "",
-    reasonOfVisit: "",
-  });
-
-  const [appointments, setAppointments] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [form, setForm] = useState({});
+  const { isSubmitted } = useSelector((state) => state.submission);
+  const [patientList, setPatientList] = useState([]);
+  const patientListRef = useRef(patientList);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleOnSubmit = () => {
-    setIsSubmitting(true);
+  // Keep a ref to always have the latest patientList in callbacks
+  useEffect(() => {
+    patientListRef.current = patientList;
+  }, [patientList]);
 
-    if (!form.patientName || !form.date || !form.time) {
-      toast.error(
-        "Please fill in all required fields (Patient Name, Date, Time)"
-      );
-      setIsSubmitting(false);
+  // To add params (e.g., search) to the query, include them in the queryKey and queryFn:
+  const [search, setSearch] = useState(""); // Example param
+
+  const { data, isSuccess, refetch } = useQuery({
+    queryKey: ["patients", { search }], // Add params to queryKey for cache separation
+    queryFn: () => getUsers({ role: RoleId.PATIENT, search }), // Pass params to API call
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  // searchPatient will update patientList with new data on each search
+  const { mutate: searchPatient } = useMutation({
+    mutationFn: getUsers,
+    onSuccess: (data) => {
+      if (data.status && data.data.results) {
+        setPatientList(data.data.results);
+      }
+    },
+  });
+
+  useEffect(() => {
+    if (isSuccess && data.success) {
+      setPatientList(data.data.results);
+    } else {
+      setPatientList([]);
+    }
+  }, [data, isSuccess]);
+
+  // memoizedPatientList will update whenever patientList changes
+  const memoizedPatientList = useMemo(() => patientList, [patientList]);
+
+  const handleGetPatientList = (search) => {
+    setSearch(search);
+    // No need to call refetch() here, as useQuery will refetch automatically when 'search' changes
+  };
+
+  const handlePatientSelect = (patientId) => {
+    // Use the ref to always get the latest patientList
+    const selectedPatient = patientListRef.current.find((p) => p.id === patientId);
+    if (selectedPatient) {
+      setForm((prev) => ({
+        ...prev,
+        patient: patientId,
+        mobileNumber: selectedPatient.phone_number || "",
+        email: selectedPatient.email || "",
+        dob: selectedPatient.dob || "",
+      }));
+    }
+  };
+
+  const handleOnSubmit = () => {
+    dispatch({ type: "SUBMISSION/SUBMIT" });
+    const data = {
+      patient: form.patient,
+      date: new Date(form.date),
+      time: form.time,
+      disease: form.disease,
+      reasonOfVisit: form.reasonOfVisit,
+    };
+
+    if (!data) {
+      dispatch({ type: "SUBMISSION/CANCEL" });
       return;
     }
 
-    const newAppointment = {
-      id: Date.now(),
-      patientName: form.patientName,
-      mobileNumber: form.mobileNumber,
-      email: form.email,
-      dateOfBirth: form.dob,
-      appointmentDate: form.date,
-      appointmentTime: form.time,
-      disease: form.disease,
-      reasonOfVisit: form.reasonOfVisit,
-      status: "scheduled",
-      createdAt: new Date().toISOString(),
-    };
+    const combinedDateTime = `${data.date.toISOString().split("T")[0]} ${data.time}`;
+    createAppointment({
+      appointment_datetime: combinedDateTime,
+      disease: data.disease,
+      reason_of_visit: data.reasonOfVisit,
+      patient: data.patient,
+    })
+      .then((response) => {
+        if (response.success) {
+          dispatch({ type: "SUBMISSION/RESET" });
+          toast.success("Appointment created successfully!");
+          navigate(getRoutePath("doctor.appointments.list"), { replace: true });
+        } else {
+          toast.error(response.message || "Failed to create appointment");
+        }
+      })
+      .catch((error) => {
+        const data = error.response?.data || {};
 
-    setTimeout(() => {
-      setAppointments((prev) => [...prev, newAppointment]);
+        let messages = [];
+        if (data.code == "unprocessable_entity") {
+          for (const key in data.detail) {
+            if (data.detail[key].length > 0) {
+              messages.push(`${key}: ${data.detail[key][0]}`);
+            }
+          }
 
-      const existingAppointments = JSON.parse(
-        localStorage.getItem("appointments") || "[]"
-      );
-      existingAppointments.push(newAppointment);
-      localStorage.setItem(
-        "appointments",
-        JSON.stringify(existingAppointments)
-      );
+          toast.error(
+            <>
+              <div>
+                <p>{data.message || "Please check the following errors:"}</p>
+                <ul>
+                  {messages.map((message, index) => (
+                    <li key={index}>{message}</li>
+                  ))}
+                </ul>
+              </div>
+            </>
+          );
+          return;
+        }
+        toast.error(
+          messages.join(", ") ||
+          data.message ||
+          "An error occurred while creating the appointment"
+        );
 
-      setForm({
-        patientName: "",
-        mobileNumber: "",
-        email: "",
-        dob: "",
-        date: "",
-        time: "",
-        disease: "",
-        reasonOfVisit: "",
+        dispatch({ type: "SUBMISSION/RESET" });
       });
-
-      setIsSubmitting(false);
-      toast.success("Appointment scheduled successfully!");
-
-      console.log("New appointment created:", newAppointment);
-      console.log("All appointments:", [...appointments, newAppointment]);
-
-      navigate(getRoutePath("doctor.appointments.list"), { replace: true });
-    }, 1000);
-  };
-
-  const handleCancel = () => {
-    setForm({
-      patientName: "",
-      mobileNumber: "",
-      email: "",
-      dob: "",
-      date: "",
-      time: "",
-      disease: "",
-      reasonOfVisit: "",
-    });
-    navigate(getRoutePath("doctor.appointments.list"));
   };
 
   return (
@@ -106,17 +151,12 @@ const AppointmentAddPage = () => {
           color="danger"
           isOutline={true}
           className="px-8"
-          onClick={handleCancel}
+          onClick={() => isSubmitted && dispatch({ type: "SUBMISSION/RESET" })}
         >
           Cancel
         </Button>
-        <Button
-          color="primary"
-          className="px-8"
-          onClick={handleOnSubmit}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
+        <Button color="primary" className="px-8" onClick={handleOnSubmit}>
+          {isSubmitted ? (
             <SpinnerComponent color="white" className="mr-2" />
           ) : (
             "Schedule"
@@ -129,22 +169,26 @@ const AppointmentAddPage = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2">
           <InputWithLabel
-            label={"Patient Name:"}
-            id={"patientName"}
-            type={"text"}
-            value={form.patientName || ""}
-            onChange={(e) => handleFormChange("patientName", e, setForm)}
-            placeholder="Enter patient name"
+            label={"Patient:"}
+            id={"patient"}
+            type={"searchable-select"}
+            onSearch={(search) => handleGetPatientList(search)}
+            options={memoizedPatientList}
+            defaultValue={form.patient || ""}
+            onChange={(option) => handlePatientSelect(option.id)}
+            keyValue={"id"}
+            keyLabel={(option) =>
+              option.first_name || option.last_name
+                ? `${option.first_name} ${option.last_name}`
+                : option.email
+            }
             wrapperClassName="p-4"
-            required
           />
           <InputWithLabel
             label={"Mobile Number:"}
             id={"mobileNumber"}
             type={"text"}
             value={form.mobileNumber || ""}
-            onChange={(e) => handleFormChange("mobileNumber", e, setForm)}
-            placeholder="Enter mobile number"
             wrapperClassName="p-4"
           />
           <InputWithLabel
@@ -152,8 +196,6 @@ const AppointmentAddPage = () => {
             id={"email"}
             type={"email"}
             value={form.email || ""}
-            onChange={(e) => handleFormChange("email", e, setForm)}
-            placeholder="Enter email address"
             wrapperClassName="p-4"
           />
           <InputWithLabel
@@ -161,27 +203,25 @@ const AppointmentAddPage = () => {
             id={"dob"}
             type={"date"}
             value={form.dob || ""}
-            onChange={(e) => handleFormChange("dob", e, setForm)}
             wrapperClassName="p-4"
           />
           <InputWithLabel
-            label={"Appointment Date:"}
+            label={"Date:"}
             id={"date"}
             type={"date"}
             value={form.date || ""}
             onChange={(e) => handleFormChange("date", e, setForm)}
             wrapperClassName="p-4"
-            required
           />
           <InputWithLabel
-            label={"Appointment Time:"}
+            label={"Time:"}
             id={"time"}
             type={"time"}
             value={form.time || ""}
             onChange={(e) => handleFormChange("time", e, setForm)}
             wrapperClassName="p-4"
-            required
           />
+
           <InputWithLabel
             label={"Disease:"}
             id={"disease"}
@@ -190,7 +230,6 @@ const AppointmentAddPage = () => {
             onChange={(e) => handleFormChange("disease", e, setForm)}
             wrapperClassName="p-4"
           >
-            <option value="">Select Disease</option>
             <option value="Acquired">Acquired</option>
             <option value="Acute">Acute</option>
             <option value="Chronic condition">Chronic condition</option>
@@ -208,21 +247,10 @@ const AppointmentAddPage = () => {
             type={"textarea"}
             value={form.reasonOfVisit || ""}
             onChange={(e) => handleFormChange("reasonOfVisit", e, setForm)}
-            placeholder="Enter reason for visit"
             wrapperClassName="p-4"
           />
         </div>
       </div>
-
-      {/* Debug section - shows current appointments in state */}
-      {appointments.length > 0 && (
-        <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-          <h3 className="font-semibold mb-2">Appointments in State:</h3>
-          <pre className="text-sm text-gray-600">
-            {JSON.stringify(appointments, null, 2)}
-          </pre>
-        </div>
-      )}
     </>
   );
 };
