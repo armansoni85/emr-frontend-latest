@@ -38,13 +38,14 @@ const AppointmentEditPage = () => {
 
   const { data, isSuccess } = useQuery({
     queryKey: ["patients", { search }],
-    queryFn: () => getUsers({ role: RoleId.PATIENT, search }),
+    queryFn: () => getUsers({ role: RoleId.PATIENT, search, limit: 10000 }),
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
 
   const { mutate: searchPatient } = useMutation({
-    mutationFn: getUsers,
+    mutationFn: (params) =>
+      getUsers({ ...params, role: RoleId.PATIENT, limit: 10000 }),
     onSuccess: (data) => {
       if (data.status && data.data.results) {
         setPatientList(data.data.results);
@@ -61,27 +62,31 @@ const AppointmentEditPage = () => {
   }, [data, isSuccess]);
 
   useEffect(() => {
-    if (isAppointmentSuccess && appointmentData.success) {
+    if (
+      isAppointmentSuccess &&
+      appointmentData.success &&
+      patientList.length > 0
+    ) {
       const appointment = appointmentData.data;
       const appointmentDate = new Date(appointment.appointment_datetime);
 
-      // Find the patient object from patientList using the patient ID
       const selectedPatient = patientList.find(
         (p) => p.id === appointment.patient
       );
 
       setForm({
-        patient: appointment.patient, // Keep the ID for form submission
-        mobileNumber: selectedPatient?.mobile_number || "",
+        patient: appointment.patient,
+        mobileNumber:
+          selectedPatient?.phone_number || selectedPatient?.mobile_number || "",
         email: selectedPatient?.email || "",
-        dob: selectedPatient?.date_of_birth || "",
+        dob: selectedPatient?.dob || selectedPatient?.date_of_birth || "",
         date: appointmentDate.toISOString().split("T")[0],
         time: appointmentDate.toTimeString().slice(0, 5),
         disease: appointment.disease || "",
         reasonOfVisit: appointment.reason_of_visit || "",
       });
     }
-  }, [appointmentData, isAppointmentSuccess, patientList]); // Add patientList dependency
+  }, [appointmentData, isAppointmentSuccess, patientList]);
 
   const memoizedPatientList = useMemo(() => patientList, [patientList]);
 
@@ -209,9 +214,8 @@ const AppointmentEditPage = () => {
             onChange={(option) => handlePatientSelect(option.id)}
             keyValue={"id"}
             keyLabel={(option) =>
-              option.first_name && option.last_name
-                ? `${option.first_name} ${option.last_name}`
-                : option.email
+              `${option.first_name || ""} ${option.last_name || ""}`.trim() ||
+              option.email
             }
             wrapperClassName="p-4"
           />
@@ -220,7 +224,6 @@ const AppointmentEditPage = () => {
             id={"mobileNumber"}
             type={"text"}
             value={form.mobileNumber || ""}
-
             wrapperClassName="p-4"
           />
           <InputWithLabel
@@ -228,7 +231,6 @@ const AppointmentEditPage = () => {
             id={"email"}
             type={"email"}
             value={form.email || ""}
-
             wrapperClassName="p-4"
           />
           <InputWithLabel

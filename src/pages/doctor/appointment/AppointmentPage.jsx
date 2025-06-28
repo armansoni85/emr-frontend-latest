@@ -50,13 +50,13 @@ const AppointmentPage = () => {
         "appointments",
         user.id,
         debounceSearchTerm,
-        filter.disease,
+        // filter.disease,
         paginationMeta.currentPage,
       ],
       queryFn: async () => {
         const params = {
           search: debounceSearchTerm,
-          disease: filter.disease,
+          // disease: filter.disease,
           limit: 1000,
           offset: 0,
         };
@@ -252,121 +252,43 @@ const AppointmentPage = () => {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex flex-col space-y-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Appointments</h1>
-            <div className="flex items-center space-x-3">
-              {location.state?.selectedDate && (
-                <div className="text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-                  From Calendar
-                </div>
-              )}
-              <Button
-                color="secondary"
-                size="small"
-                onClick={handleClearFilter}
-                isOutline
-              >
-                Clear Filters
-              </Button>
-            </div>
-          </div>
-
-          {/* Filter Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <InputWithLabel
-              label="Search Appointments"
-              name="search"
-              type="text"
-              placeholder="Search by patient name, disease..."
-              labelOnTop={true}
-              inputClassName="!pe-4 !ps-10 !py-3"
-              prependInput={
-                <span className="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                  search
-                </span>
-              }
-              value={filter.search}
-              onChange={handleChangeFilter}
-            />
-
-            <InputWithLabel
-              label="Filter by Date"
-              type="date"
-              name="date"
-              labelOnTop={true}
-              inputClassName="!py-3"
-              value={filter.date}
-              onChange={handleChangeFilter}
-            />
-
-            <InputWithLabel
-              label="Filter by Disease"
-              name="disease"
-              type="text"
-              placeholder="Enter disease name..."
-              labelOnTop={true}
-              inputClassName="!py-3"
-              value={filter.disease}
-              onChange={handleChangeFilter}
-            />
-          </div>
-
-          {/* Results Summary */}
-          <div className="flex items-center justify-between py-3 border-t border-gray-100">
-            <div className="text-sm text-gray-600">
-              {filter.date && (
-                <div className="flex items-center space-x-2">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    Date Filtered
-                  </span>
-                  <span>
-                    <strong>
-                      {new Date(filter.date).toLocaleDateString("en-US", {
-                        weekday: "long",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </strong>
-                  </span>
-                </div>
-              )}
-              <div className="mt-1">
-                <span className="font-medium">
-                  {filteredAppointments.length}
-                </span>{" "}
-                {filteredAppointments.length === 1
-                  ? "appointment"
-                  : "appointments"}{" "}
-                found
-                {filter.date || filter.search || filter.disease ? (
-                  <span className="text-gray-400">
-                    {" "}
-                    (filtered from {data?.data?.results?.length || 0} total)
-                  </span>
-                ) : null}
-              </div>
-            </div>
-
-            {(filter.search || filter.disease || filter.date) && (
-              <div className="text-xs text-gray-500">
-                Active filters:{" "}
-                {[
-                  filter.search && "Search",
-                  filter.disease && "Disease",
-                  filter.date && "Date",
-                ]
-                  .filter(Boolean)
-                  .join(", ")}
-              </div>
-            )}
-          </div>
-        </div>
+      <div className="mb-3 grid grid-cols-1 md:grid-cols-2 md:gap-4">
+        <InputWithLabel
+          label={"Search"}
+          name={"search"}
+          type={"text"}
+          placeholder={"Search patient name, or DOB"}
+          labelOnTop={true}
+          wrapperClassName="mb-3"
+          inputClassName="!pe-4 !ps-10 !py-2"
+          prependInput={
+            <span className="material-icons absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-500">
+              search
+            </span>
+          }
+          value={filter.search}
+          onChange={handleChangeFilter}
+        />
+        {/* <InputWithLabel
+          labelOnTop={true}
+          label={"Disease"}
+          name={"disease"}
+          type={"text"}
+          placeholder={"Filter by disease..."}
+          value={filter.disease}
+          onChange={handleChangeFilter}
+        /> */}
+        <InputWithLabel
+          labelOnTop={true}
+          label={"Date"}
+          name={"date"}
+          type={"date"}
+          wrapperClassName="mb-3"
+          inputClassName="!pe-4 !ps-10 !py-2"
+          value={filter.date}
+          onChange={handleChangeFilter}
+        />
       </div>
-
-      {/* Appointments Table */}
       <div className="bg-white shadow-md rounded-2xl pb-4">
         <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
           <h2 className="text-lg font-medium">All Appointments</h2>
@@ -413,14 +335,13 @@ const AppointmentPage = () => {
                         <div className="text-start">
                           <p>
                             {!item?.patient?.first_name &&
-                            !item?.patient?.last_name ? (
+                              !item?.patient?.last_name ? (
                               <span className="text-gray-400">
                                 Not provided
                               </span>
                             ) : (
-                              `${item?.patient?.first_name || ""} ${
-                                item?.patient?.last_name || ""
-                              }`.trim()
+                              `${item?.patient?.first_name || ""} ${item?.patient?.last_name || ""
+                                }`.trim()
                             )}
                           </p>
                         </div>
@@ -545,8 +466,8 @@ const AppointmentPage = () => {
             <span className="font-semibold text-gray-900">
               {filteredAppointments.length > 0
                 ? (paginationMeta.currentPage - 1) *
-                    paginationMeta.limitPerPage +
-                  1
+                paginationMeta.limitPerPage +
+                1
                 : 0}
             </span>{" "}
             to{" "}
@@ -569,11 +490,10 @@ const AppointmentPage = () => {
             <button
               onClick={handlePrevPage}
               disabled={!hasPrevPage || isFetching}
-              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                hasPrevPage && !isFetching
-                  ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
-                  : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${hasPrevPage && !isFetching
+                ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+                : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
             >
               <i className="material-icons text-sm">chevron_left</i>
               <span className="hidden sm:inline">Previous</span>
@@ -626,11 +546,10 @@ const AppointmentPage = () => {
                           <button
                             key={pageNumber}
                             onClick={() => handlePageChange(pageNumber)}
-                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                              pageNumber === paginationMeta.currentPage
-                                ? "bg-primary text-white shadow-sm"
-                                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
-                            }`}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${pageNumber === paginationMeta.currentPage
+                              ? "bg-primary text-white shadow-sm"
+                              : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                              }`}
                           >
                             {pageNumber}
                           </button>
@@ -663,11 +582,10 @@ const AppointmentPage = () => {
             <button
               onClick={handleNextPage}
               disabled={!hasNextPage || isFetching}
-              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                hasNextPage && !isFetching
-                  ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
-                  : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${hasNextPage && !isFetching
+                ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+                : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
             >
               <span className="hidden sm:inline">Next</span>
               <i className="material-icons text-sm">chevron_right</i>
@@ -692,7 +610,6 @@ const AppointmentPage = () => {
           </div>
         </div>
       </div>
-
       {/* Empty State */}
       {!isPending && filteredAppointments.length === 0 && (
         <div className="bg-white rounded-lg shadow-sm p-12 text-center">
@@ -710,11 +627,11 @@ const AppointmentPage = () => {
             No appointments found
           </h3>
           <p className="text-gray-500 mb-6">
-            {filter.date || filter.search || filter.disease
+            {filter.date || filter.search
               ? "Try adjusting your filters to see more results."
               : "You don't have any appointments yet."}
           </p>
-          {(filter.date || filter.search || filter.disease) && (
+          {(filter.date || filter.search) && (
             <Button color="primary" onClick={handleClearFilter} isOutline>
               Clear All Filters
             </Button>

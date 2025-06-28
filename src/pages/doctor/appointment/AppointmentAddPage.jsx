@@ -2,7 +2,6 @@ import { Button, InputWithLabel, VoiceRecorder } from "@src/components";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-
 import { AddAppointmentSchema } from "@src/schema/AddAppointmentSchema";
 import { RoleId } from "@src/constant/enumRole";
 import SpinnerComponent from "@src/components/SpinnerComponent";
@@ -12,8 +11,6 @@ import { getUsers } from "@src/services/userService";
 import { handleFormChange } from "@src/utils/handleForm";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import { createAppointment } from "@src/services/appointmentService";
-import { getUsers } from "@src/services/userService";
 
 const AppointmentAddPage = () => {
   const [form, setForm] = useState({

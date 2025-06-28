@@ -242,133 +242,54 @@ const PrescriptionListPage = () => {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex flex-col space-y-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Prescriptions</h1>
-            <div className="flex items-center space-x-3">
-              {/* Show subtle loading indicator during search/filter */}
-              {isFetching && prescriptionsData && (
-                <div className="flex items-center text-blue-600 text-sm">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                  Updating...
-                </div>
-              )}
-              <Button
-                color="secondary"
-                size="small"
-                onClick={handleClearFilter}
-                isOutline
+      <div className="mb-3 grid grid-cols-1 md:grid-cols-2 md:gap-4">
+        {/* Search by patient name or DOB */}
+        <div>
+          <label className="block text-sm font-medium mb-1" htmlFor="search">
+            Search
+          </label>
+          <div className="relative">
+            <span className="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+              search
+            </span>
+            <input
+              id="search"
+              name="search"
+              type="text"
+              placeholder="Search patient name or date of birth..."
+              className="pl-10 pr-4 py-2 border rounded-full w-full focus:outline-none focus:ring-2 focus:ring-primary"
+              value={filter.search}
+              onChange={handleChangeFilter}
+            />
+            {filter.search && (
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                onClick={() => setFilter((prev) => ({ ...prev, search: "" }))}
+                tabIndex={-1}
               >
-                Clear Filters
-              </Button>
-            </div>
-          </div>
-
-          {/* Filter Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="search"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Search
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  name="search"
-                  placeholder="Search by Name or DOB"
-                  className="w-full rounded-full pe-4 ps-10 py-3 border-grey focus:outline-grey2"
-                  value={filter.search}
-                  onChange={handleChangeFilter}
-                />
-                <span className="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                  search
-                </span>
-              </div>
-            </div>
-
-            {/* <div>
-              <label
-                htmlFor="disease"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Disease or Allergy
-              </label>
-              <div className="relative text-muted">
-                <input
-                  type="text"
-                  name="disease"
-                  placeholder="Search by Disease"
-                  className="w-full rounded-full px-4 py-3 border-grey focus:outline-grey2"
-                  value={filter.disease}
-                  onChange={handleChangeFilter}
-                />
-              </div>
-            </div> */}
-
-            <div>
-              <label
-                htmlFor="date"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Date
-              </label>
-              <div className="relative text-muted">
-                <input
-                  type="date"
-                  name="date"
-                  className="w-full rounded-full px-4 py-3 border-grey focus:outline-grey2"
-                  value={filter.date}
-                  onChange={handleChangeFilter}
-                />
-                <i className="material-icons absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                  calendar_today
-                </i>
-              </div>
-            </div>
-          </div>
-
-          {/* Results Summary */}
-          <div className="flex items-center justify-between py-3 border-t border-gray-100">
-            <div className="text-sm text-gray-600">
-              <div className="mt-1">
-                <span className="font-medium">
-                  {filteredPrescriptions.length}
-                </span>{" "}
-                {filteredPrescriptions.length === 1
-                  ? "prescription"
-                  : "prescriptions"}{" "}
-                found
-                {filter.date || filter.search || filter.disease ? (
-                  <span className="text-gray-400">
-                    {" "}
-                    (filtered from {prescriptionsData?.results?.length ||
-                      0}{" "}
-                    total)
-                  </span>
-                ) : null}
-              </div>
-            </div>
-
-            {(filter.search || filter.disease || filter.date) && (
-              <div className="text-xs text-gray-500">
-                Active filters:{" "}
-                {[
-                  filter.search && "Search",
-                  filter.disease && "Disease",
-                  filter.date && "Date",
-                ]
-                  .filter(Boolean)
-                  .join(", ")}
-              </div>
+                <span className="material-icons text-base">close</span>
+              </button>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Prescriptions Table */}
+        {/* Filter by date */}
+        <div>
+          <label className="block text-sm font-medium mb-1" htmlFor="date">
+            Date
+          </label>
+          <input
+            id="date"
+            name="date"
+            type="date"
+            className="pl-4 pr-4 py-2 border rounded-full w-full focus:outline-none focus:ring-2 focus:ring-primary"
+            value={filter.date}
+            onChange={handleChangeFilter}
+            max={new Date().toISOString().split("T")[0]}
+          />
+        </div>
+      </div>
       <div className="bg-white shadow-md rounded-2xl pb-4">
         <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
           <h2 className="text-lg font-medium">All Prescriptions</h2>
@@ -623,7 +544,6 @@ const PrescriptionListPage = () => {
           </div>
         </div>
       </div>
-
       {/* Empty State - Updated condition */}
       {prescriptionsData && filteredPrescriptions.length === 0 && (
         <div className="bg-white rounded-lg shadow-sm p-12 text-center">

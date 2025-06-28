@@ -576,27 +576,6 @@ const PatientAddPage = () => {
           )}
         </div>
       </div>
-
-      {/* Selected Country Info Display - Updated */}
-      {selectedCountry && (
-        <div className="mx-4 mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h4 className="font-semibold text-blue-800 mb-2">
-            Selected Country:
-          </h4>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-medium">Country:</span>
-            <span className="ml-2">{selectedCountry.text}</span>
-            <span className="text-gray-500">({selectedCountry.value})</span>
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            <span className="font-medium">Form stores:</span> {form.country}{" "}
-            (code)
-            <br />
-            <span className="font-medium">API will receive:</span>{" "}
-            {getCountryNameFromCode(form.country)} (name)
-          </div>
-        </div>
-      )}
     </>
   );
 };
