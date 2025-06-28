@@ -1,6 +1,7 @@
 import { Button, InputWithLabel, VoiceRecorder } from "@src/components";
 import SpinnerComponent from "@src/components/SpinnerComponent";
 import { RoleId } from "@src/constant/enumRole";
+import { countryCodes } from "@src/constant/countryCode";
 import { registerPatientAction } from "@src/redux/actions/auth/authAction";
 import ROUTES from "@src/routes";
 import { AddPatient } from "@src/schema/UserSchema";
@@ -8,7 +9,7 @@ import { getUsers, getUserById, updateUser } from "@src/services/userService";
 import { handleFormChange } from "@src/utils/handleForm";
 import { validateForm } from "@src/utils/validateForm";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -18,9 +19,11 @@ const PatientAddPage = () => {
   const { patientId } = useParams();
   const [form, setForm] = useState({
     gender: "male",
+    country: "IN",
   });
   const { isSubmitted } = useSelector((state) => state.submission);
   const [doctorList, setDoctorList] = useState([]);
+  const [filteredCountries, setFilteredCountries] = useState(countryCodes);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -60,6 +63,26 @@ const PatientAddPage = () => {
     },
   });
 
+  const getCountryNameFromCode = useCallback((countryCode) => {
+    if (!countryCode) return "";
+
+    const foundCountry = countryCodes.find(
+      (country) => country.value === countryCode
+    );
+
+    return foundCountry ? foundCountry.text : countryCode;
+  }, []);
+
+  const getCountryCodeFromName = useCallback((countryName) => {
+    if (!countryName) return "";
+
+    const foundCountry = countryCodes.find(
+      (country) => country.text.toLowerCase() === countryName.toLowerCase()
+    );
+
+    return foundCountry ? foundCountry.value : countryName;
+  }, []);
+
   useEffect(() => {
     if (patientData?.success) {
       const patient = patientData.data;
@@ -79,9 +102,10 @@ const PatientAddPage = () => {
         weightInches: patient.weight_grams || "",
         patientAddress: patient.address || "",
         disease: patient.disease || "",
+        country: getCountryCodeFromName(patient.country) || "IN",
       });
     }
-  }, [patientData]);
+  }, [patientData, getCountryCodeFromName]);
 
   const { data, isSuccess } = useQuery({
     queryKey: ["doctors"],
@@ -127,12 +151,56 @@ const PatientAddPage = () => {
 
   const memoizedDoctorList = useMemo(() => doctorList, [doctorList]);
 
+  const memoizedCountryList = useMemo(() => {
+    return countryCodes.map((country) => ({
+      ...country,
+      id: country.value,
+      displayName: country.text,
+    }));
+  }, []);
+
   const handleGetDoctorList = (search) => {
     searchDoctor({ search, role: RoleId.DOCTOR });
   };
 
+  const handleGetCountryList = (search) => {
+    if (!search) {
+      setFilteredCountries(countryCodes);
+      return;
+    }
+
+    const filtered = countryCodes.filter(
+      (country) =>
+        country.text.toLowerCase().includes(search.toLowerCase()) ||
+        country.value.toLowerCase().includes(search.toLowerCase())
+    );
+    setFilteredCountries(filtered);
+  };
+
+  const handleCountrySelect = (selectedCountry) => {
+    console.log("Country selected:", selectedCountry);
+
+    if (selectedCountry) {
+      setForm((prev) => ({
+        ...prev,
+        country: selectedCountry.value,
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        country: "",
+      }));
+    }
+  };
+
+  const selectedCountry = useMemo(() => {
+    return countryCodes.find((country) => country.value === form.country);
+  }, [form.country]);
+
   const handleOnSubmit = () => {
     if (isEditMode) {
+      const countryName = getCountryNameFromCode(form.country);
+
       const updateData = {
         first_name: form.patientName?.split(" ")[0] || form.patientName,
         last_name: form.patientName?.split(" ").slice(1).join(" ") || "",
@@ -147,11 +215,15 @@ const PatientAddPage = () => {
         weight_grams: form.weightInches ? Number(form.weightInches) : 0,
         address: form.patientAddress,
         disease: form.disease,
+        country: countryName,
       };
 
+      console.log("Update data with country name:", updateData);
       dispatch({ type: "SUBMISSION/SUBMIT" });
       updatePatientMutation.mutate({ patientId, userData: updateData });
     } else {
+      const countryName = getCountryNameFromCode(form.country);
+
       const data = validateForm(AddPatient, {
         patientName: form.patientName,
         email: form.email,
@@ -166,11 +238,20 @@ const PatientAddPage = () => {
         weightInches: form.weightInches ? Number(form.weightInches) : 0,
         patientAddress: form.patientAddress || "-",
         disease: form.disease || "-",
+        country: countryName || "India",
         password: form.password,
         confirmPassword: form.confirmPassword,
       });
 
       if (data) {
+        console.log("Validated Form with country name:", data);
+        console.log(
+          "Country Code:",
+          form.country,
+          "Country Name:",
+          countryName
+        );
+
         dispatch({ type: "SUBMISSION/SUBMIT" });
         dispatch(
           registerPatientAction({
@@ -180,7 +261,7 @@ const PatientAddPage = () => {
             first_name: data.patientName?.split(" ")[0] || data.patientName,
             last_name: data.patientName?.split(" ").slice(1).join(" ") || "",
             role: 3,
-            country: "IN",
+            country: countryName || "India",
             gender: data.gender,
             dob: data.dob.toISOString().split("T")[0],
             blood_group: data.bloodGroup,
@@ -200,10 +281,8 @@ const PatientAddPage = () => {
           .unwrap()
           .then(() => {
             toast("Add Patient successful", { type: "success" });
-
             queryClient.invalidateQueries({ queryKey: ["patientList"] });
             queryClient.invalidateQueries({ queryKey: ["patients"] });
-
             navigate(getRoutePath("doctor.patients.list"));
           })
           .catch((error) => {
@@ -296,6 +375,22 @@ const PatientAddPage = () => {
             onChange={(e) => handleFormChange("dob", e, setForm)}
             wrapperClassName="p-4"
           />
+
+          {/* Country Searchable Select */}
+          <InputWithLabel
+            label={"Country:"}
+            id={"country"}
+            type={"searchable-select"}
+            onSearch={handleGetCountryList}
+            options={memoizedCountryList}
+            defaultValue={form.country || ""}
+            onChange={handleCountrySelect}
+            keyValue={"value"}
+            keyLabel={(option) => option.text}
+            wrapperClassName="p-4 z-30"
+            placeholder="Search and select country"
+          />
+
           <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
             <label className="block text-nowrap my-auto">Gender:</label>
             <div className="flex items-center w-full col-span-2">
@@ -354,6 +449,7 @@ const PatientAddPage = () => {
             onChange={(e) => handleFormChange("bloodGroup", e, setForm)}
             wrapperClassName="p-4"
           >
+            <option value="">Select Blood Group</option>
             <option value="A+">A+</option>
             <option value="A-">A-</option>
             <option value="B+">B+</option>
@@ -480,6 +576,27 @@ const PatientAddPage = () => {
           )}
         </div>
       </div>
+
+      {/* Selected Country Info Display - Updated */}
+      {selectedCountry && (
+        <div className="mx-4 mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h4 className="font-semibold text-blue-800 mb-2">
+            Selected Country:
+          </h4>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-medium">Country:</span>
+            <span className="ml-2">{selectedCountry.text}</span>
+            <span className="text-gray-500">({selectedCountry.value})</span>
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            <span className="font-medium">Form stores:</span> {form.country}{" "}
+            (code)
+            <br />
+            <span className="font-medium">API will receive:</span>{" "}
+            {getCountryNameFromCode(form.country)} (name)
+          </div>
+        </div>
+      )}
     </>
   );
 };

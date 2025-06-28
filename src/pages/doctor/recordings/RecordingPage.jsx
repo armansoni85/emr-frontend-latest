@@ -236,6 +236,34 @@ const RecordingPage = () => {
     }
   };
 
+  const formatAppointmentDateTime = (dateTimeString) => {
+    if (!dateTimeString) return "-";
+
+    try {
+      const date = new Date(dateTimeString);
+
+      const dateOptions = {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      };
+
+      const timeOptions = {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      };
+
+      const formattedDate = date.toLocaleDateString("en-US", dateOptions);
+      const formattedTime = date.toLocaleTimeString("en-US", timeOptions);
+
+      return `${formattedDate} at ${formattedTime}`;
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return dateTimeString;
+    }
+  };
+
   return (
     <>
       <div className="grid md:gap-4 md:grid-cols-3 grid-cols-1">
@@ -290,7 +318,9 @@ const RecordingPage = () => {
                     <div className="flex gap-1 text-xs">
                       <span>Appointment Date &amp; Time :</span>
                       <span className="text-muted">
-                        {consultation?.appointment?.appointment_datetime || "-"}
+                        {formatAppointmentDateTime(
+                          consultation?.appointment?.appointment_datetime
+                        )}
                       </span>
                     </div>
                   </div>

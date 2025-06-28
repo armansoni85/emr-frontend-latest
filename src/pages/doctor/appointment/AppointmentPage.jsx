@@ -11,7 +11,6 @@ import {
   Th,
 } from "@src/components";
 import { useDispatch, useSelector } from "react-redux";
-
 import Moment from "react-moment";
 import StatusText from "../components/StatusText";
 import {
@@ -42,9 +41,9 @@ const AppointmentPage = () => {
     disease: "",
     date: location.state?.selectedDate || "",
   });
+
   const debounceSearchTerm = useDebounce(filter.search, 500);
 
-  // Fetch ALL appointments without date filtering
   const { data, isSuccess, isError, error, isPending, isFetching, refetch } =
     useQuery({
       queryKey: [
@@ -56,11 +55,10 @@ const AppointmentPage = () => {
       ],
       queryFn: async () => {
         const params = {
-          // doctor: user.id,
           search: debounceSearchTerm,
           disease: filter.disease,
-          limit: 1000, // Fetch a large number to get all appointments
-          offset: 0, // Start from beginning
+          limit: 1000,
+          offset: 0,
         };
 
         console.log("Fetching ALL appointments with params:", params);
@@ -69,12 +67,6 @@ const AppointmentPage = () => {
 
         if (data.success) {
           console.log("Total appointments fetched:", data.data.results.length);
-          dispatch({
-            type: "FETCH_SET_PAGINATION",
-            payload: {
-              totalData: data.data.count,
-            },
-          });
         }
 
         return data;
@@ -85,22 +77,18 @@ const AppointmentPage = () => {
       refetchOnReconnect: false,
     });
 
-  // Filter appointments by date on the frontend
   const filteredAppointments = useMemo(() => {
     if (!data?.data?.results) return [];
 
     let appointments = data.data.results;
 
-    // Filter by date if date is selected
     if (filter.date) {
       appointments = appointments.filter((appointment) => {
         if (!appointment.appointment_datetime) return false;
 
-        // Extract date part from appointment datetime
         const appointmentDate = new Date(appointment.appointment_datetime);
         const selectedDate = new Date(filter.date);
 
-        // Compare dates (ignore time)
         return (
           appointmentDate.getFullYear() === selectedDate.getFullYear() &&
           appointmentDate.getMonth() === selectedDate.getMonth() &&
@@ -112,22 +100,11 @@ const AppointmentPage = () => {
         `Filtered appointments for date ${filter.date}:`,
         appointments.length
       );
-      console.log(
-        "Appointments on this date:",
-        appointments.map((apt) => ({
-          id: apt.id,
-          datetime: apt.appointment_datetime,
-          patient: `${apt.patient?.first_name || ""} ${
-            apt.patient?.last_name || ""
-          }`.trim(),
-        }))
-      );
     }
 
     return appointments;
   }, [data?.data?.results, filter.date]);
 
-  // Paginate the filtered results
   const paginatedAppointments = useMemo(() => {
     const startIndex =
       (paginationMeta.currentPage - 1) * paginationMeta.limitPerPage;
@@ -139,7 +116,6 @@ const AppointmentPage = () => {
     paginationMeta.limitPerPage,
   ]);
 
-  // Update pagination meta when filtered results change
   useEffect(() => {
     dispatch({
       type: "FETCH_SET_PAGINATION",
@@ -151,19 +127,46 @@ const AppointmentPage = () => {
 
   const handleChangeFilter = (e) => {
     const { name, value } = e.target;
-    setFilter((prev) => {
-      return {
-        ...prev,
-        [name]: value,
-      };
-    });
+    setFilter((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
 
-    // Reset to first page when filter changes
     dispatch({ type: "FETCH_SET_PAGINATION", payload: { currentPage: 1 } });
   };
 
   const handlePageChange = (page) => {
     dispatch({ type: "FETCH_SET_PAGINATION", payload: { currentPage: page } });
+  };
+
+  const handleNextPage = () => {
+    const totalPages = Math.ceil(
+      filteredAppointments.length / paginationMeta.limitPerPage
+    );
+    if (paginationMeta.currentPage < totalPages) {
+      handlePageChange(paginationMeta.currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (paginationMeta.currentPage > 1) {
+      handlePageChange(paginationMeta.currentPage - 1);
+    }
+  };
+
+  const totalPages = Math.ceil(
+    filteredAppointments.length / paginationMeta.limitPerPage
+  );
+  const hasPrevPage = paginationMeta.currentPage > 1;
+  const hasNextPage = paginationMeta.currentPage < totalPages;
+
+  const handleClearFilter = () => {
+    setFilter({
+      search: "",
+      disease: "",
+      date: "",
+    });
+    dispatch({ type: "FETCH_SET_PAGINATION", payload: { currentPage: 1 } });
   };
 
   const handleDeleteAppointment = (appointmentId) => {
@@ -231,215 +234,494 @@ const AppointmentPage = () => {
       });
   };
 
+  const handlePageSizeChange = (e) => {
+    const newPageSize = parseInt(e.target.value);
+    dispatch({
+      type: "FETCH_SET_PAGINATION",
+      payload: {
+        limitPerPage: newPageSize,
+        currentPage: 1,
+      },
+    });
+  };
+
   useEffect(() => {
     refetch();
   }, []);
 
-  const handleClearFilter = () => {
-    setFilter({
-      search: "",
-      disease: "",
-      date: "",
-    });
-    dispatch({ type: "FETCH_SET_PAGINATION", payload: { currentPage: 1 } });
-  };
-
   return (
-    <>
-      <div className="mb-3 grid grid-cols-1 md:grid-cols-2 md:gap-4">
-        <InputWithLabel
-          label={"Search"}
-          name={"search"}
-          type={"text"}
-          placeholder={"Search . . ."}
-          labelOnTop={true}
-          wrapperClassName="mb-3"
-          inputClassName="!pe-4 !ps-10 !py-2"
-          prependInput={
-            <span className="material-icons absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-500">
-              search
-            </span>
-          }
-          appendInput={
-            <Button
-              color="primary"
-              size="small"
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 !px-5 mt-[2px] "
-            >
-              Search
-            </Button>
-          }
-          value={filter.search}
-          onChange={handleChangeFilter}
-        />
-        <InputWithLabel
-          label={"Select Date"}
-          type={"date"}
-          name={"date"}
-          labelOnTop={true}
-          wrapperClassName="mb-3"
-          value={filter.date}
-          onChange={handleChangeFilter}
-        />
-      </div>
-      <div className="mb-3 flex justify-between items-center">
-        <div className="text-sm text-gray-600">
-          {filter.date && (
-            <span>
-              Showing appointments for:{" "}
-              <strong>
-                {new Date(filter.date).toLocaleDateString("en-US", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </strong>
-              {` (${filteredAppointments.length} appointments)`}
-            </span>
-          )}
-          {!filter.date && (
-            <span>
-              Showing all appointments ({filteredAppointments.length} total)
-            </span>
-          )}
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900">Appointments</h1>
+            <div className="flex items-center space-x-3">
+              {location.state?.selectedDate && (
+                <div className="text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                  From Calendar
+                </div>
+              )}
+              <Button
+                color="secondary"
+                size="small"
+                onClick={handleClearFilter}
+                isOutline
+              >
+                Clear Filters
+              </Button>
+            </div>
+          </div>
+
+          {/* Filter Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <InputWithLabel
+              label="Search Appointments"
+              name="search"
+              type="text"
+              placeholder="Search by patient name, disease..."
+              labelOnTop={true}
+              inputClassName="!pe-4 !ps-10 !py-3"
+              prependInput={
+                <span className="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                  search
+                </span>
+              }
+              value={filter.search}
+              onChange={handleChangeFilter}
+            />
+
+            <InputWithLabel
+              label="Filter by Date"
+              type="date"
+              name="date"
+              labelOnTop={true}
+              inputClassName="!py-3"
+              value={filter.date}
+              onChange={handleChangeFilter}
+            />
+
+            <InputWithLabel
+              label="Filter by Disease"
+              name="disease"
+              type="text"
+              placeholder="Enter disease name..."
+              labelOnTop={true}
+              inputClassName="!py-3"
+              value={filter.disease}
+              onChange={handleChangeFilter}
+            />
+          </div>
+
+          {/* Results Summary */}
+          <div className="flex items-center justify-between py-3 border-t border-gray-100">
+            <div className="text-sm text-gray-600">
+              {filter.date && (
+                <div className="flex items-center space-x-2">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Date Filtered
+                  </span>
+                  <span>
+                    <strong>
+                      {new Date(filter.date).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </strong>
+                  </span>
+                </div>
+              )}
+              <div className="mt-1">
+                <span className="font-medium">
+                  {filteredAppointments.length}
+                </span>{" "}
+                {filteredAppointments.length === 1
+                  ? "appointment"
+                  : "appointments"}{" "}
+                found
+                {filter.date || filter.search || filter.disease ? (
+                  <span className="text-gray-400">
+                    {" "}
+                    (filtered from {data?.data?.results?.length || 0} total)
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            {(filter.search || filter.disease || filter.date) && (
+              <div className="text-xs text-gray-500">
+                Active filters:{" "}
+                {[
+                  filter.search && "Search",
+                  filter.disease && "Disease",
+                  filter.date && "Date",
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              </div>
+            )}
+          </div>
         </div>
-        <Button
-          color="secondary"
-          size="small"
-          onClick={handleClearFilter}
-          className="px-4"
-        >
-          Clear Filters
-        </Button>
       </div>
+
+      {/* Appointments Table */}
       <div className="bg-white shadow-md rounded-2xl pb-4">
-        <div className="flex justify-between p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
+        <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
           <h2 className="text-lg font-medium">All Appointments</h2>
           <div className="text-end inline-block">
-            <button className="text-primary  rounded-full text-lg flex">
+            <button className="text-primary rounded-full text-lg flex">
               Summary <i className="material-icons pt-1">expand_more</i>
             </button>
           </div>
         </div>
-        <Table
-          countCoulumn={7}
-          dataList={paginatedAppointments}
-          isLoading={isPending}
-          theadChildren={
-            <>
-              <tr>
-                <Th>Patient Name</Th>
-                <Th>Date of Birth</Th>
-                <Th>Mobile Number</Th>
-                <Th>Disease</Th>
-                <Th>Date &amp; Time</Th>
-                <Th>Status</Th>
-                <Th>Full Details</Th>
-              </tr>
-            </>
-          }
-          rowCallback={(item, index) => {
-            return (
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <Table
+            countCoulumn={7}
+            dataList={paginatedAppointments}
+            isLoading={isPending}
+            theadChildren={
               <>
                 <tr>
-                  <Td>
-                    <div className="flex items-center cursor-pointer">
-                      <CircleAvatar
-                        src={item?.patient?.flag}
-                        alt="profile"
-                        className="mr-3"
-                      />
-                      <div className="text-start">
-                        <p>
-                          {!item?.patient?.first_name &&
-                          !item?.patient?.last_name
-                            ? "Unknown"
-                            : `${item?.patient?.first_name || ""} ${
-                                item?.patient?.last_name || ""
-                              }`.trim()}
-                        </p>
-                      </div>
-                    </div>
-                  </Td>
-                  <Td>
-                    {item?.patient?.dob ? (
-                      <Moment date={item?.patient?.dob} format="MMMM D, YYYY" />
-                    ) : (
-                      "-"
-                    )}
-                  </Td>
-                  <Td>{item?.patient?.phone_number || "089782"}</Td>
-                  <Td>
-                    <Badge color="info">{item?.disease ?? "Empty"}</Badge>
-                  </Td>
-                  <Td>
-                    {item.appointment_datetime ? (
-                      <Moment
-                        date={item?.appointment_datetime}
-                        format="MMMM D, YYYY - h:mmA"
-                      />
-                    ) : (
-                      "-"
-                    )}
-                  </Td>
-                  <Td>
-                    <StatusText status={item.appointment_status} />
-                  </Td>
-                  <Td>
-                    <div className="flex justify-between">
-                      <Button
-                        color="warning"
-                        size="small"
-                        className="px-3"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          startConsultation(item);
-                        }}
-                      >
-                        Start
-                      </Button>
-                      <div className="relative">
-                        <MoreVertical>
-                          <MoreVerticalItem
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              navigate(
-                                getRoutePath("doctor.appointments.edit", {
-                                  id: item.id,
-                                })
-                              );
-                            }}
-                          >
-                            Edit
-                          </MoreVerticalItem>
-                          <MoreVerticalItem
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleDeleteAppointment(item.id);
-                            }}
-                          >
-                            Delete
-                          </MoreVerticalItem>
-                        </MoreVertical>
-                      </div>
-                    </div>
-                  </Td>
+                  <Th>Patient Name</Th>
+                  <Th>Date of Birth</Th>
+                  <Th>Mobile Number</Th>
+                  <Th>Disease</Th>
+                  <Th>Date & Time</Th>
+                  <Th>Status</Th>
+                  <Th>Full Details</Th>
                 </tr>
               </>
-            );
-          }}
-        />
-        <Pagination
-          limitPerPage={paginationMeta.limitPerPage}
-          countData={filteredAppointments.length}
-          onChangePage={handlePageChange}
-        />
+            }
+            rowCallback={(item, index) => {
+              return (
+                <>
+                  <tr>
+                    <Td>
+                      <div className="flex items-center cursor-pointer">
+                        <CircleAvatar
+                          src={
+                            item?.patient?.flag ||
+                            "./assets/images/default-avatar.png"
+                          }
+                          alt="profile"
+                          className="mr-3"
+                        />
+                        <div className="text-start">
+                          <p>
+                            {!item?.patient?.first_name &&
+                            !item?.patient?.last_name ? (
+                              <span className="text-gray-400">
+                                Not provided
+                              </span>
+                            ) : (
+                              `${item?.patient?.first_name || ""} ${
+                                item?.patient?.last_name || ""
+                              }`.trim()
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </Td>
+                    <Td>
+                      {item?.patient?.dob ? (
+                        <Moment
+                          date={item?.patient?.dob}
+                          format="MMMM D, YYYY"
+                        />
+                      ) : (
+                        <span className="text-gray-400">Not provided</span>
+                      )}
+                    </Td>
+                    <Td>
+                      {item?.patient?.phone_number ? (
+                        <span className="font-mono text-sm">
+                          {item?.patient?.phone_number}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">Not provided</span>
+                      )}
+                    </Td>
+                    <Td>
+                      <Badge color="info">
+                        {item?.disease || "Not provided"}
+                      </Badge>
+                    </Td>
+                    <Td>
+                      {item.appointment_datetime ? (
+                        <Moment
+                          date={item?.appointment_datetime}
+                          format="MMMM D, YYYY - h:mmA"
+                        />
+                      ) : (
+                        <span className="text-gray-400">Not provided</span>
+                      )}
+                    </Td>
+                    <Td>
+                      {item.appointment_status ? (
+                        <StatusText status={item.appointment_status} />
+                      ) : (
+                        <span className="text-gray-400">Not provided</span>
+                      )}
+                    </Td>
+                    <Td>
+                      <div className="flex justify-between">
+                        <Button
+                          color="warning"
+                          size="small"
+                          className="px-3"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            startConsultation(item);
+                          }}
+                          disabled={
+                            !item?.appointment_datetime || !item?.patient
+                          }
+                        >
+                          Start
+                        </Button>
+                        <div className="relative">
+                          <MoreVertical>
+                            <MoreVerticalItem
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                navigate(
+                                  getRoutePath("doctor.appointments.edit", {
+                                    id: item.id,
+                                  })
+                                );
+                              }}
+                            >
+                              <i className="material-icons text-sm mr-2">
+                                edit
+                              </i>
+                              Edit
+                            </MoreVerticalItem>
+                            <MoreVerticalItem
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDeleteAppointment(item.id);
+                              }}
+                            >
+                              <i className="material-icons text-sm mr-2">
+                                delete
+                              </i>
+                              Delete
+                            </MoreVerticalItem>
+                            <MoreVerticalItem
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleOpenModalAppointment(item);
+                              }}
+                            >
+                              <i className="material-icons text-sm mr-2">
+                                visibility
+                              </i>
+                              View Details
+                            </MoreVerticalItem>
+                          </MoreVertical>
+                        </div>
+                      </div>
+                    </Td>
+                  </tr>
+                </>
+              );
+            }}
+          />
+        </div>
+
+        {/* Pagination - Same Style as PatientListPage */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-6 border-t border-gray-100">
+          {/* Data Summary */}
+          <div className="text-sm text-gray-600 order-2 sm:order-1">
+            Showing{" "}
+            <span className="font-semibold text-gray-900">
+              {filteredAppointments.length > 0
+                ? (paginationMeta.currentPage - 1) *
+                    paginationMeta.limitPerPage +
+                  1
+                : 0}
+            </span>{" "}
+            to{" "}
+            <span className="font-semibold text-gray-900">
+              {Math.min(
+                paginationMeta.currentPage * paginationMeta.limitPerPage,
+                filteredAppointments.length
+              )}
+            </span>{" "}
+            of{" "}
+            <span className="font-semibold text-gray-900">
+              {filteredAppointments.length}
+            </span>{" "}
+            appointments
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center gap-2 order-1 sm:order-2">
+            {/* Previous Button */}
+            <button
+              onClick={handlePrevPage}
+              disabled={!hasPrevPage || isFetching}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                hasPrevPage && !isFetching
+                  ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+                  : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              <i className="material-icons text-sm">chevron_left</i>
+              <span className="hidden sm:inline">Previous</span>
+            </button>
+
+            {/* Page Numbers Container */}
+            <div className="flex items-center gap-1 mx-2">
+              {/* Loading Indicator */}
+              {isFetching && (
+                <div className="flex items-center px-3 py-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                </div>
+              )}
+
+              {/* Page Numbers - Hide when loading */}
+              {!isFetching && totalPages > 0 && (
+                <>
+                  {/* First Page */}
+                  {paginationMeta.currentPage > 3 && (
+                    <>
+                      <button
+                        onClick={() => handlePageChange(1)}
+                        className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
+                      >
+                        1
+                      </button>
+                      {paginationMeta.currentPage > 4 && (
+                        <span className="px-2 text-gray-400">...</span>
+                      )}
+                    </>
+                  )}
+
+                  {/* Current Page Range */}
+                  {Array.from(
+                    { length: Math.min(5, totalPages) },
+                    (_, index) => {
+                      let pageNumber;
+                      if (totalPages <= 5) {
+                        pageNumber = index + 1;
+                      } else if (paginationMeta.currentPage <= 3) {
+                        pageNumber = index + 1;
+                      } else if (paginationMeta.currentPage >= totalPages - 2) {
+                        pageNumber = totalPages - 4 + index;
+                      } else {
+                        pageNumber = paginationMeta.currentPage - 2 + index;
+                      }
+
+                      if (pageNumber > 0 && pageNumber <= totalPages) {
+                        return (
+                          <button
+                            key={pageNumber}
+                            onClick={() => handlePageChange(pageNumber)}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                              pageNumber === paginationMeta.currentPage
+                                ? "bg-primary text-white shadow-sm"
+                                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                            }`}
+                          >
+                            {pageNumber}
+                          </button>
+                        );
+                      }
+                      return null;
+                    }
+                  )}
+
+                  {/* Last Page */}
+                  {paginationMeta.currentPage < totalPages - 2 &&
+                    totalPages > 5 && (
+                      <>
+                        {paginationMeta.currentPage < totalPages - 3 && (
+                          <span className="px-2 text-gray-400">...</span>
+                        )}
+                        <button
+                          onClick={() => handlePageChange(totalPages)}
+                          className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
+                        >
+                          {totalPages}
+                        </button>
+                      </>
+                    )}
+                </>
+              )}
+            </div>
+
+            {/* Next Button */}
+            <button
+              onClick={handleNextPage}
+              disabled={!hasNextPage || isFetching}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                hasNextPage && !isFetching
+                  ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+                  : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              <span className="hidden sm:inline">Next</span>
+              <i className="material-icons text-sm">chevron_right</i>
+            </button>
+          </div>
+
+          {/* Page Size Selector */}
+          <div className="flex items-center gap-2 text-sm text-gray-600 order-3">
+            <span>Show:</span>
+            <select
+              value={paginationMeta.limitPerPage}
+              onChange={handlePageSizeChange}
+              disabled={isFetching}
+              className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+            <span>per page</span>
+          </div>
+        </div>
       </div>
-    </>
+
+      {/* Empty State */}
+      {!isPending && filteredAppointments.length === 0 && (
+        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+          <div className="mx-auto h-24 w-24 text-gray-400 mb-4">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1}
+                d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4M8 7H3a1 1 0 00-1 1v10a1 1 0 001 1h18a1 1 0 001-1V8a1 1 0 00-1-1h-5M8 7h8m-8 0V5m8 2V5"
+              />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No appointments found
+          </h3>
+          <p className="text-gray-500 mb-6">
+            {filter.date || filter.search || filter.disease
+              ? "Try adjusting your filters to see more results."
+              : "You don't have any appointments yet."}
+          </p>
+          {(filter.date || filter.search || filter.disease) && (
+            <Button color="primary" onClick={handleClearFilter} isOutline>
+              Clear All Filters
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
 

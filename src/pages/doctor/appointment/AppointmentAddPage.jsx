@@ -12,135 +12,207 @@ import { getUsers } from "@src/services/userService";
 import { handleFormChange } from "@src/utils/handleForm";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import { validateForm } from "@src/utils/validateForm";
+import { createAppointment } from "@src/services/appointmentService";
+import { getUsers } from "@src/services/userService";
 
 const AppointmentAddPage = () => {
-  const [form, setForm] = useState({});
-  const { isSubmitted } = useSelector((state) => state.submission);
-  const [patientList, setPatientList] = useState([]);
-  const patientListRef = useRef(patientList);
+  const [form, setForm] = useState({
+    patient: "",
+    mobileNumber: "",
+    email: "",
+    dob: "",
+    date: "",
+    time: "",
+    disease: "",
+    reasonOfVisit: "",
+  });
+
+  const [patients, setPatients] = useState([]);
+  const [patientsLoading, setPatientsLoading] = useState(false);
+  const [isLoadingPatientDetail, setIsLoadingPatientDetail] = useState(false);
+  const [appointments, setAppointments] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth);
 
-  // Keep a ref to always have the latest patientList in callbacks
+  // Fetch patients on component mount
   useEffect(() => {
-    patientListRef.current = patientList;
-  }, [patientList]);
+    fetchPatients();
+  }, []);
 
-  // To add params (e.g., search) to the query, include them in the queryKey and queryFn:
-  const [search, setSearch] = useState(""); // Example param
+  const fetchPatients = async (search = "") => {
+    try {
+      setPatientsLoading(true);
 
-  const { data, isSuccess, refetch } = useQuery({
-    queryKey: ["patients", { search }], // Add params to queryKey for cache separation
-    queryFn: () => getUsers({ role: RoleId.PATIENT, search }), // Pass params to API call
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
-
-  // searchPatient will update patientList with new data on each search
-  const { mutate: searchPatient } = useMutation({
-    mutationFn: getUsers,
-    onSuccess: (data) => {
-      if (data.status && data.data.results) {
-        setPatientList(data.data.results);
+      // Add search parameter if provided
+      const params = { role: 3 };
+      if (search) {
+        params.search = search;
       }
-    },
-  });
 
-  useEffect(() => {
-    if (isSuccess && data.success) {
-      setPatientList(data.data.results);
-    } else {
-      setPatientList([]);
+      const response = await getUsers(params);
+
+      if (response && response.data && response.data.results) {
+        const patientsData = response.data.results;
+
+        const patientsOnly = patientsData.filter(
+          (user) => user.role === "3" || user.role === 3
+        );
+
+        setPatients(patientsOnly);
+      } else if (response && response.results) {
+        const patientsOnly = response.results.filter(
+          (user) => user.role === "3" || user.role === 3
+        );
+        setPatients(patientsOnly);
+      } else if (response && Array.isArray(response)) {
+        const patientsOnly = response.filter(
+          (user) => user.role === "3" || user.role === 3
+        );
+        setPatients(patientsOnly);
+      } else {
+        console.warn("Unexpected response structure:", response);
+        setPatients([]);
+      }
+    } catch (error) {
+      console.error("Error fetching patients:", error);
+      toast.error("Failed to load patients");
+      setPatients([]);
+    } finally {
+      setPatientsLoading(false);
     }
-  }, [data, isSuccess]);
-
-  // memoizedPatientList will update whenever patientList changes
-  const memoizedPatientList = useMemo(() => patientList, [patientList]);
-
-  const handleGetPatientList = (search) => {
-    setSearch(search);
-    // No need to call refetch() here, as useQuery will refetch automatically when 'search' changes
   };
 
-  const handlePatientSelect = (patientId) => {
-    // Use the ref to always get the latest patientList
-    const selectedPatient = patientListRef.current.find((p) => p.id === patientId);
+  // Handle patient search for searchable select
+  const handleGetPatientList = async (search) => {
+    console.log("Searching patients with:", search);
+    await fetchPatients(search);
+  };
+
+  // Memoized patient list for the searchable select
+  const memoizedPatientList = useMemo(() => {
+    return patients.map((patient) => ({
+      ...patient,
+      // Ensure we have proper display names
+      displayName:
+        `${patient.first_name || ""} ${patient.last_name || ""}`.trim() ||
+        patient.email,
+    }));
+  }, [patients]);
+  // Handle patient selection from searchable select
+  const handlePatientSelect = (selectedPatient) => {
+    console.log("Patient selected from searchable select:", selectedPatient);
+
     if (selectedPatient) {
+      setIsLoadingPatientDetail(true);
+
+      // Update form with selected patient
       setForm((prev) => ({
         ...prev,
-        patient: patientId,
+        patient: selectedPatient.id,
+        // Auto-fill editable fields
         mobileNumber: selectedPatient.phone_number || "",
         email: selectedPatient.email || "",
         dob: selectedPatient.dob || "",
       }));
+
+      setIsLoadingPatientDetail(false);
+    } else {
+      // Clear form if no patient selected
+      setForm((prev) => ({
+        ...prev,
+        patient: "",
+        mobileNumber: "",
+        email: "",
+        dob: "",
+      }));
     }
   };
 
-  const handleOnSubmit = () => {
-    dispatch({ type: "SUBMISSION/SUBMIT" });
-    const data = {
-      patient: form.patient,
-      date: new Date(form.date),
-      time: form.time,
-      disease: form.disease,
-      reasonOfVisit: form.reasonOfVisit,
-    };
+  // Get selected patient details
+  const selectedPatient = useMemo(() => {
+    const patient = patients.find((patient) => patient.id === form.patient);
+    return patient;
+  }, [patients, form.patient]);
 
-    if (!data) {
-      dispatch({ type: "SUBMISSION/CANCEL" });
+  const handleOnSubmit = async () => {
+    setIsSubmitting(true);
+    if (!form.patient || !form.date || !form.time) {
+      toast.error("Please fill in all required fields (Patient, Date, Time)");
+      setIsSubmitting(false);
       return;
     }
 
-    const combinedDateTime = `${data.date.toISOString().split("T")[0]} ${data.time}`;
-    createAppointment({
-      appointment_datetime: combinedDateTime,
-      disease: data.disease,
-      reason_of_visit: data.reasonOfVisit,
-      patient: data.patient,
-    })
-      .then((response) => {
-        if (response.success) {
-          dispatch({ type: "SUBMISSION/RESET" });
-          toast.success("Appointment created successfully!");
-          navigate(getRoutePath("doctor.appointments.list"), { replace: true });
-        } else {
-          toast.error(response.message || "Failed to create appointment");
-        }
-      })
-      .catch((error) => {
-        const data = error.response?.data || {};
+    try {
+      const appointmentData = {
+        patient: form.patient,
+        doctor: user.id,
+        appointment_datetime: `${form.date}T${form.time}:00Z`,
+        disease: form.disease || null,
+        reason_of_visit: form.reasonOfVisit || "",
+        status: "scheduled",
+      };
 
-        let messages = [];
-        if (data.code == "unprocessable_entity") {
-          for (const key in data.detail) {
-            if (data.detail[key].length > 0) {
-              messages.push(`${key}: ${data.detail[key][0]}`);
-            }
-          }
-
-          toast.error(
-            <>
-              <div>
-                <p>{data.message || "Please check the following errors:"}</p>
-                <ul>
-                  {messages.map((message, index) => (
-                    <li key={index}>{message}</li>
-                  ))}
-                </ul>
-              </div>
-            </>
-          );
-          return;
-        }
-        toast.error(
-          messages.join(", ") ||
-          data.message ||
-          "An error occurred while creating the appointment"
-        );
-
-        dispatch({ type: "SUBMISSION/RESET" });
+      console.log(
+        "Submitting appointment data (without mobile/email/dob):",
+        appointmentData
+      );
+      console.log("Form data (local only - mobile/email/dob):", {
+        mobileNumber: form.mobileNumber,
+        email: form.email,
+        dob: form.dob,
       });
+
+      const response = await createAppointment(appointmentData);
+
+      if (response) {
+        setForm({
+          patient: "",
+          mobileNumber: "",
+          email: "",
+          dob: "",
+          date: "",
+          time: "",
+          disease: "",
+          reasonOfVisit: "",
+        });
+
+        toast.success("Appointment scheduled successfully!");
+        console.log("Appointment created:", response);
+
+        navigate(getRoutePath("doctor.appointments.list"), { replace: true });
+      }
+    } catch (error) {
+      console.error("Error creating appointment:", error);
+
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else if (error.response?.data?.error) {
+        toast.error(error.response.data.error);
+      } else if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to schedule appointment. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setForm({
+      patient: "",
+      mobileNumber: "",
+      email: "",
+      dob: "",
+      date: "",
+      time: "",
+      disease: "",
+      reasonOfVisit: "",
+    });
+    navigate(getRoutePath("doctor.appointments.list"));
   };
 
   return (
@@ -151,60 +223,77 @@ const AppointmentAddPage = () => {
           color="danger"
           isOutline={true}
           className="px-8"
-          onClick={() => isSubmitted && dispatch({ type: "SUBMISSION/RESET" })}
+          onClick={() => isSubmitting && dispatch({ type: "SUBMISSION/RESET" })}
         >
           Cancel
         </Button>
         <Button color="primary" className="px-8" onClick={handleOnSubmit}>
-          {isSubmitted ? (
+          {isSubmitting ? (
             <SpinnerComponent color="white" className="mr-2" />
           ) : (
             "Schedule"
           )}
         </Button>
       </div>
+
       <div className="bg-white shadow-md rounded-2xl pb-4">
         <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
           <h2 className="text-lg font-medium">Schedule New Appointment</h2>
         </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2">
+          {/* Searchable Patient Selection */}
           <InputWithLabel
-            label={"Patient:"}
-            id={"patient"}
+            label={"Patient's Name:"}
+            id={"patientName"}
             type={"searchable-select"}
             onSearch={(search) => handleGetPatientList(search)}
             options={memoizedPatientList}
             defaultValue={form.patient || ""}
-            onChange={(option) => handlePatientSelect(option.id)}
+            onChange={handlePatientSelect}
             keyValue={"id"}
             keyLabel={(option) =>
-              option.first_name || option.last_name
-                ? `${option.first_name} ${option.last_name}`
-                : option.email
+              `${option.first_name || ""} ${option.last_name || ""}`.trim() ||
+              option.email
             }
-            wrapperClassName="p-4"
+            wrapperClassName="p-4 z-20"
+            disabled={isLoadingPatientDetail}
           />
+
           <InputWithLabel
             label={"Mobile Number:"}
             id={"mobileNumber"}
             type={"text"}
             value={form.mobileNumber || ""}
+            onChange={(e) => handleFormChange("mobileNumber", e, setForm)}
             wrapperClassName="p-4"
+            disabled={false}
+            className=""
           />
+
           <InputWithLabel
             label={"Email ID:"}
             id={"email"}
             type={"email"}
             value={form.email || ""}
+            onChange={(e) => handleFormChange("email", e, setForm)}
+            placeholder="Enter email"
             wrapperClassName="p-4"
+            disabled={false}
+            className=""
           />
+
           <InputWithLabel
             label={"Date of Birth:"}
             id={"dob"}
             type={"date"}
             value={form.dob || ""}
             wrapperClassName="p-4"
+            placeholder="Enter date of birth"
+            disabled={false}
+            className=""
           />
+
           <InputWithLabel
             label={"Date:"}
             id={"date"}
@@ -212,7 +301,10 @@ const AppointmentAddPage = () => {
             value={form.date || ""}
             onChange={(e) => handleFormChange("date", e, setForm)}
             wrapperClassName="p-4"
+            required
+            min={new Date().toISOString().split("T")[0]}
           />
+
           <InputWithLabel
             label={"Time:"}
             id={"time"}
@@ -241,6 +333,7 @@ const AppointmentAddPage = () => {
             <option value="Iatrogenic">Iatrogenic</option>
             <option value="Idiopathic">Idiopathic</option>
           </InputWithLabel>
+
           <InputWithLabel
             label={"Reason of Visit:"}
             id={"reasonOfVisit"}
@@ -250,7 +343,79 @@ const AppointmentAddPage = () => {
             wrapperClassName="p-4"
           />
         </div>
+
+        {/* Selected Patient Info Display */}
+        {selectedPatient && (
+          <div className="mx-4 mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <h3 className="font-semibold text-green-800 mb-2">
+              Selected Patient Information:
+            </h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Name:</span>
+                <span className="ml-2">
+                  {`${selectedPatient.first_name || ""} ${
+                    selectedPatient.last_name || ""
+                  }`.trim() || "N/A"}
+                </span>
+              </div>
+              <div>
+                <span className="font-medium">Patient ID:</span>
+                <span className="ml-2 text-xs text-gray-500">
+                  {selectedPatient.id}
+                </span>
+              </div>
+              <div>
+                <span className="font-medium">Registration Date:</span>
+                <span className="ml-2">
+                  {selectedPatient.date_joined
+                    ? new Date(selectedPatient.date_joined).toLocaleDateString()
+                    : "N/A"}
+                </span>
+              </div>
+              <div>
+                <span className="font-medium">Status:</span>
+                <span className="ml-2 text-green-600 font-medium">
+                  {selectedPatient.is_active ? "Active" : "Inactive"}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Loading Patient Detail */}
+        {isLoadingPatientDetail && (
+          <div className="mx-4 mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center">
+              <SpinnerComponent className="mr-2" />
+              <span className="text-yellow-700">
+                Loading patient details...
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* No Patients Found Message */}
+        {!patientsLoading && patients.length === 0 && (
+          <div className="mx-4 mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <h3 className="font-semibold text-red-800 mb-2">
+              No Patients Found
+            </h3>
+            <p className="text-red-600 text-sm">
+              No patients were found. Please check if patients exist in the
+              system or try adjusting your search.
+            </p>
+          </div>
+        )}
       </div>
+
+      {/* Loading indicator for patients */}
+      {patientsLoading && (
+        <div className="mt-4 p-4 bg-gray-100 rounded-lg text-center">
+          <SpinnerComponent className="mr-2" />
+          Loading patients...
+        </div>
+      )}
     </>
   );
 };

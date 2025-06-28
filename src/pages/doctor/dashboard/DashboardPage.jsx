@@ -97,7 +97,7 @@ const DashboardPage = () => {
       setTodayPatientData(data);
     } catch (err) {
       console.error("Error fetching today's patients:", err);
-      setError("Failed to fetch today's patient data");
+      // setError("Failed to fetch today's patient data");
     }
   };
 
@@ -174,7 +174,7 @@ const DashboardPage = () => {
       const data = await getMonthlyPatient();
       setMonthlyPatientData(data);
     } catch (err) {
-      setError("Failed to fetch monthly patient data");
+      // setError("Failed to fetch monthly patient data");
       console.error("Error fetching monthly patients:", err);
     } finally {
       setLoading(false);
@@ -406,6 +406,48 @@ const DashboardPage = () => {
   const handlePeriodChange = (period) => {
     setSelectedPeriod(period);
     setIsDropdownOpen(false);
+  };
+
+  // Add these helper functions and state updates
+  const getUpcomingAppointments = () => {
+    const now = new Date();
+    const upcomingAppointments = appointments
+      .filter(
+        (appointment) =>
+          new Date(appointment.appointment_datetime) >= now &&
+          appointment.appointment_status !== "CANCELLED"
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.appointment_datetime) - new Date(b.appointment_datetime)
+      )
+      .slice(0, 10); // Show only first 10 upcoming appointments
+
+    return upcomingAppointments;
+  };
+
+  const formatAppointmentTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case "scheduled":
+        return "bg-blue-500";
+      case "confirmed":
+        return "bg-green-500";
+      case "pending":
+        return "bg-orange-500";
+      case "done":
+        return "bg-gray-500";
+      default:
+        return "bg-orange-500";
+    }
   };
 
   return (
@@ -874,310 +916,131 @@ const DashboardPage = () => {
           <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
             <h2 className="2xl:text-lg text-sm font-medium">Appointments</h2>
             <span className="text-primary font-medium cursor-pointer 2xl:text-lg text-sm">
-              Upcoming
+              Upcoming ({getUpcomingAppointments().length})
             </span>
           </div>
           <div className="p-4 2xl:text-lg lg:text-sm">
-            {/* Appointment 1 */}
-            <div className="flex justify-between items-center border-b py-3">
-              <div>
-                <div className="flex flex-wrap items-center 2xl:text-lg text-xs">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
-                  <span className="font-semibold">Temitope Joshua</span>
-                  <span className="2xl:text-sm text-xs text-gray-500 ml-1">
-                    • Asthma
-                  </span>
-                </div>
-                <div className="2xl:text-sm text-xs text-gray-500">3:00 PM</div>
-                <div className="2xl:text-sm text-xs">
-                  <a href="#" className="text-blue-500 mr-2">
-                    View Profile
-                  </a>
-                  <a href="#" className="text-blue-500">
-                    Recordings
-                  </a>
-                </div>
+            {appointmentsLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <span className="ml-2 text-gray-500">
+                  Loading appointments...
+                </span>
               </div>
-              <a href="#" className="text-red-500">
-                Skip
-              </a>
-            </div>
-            <div className="flex justify-between items-center border-b py-3">
-              <div>
-                <div className="flex flex-wrap items-center 2xl:text-lg text-xs">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
-                  <span className="font-semibold">Temitope Joshua</span>
-                  <span className="2xl:text-sm text-xs text-gray-500 ml-1">
-                    • Asthma
-                  </span>
+            ) : getUpcomingAppointments().length === 0 ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 mx-auto mb-4 text-gray-400">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1}
+                      d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4M8 7H3a1 1 0 00-1 1v10a1 1 0 001 1h18a1 1 0 001-1V8a1 1 0 00-1-1h-5M8 7h8m-8 0V5m8 2V5"
+                    />
+                  </svg>
                 </div>
-                <div className="2xl:text-sm text-xs text-gray-500">3:00 PM</div>
-                <div className="2xl:text-sm text-xs">
-                  <a href="#" className="text-blue-500 mr-2">
-                    View Profile
-                  </a>
-                  <a href="#" className="text-blue-500">
-                    Recordings
-                  </a>
-                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No Upcoming Appointments
+                </h3>
+                <p className="text-gray-500">
+                  You don't have any upcoming appointments scheduled.
+                </p>
               </div>
-              <a href="#" className="text-red-500">
-                Skip
-              </a>
-            </div>
-            <div className="flex justify-between items-center border-b py-3">
-              <div>
-                <div className="flex flex-wrap items-center 2xl:text-lg text-xs">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
-                  <span className="font-semibold">Temitope Joshua</span>
-                  <span className="2xl:text-sm text-xs text-gray-500 ml-1">
-                    • Asthma
-                  </span>
+            ) : (
+              getUpcomingAppointments().map((appointment, index) => (
+                <div
+                  key={appointment.id}
+                  className="flex justify-between items-center border-b py-3 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center 2xl:text-lg text-xs mb-1">
+                      <span
+                        className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${getStatusColor(
+                          appointment.appointment_status
+                        )}`}
+                      />
+                      <span className="font-semibold">
+                        {appointment.patient?.first_name || "N/A"}{" "}
+                        {appointment.patient?.last_name || ""}
+                      </span>
+                      {appointment.disease && (
+                        <span className="2xl:text-sm text-xs text-gray-500 ml-1">
+                          • {appointment.disease}
+                        </span>
+                      )}
+                    </div>
+                    <div className="2xl:text-sm text-xs text-gray-500 mb-1">
+                      {formatAppointmentTime(appointment.appointment_datetime)}
+                      <span className="ml-2 text-gray-400">
+                        {new Date(
+                          appointment.appointment_datetime
+                        ).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    </div>
+                    <div className="2xl:text-sm text-xs">
+                      <button
+                        onClick={() =>
+                          navigate(
+                            `/doctor/patients/${appointment.patient?.id}`
+                          )
+                        }
+                        className="text-blue-500 mr-2 hover:text-blue-700 transition-colors"
+                      >
+                        View Profile
+                      </button>
+                      <button
+                        onClick={() =>
+                          navigate("/doctor/ai-support/visit-notes")
+                        }
+                        className="text-blue-500 hover:text-blue-700 transition-colors"
+                      >
+                        Recordings
+                      </button>
+                    </div>
+                    {appointment.reason_of_visit && (
+                      <div className="2xl:text-sm text-xs text-gray-500 mt-1 italic">
+                        "{appointment.reason_of_visit}"
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-end space-y-1">
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+              ${
+                appointment.appointment_status === "scheduled"
+                  ? "bg-blue-100 text-blue-800"
+                  : appointment.appointment_status === "confirmed"
+                  ? "bg-green-100 text-green-800"
+                  : appointment.appointment_status === "done"
+                  ? "bg-gray-100 text-gray-800"
+                  : "bg-orange-100 text-orange-800"
+              }`}
+                    >
+                      {appointment.appointment_status || "Pending"}
+                    </span>
+                    <button className="text-red-500 hover:text-red-700 transition-colors text-xs">
+                      Skip
+                    </button>
+                  </div>
                 </div>
-                <div className="2xl:text-sm text-xs text-gray-500">3:00 PM</div>
-                <div className="2xl:text-sm text-xs">
-                  <a href="#" className="text-blue-500 mr-2">
-                    View Profile
-                  </a>
-                  <a href="#" className="text-blue-500">
-                    Recordings
-                  </a>
+              ))
+            )}
+
+            {/* Show "View All" button if there are more appointments */}
+            {getUpcomingAppointments().length > 0 &&
+              appointments.length > 10 && (
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => navigate("/doctor/appointments/list")}
+                    className="text-primary hover:text-primary-dark font-medium text-sm transition-colors"
+                  >
+                    View All Appointments ({appointments.length})
+                  </button>
                 </div>
-              </div>
-              <a href="#" className="text-red-500">
-                Skip
-              </a>
-            </div>
-            <div className="flex justify-between items-center border-b py-3">
-              <div>
-                <div className="flex flex-wrap items-center 2xl:text-lg text-xs">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
-                  <span className="font-semibold">Temitope Joshua</span>
-                  <span className="2xl:text-sm text-xs text-gray-500 ml-1">
-                    • Asthma
-                  </span>
-                </div>
-                <div className="2xl:text-sm text-xs text-gray-500">3:00 PM</div>
-                <div className="2xl:text-sm text-xs">
-                  <a href="#" className="text-blue-500 mr-2">
-                    View Profile
-                  </a>
-                  <a href="#" className="text-blue-500">
-                    Recordings
-                  </a>
-                </div>
-              </div>
-              <a href="#" className="text-red-500">
-                Skip
-              </a>
-            </div>
-            <div className="flex justify-between items-center border-b py-3">
-              <div>
-                <div className="flex flex-wrap items-center 2xl:text-lg text-xs">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
-                  <span className="font-semibold">Temitope Joshua</span>
-                  <span className="2xl:text-sm text-xs text-gray-500 ml-1">
-                    • Asthma
-                  </span>
-                </div>
-                <div className="2xl:text-sm text-xs text-gray-500">3:00 PM</div>
-                <div className="2xl:text-sm text-xs">
-                  <a href="#" className="text-blue-500 mr-2">
-                    View Profile
-                  </a>
-                  <a href="#" className="text-blue-500">
-                    Recordings
-                  </a>
-                </div>
-              </div>
-              <a href="#" className="text-red-500">
-                Skip
-              </a>
-            </div>
-            <div className="flex justify-between items-center border-b py-3">
-              <div>
-                <div className="flex flex-wrap items-center 2xl:text-lg text-xs">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
-                  <span className="font-semibold">Temitope Joshua</span>
-                  <span className="2xl:text-sm text-xs text-gray-500 ml-1">
-                    • Asthma
-                  </span>
-                </div>
-                <div className="2xl:text-sm text-xs text-gray-500">3:00 PM</div>
-                <div className="2xl:text-sm text-xs">
-                  <a href="#" className="text-blue-500 mr-2">
-                    View Profile
-                  </a>
-                  <a href="#" className="text-blue-500">
-                    Recordings
-                  </a>
-                </div>
-              </div>
-              <a href="#" className="text-red-500">
-                Skip
-              </a>
-            </div>
-            <div className="flex justify-between items-center border-b py-3">
-              <div>
-                <div className="flex flex-wrap items-center 2xl:text-lg text-xs">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
-                  <span className="font-semibold">Temitope Joshua</span>
-                  <span className="2xl:text-sm text-xs text-gray-500 ml-1">
-                    • Asthma
-                  </span>
-                </div>
-                <div className="2xl:text-sm text-xs text-gray-500">3:00 PM</div>
-                <div className="2xl:text-sm text-xs">
-                  <a href="#" className="text-blue-500 mr-2">
-                    View Profile
-                  </a>
-                  <a href="#" className="text-blue-500">
-                    Recordings
-                  </a>
-                </div>
-              </div>
-              <a href="#" className="text-red-500">
-                Skip
-              </a>
-            </div>
-            <div className="flex justify-between items-center border-b py-3">
-              <div>
-                <div className="flex flex-wrap items-center 2xl:text-lg text-xs">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
-                  <span className="font-semibold">Temitope Joshua</span>
-                  <span className="2xl:text-sm text-xs text-gray-500 ml-1">
-                    • Asthma
-                  </span>
-                </div>
-                <div className="2xl:text-sm text-xs text-gray-500">3:00 PM</div>
-                <div className="2xl:text-sm text-xs">
-                  <a href="#" className="text-blue-500 mr-2">
-                    View Profile
-                  </a>
-                  <a href="#" className="text-blue-500">
-                    Recordings
-                  </a>
-                </div>
-              </div>
-              <a href="#" className="text-red-500">
-                Skip
-              </a>
-            </div>
-            <div className="flex justify-between items-center border-b py-3">
-              <div>
-                <div className="flex flex-wrap items-center 2xl:text-lg text-xs">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
-                  <span className="font-semibold">Temitope Joshua</span>
-                  <span className="2xl:text-sm text-xs text-gray-500 ml-1">
-                    • Asthma
-                  </span>
-                </div>
-                <div className="2xl:text-sm text-xs text-gray-500">3:00 PM</div>
-                <div className="2xl:text-sm text-xs">
-                  <a href="#" className="text-blue-500 mr-2">
-                    View Profile
-                  </a>
-                  <a href="#" className="text-blue-500">
-                    Recordings
-                  </a>
-                </div>
-              </div>
-              <a href="#" className="text-red-500">
-                Skip
-              </a>
-            </div>
-            <div className="flex justify-between items-center border-b py-3">
-              <div>
-                <div className="flex flex-wrap items-center 2xl:text-lg text-xs">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
-                  <span className="font-semibold">Temitope Joshua</span>
-                  <span className="2xl:text-sm text-xs text-gray-500 ml-1">
-                    • Asthma
-                  </span>
-                </div>
-                <div className="2xl:text-sm text-xs text-gray-500">3:00 PM</div>
-                <div className="2xl:text-sm text-xs">
-                  <a href="#" className="text-blue-500 mr-2">
-                    View Profile
-                  </a>
-                  <a href="#" className="text-blue-500">
-                    Recordings
-                  </a>
-                </div>
-              </div>
-              <a href="#" className="text-red-500">
-                Skip
-              </a>
-            </div>
-            <div className="flex justify-between items-center border-b py-3">
-              <div>
-                <div className="flex flex-wrap items-center 2xl:text-lg text-xs">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
-                  <span className="font-semibold">Temitope Joshua</span>
-                  <span className="2xl:text-sm text-xs text-gray-500 ml-1">
-                    • Asthma
-                  </span>
-                </div>
-                <div className="2xl:text-sm text-xs text-gray-500">3:00 PM</div>
-                <div className="2xl:text-sm text-xs">
-                  <a href="#" className="text-blue-500 mr-2">
-                    View Profile
-                  </a>
-                  <a href="#" className="text-blue-500">
-                    Recordings
-                  </a>
-                </div>
-              </div>
-              <a href="#" className="text-red-500">
-                Skip
-              </a>
-            </div>
-            <div className="flex justify-between items-center border-b py-3">
-              <div>
-                <div className="flex flex-wrap items-center 2xl:text-lg text-xs">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
-                  <span className="font-semibold">Temitope Joshua</span>
-                  <span className="2xl:text-sm text-xs text-gray-500 ml-1">
-                    • Asthma
-                  </span>
-                </div>
-                <div className="2xl:text-sm text-xs text-gray-500">3:00 PM</div>
-                <div className="2xl:text-sm text-xs">
-                  <a href="#" className="text-blue-500 mr-2">
-                    View Profile
-                  </a>
-                  <a href="#" className="text-blue-500">
-                    Recordings
-                  </a>
-                </div>
-              </div>
-              <a href="#" className="text-red-500">
-                Skip
-              </a>
-            </div>
-            <div className="flex justify-between items-center border-b py-3">
-              <div>
-                <div className="flex flex-wrap items-center 2xl:text-lg text-xs">
-                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-500 mr-2" />
-                  <span className="font-semibold">Temitope Joshua</span>
-                  <span className="2xl:text-sm text-xs text-gray-500 ml-1">
-                    • Asthma
-                  </span>
-                </div>
-                <div className="2xl:text-sm text-xs text-gray-500">3:00 PM</div>
-                <div className="2xl:text-sm text-xs">
-                  <a href="#" className="text-blue-500 mr-2">
-                    View Profile
-                  </a>
-                  <a href="#" className="text-blue-500">
-                    Recordings
-                  </a>
-                </div>
-              </div>
-              <a href="#" className="text-red-500">
-                Skip
-              </a>
-            </div>
+              )}
           </div>
         </div>
         {/* Second row, first and second columns */}

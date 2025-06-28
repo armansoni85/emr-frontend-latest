@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { EachLoop } from "@src/utils/EachLoop";
@@ -18,8 +18,31 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
 
-  // Use provided userData or fallback to logged-in user
   const activeUser = userData || user;
+
+  // Helper function to map country name to country code
+  const getCountryCodeFromName = useCallback((countryName) => {
+    if (!countryName) return "";
+
+    // Find country by name (case insensitive)
+    const foundCountry = countryCodes.find(
+      (country) => country.text.toLowerCase() === countryName.toLowerCase()
+    );
+
+    return foundCountry ? foundCountry.value : countryName;
+  }, []);
+
+  // Helper function to map country code to country name
+  const getCountryNameFromCode = useCallback((countryCode) => {
+    if (!countryCode) return "";
+
+    // Find country by code
+    const foundCountry = countryCodes.find(
+      (country) => country.value === countryCode
+    );
+
+    return foundCountry ? foundCountry.text : countryCode;
+  }, []);
 
   const [forms, setForms] = useState({
     firstName: activeUser?.first_name || "",
@@ -27,8 +50,9 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
     gender: activeUser?.gender || "male",
     dob: activeUser?.dob || "2024-11-20",
     email: activeUser?.email || "",
-    country: activeUser?.country || "",
-    residentalAddress: activeUser?.residential_address || "",
+    country: getCountryCodeFromName(activeUser?.country) || "",
+    residentalAddress:
+      activeUser?.residential_address || activeUser?.address || "",
     mobileNumber: activeUser?.mobile_number || activeUser?.phone_number || "",
   });
 
@@ -41,13 +65,13 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
         gender: activeUser.gender || "male",
         dob: activeUser.dob || "2024-11-20",
         email: activeUser.email || "",
-        country: activeUser.country || "",
+        country: getCountryCodeFromName(activeUser.country) || "",
         residentalAddress:
           activeUser.residential_address || activeUser.address || "",
         mobileNumber: activeUser.mobile_number || activeUser.phone_number || "",
       });
     }
-  }, [activeUser]);
+  }, [activeUser, getCountryCodeFromName]);
 
   const onSubmit = useCallback(() => {
     const validatedForm = validateForm(UpdateUserSchema, forms);
@@ -58,13 +82,17 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
     }
 
     console.log("Validated Form: ", validatedForm);
+
+    // Convert country code back to country name for API
+    const countryName = getCountryNameFromCode(validatedForm.country);
+
     updateUser(activeUser.id, {
       first_name: validatedForm.firstName,
       last_name: validatedForm.lastName,
       gender: validatedForm.gender,
       dob: validatedForm.dob,
       email: validatedForm.email,
-      country: validatedForm.country,
+      country: countryName, // Send country name to API
       residential_address: validatedForm.residentalAddress,
       mobile_number: validatedForm.mobileNumber,
     })
@@ -85,7 +113,7 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
       .finally(() => {
         dispatch({ type: "SUBMISSION/CANCEL" });
       });
-  }, [dispatch, forms, activeUser, userData]);
+  }, [dispatch, forms, activeUser, userData, getCountryNameFromCode]);
 
   useEffect(() => {
     if (isSubmitted) {
@@ -101,14 +129,22 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
         gender: activeUser?.gender || "male",
         dob: activeUser?.dob || "2024-11-20",
         email: activeUser?.email || "",
-        country: activeUser?.country || "",
+        country: getCountryCodeFromName(activeUser?.country) || "",
         residentalAddress:
           activeUser?.residential_address || activeUser?.address || "",
         mobileNumber:
           activeUser?.mobile_number || activeUser?.phone_number || "",
       });
     }
-  }, [isReset, activeUser, isSubmitted]);
+  }, [isReset, activeUser, isSubmitted, getCountryCodeFromName]);
+
+  // Get selected country info for display
+  const selectedCountryInfo = useMemo(() => {
+    const foundCountry = countryCodes.find(
+      (country) => country.value === forms.country
+    );
+    return foundCountry || null;
+  }, [forms.country]);
 
   return (
     <div
@@ -137,6 +173,7 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
         >
           <option value={"male"}>Male</option>
           <option value={"female"}>Female</option>
+          <option value={"other"}>Other</option>
         </InputWithLabel>
 
         <InputWithLabel
@@ -152,7 +189,7 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
         <InputWithLabel
           wrapperClassName={"mb-3"}
           label={"Nationality:"}
-          id={"state"}
+          id={"country"}
           type={"select"}
           value={forms.country}
           onChange={(e) =>
@@ -160,13 +197,28 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
           }
           readOnly={isReadOnly}
         >
+          <option value="">Select Country</option>
           <EachLoop
             of={countryCodes}
             render={(item) => {
-              return <option value={item.value}>{item.text}</option>;
+              return (
+                <option key={item.value} value={item.value}>
+                  {item.text}
+                </option>
+              );
             }}
           />
         </InputWithLabel>
+
+        {/* Debug info - show selected country mapping */}
+        {selectedCountryInfo && !isReadOnly && (
+          <div className="text-xs text-gray-500 mt-1 mb-2">
+            Selected: {selectedCountryInfo.text} ({selectedCountryInfo.value})
+            {activeUser?.country && (
+              <span className="ml-2">| DB Value: "{activeUser.country}"</span>
+            )}
+          </div>
+        )}
       </div>
       <div className="p-4">
         <InputWithLabel
@@ -202,7 +254,7 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
         />
         <InputWithLabel
           wrapperClassName={"mb-3"}
-          label={"Residental Address:"}
+          label={"Residential Address:"}
           id={"residentialAddress"}
           type={"textarea"}
           placeholder={"Enter Address"}

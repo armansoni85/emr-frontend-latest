@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { getConsultations } from "@src/services/consultation.service";
+import { useDispatch, useSelector } from "react-redux";
 
 const AIVisitNotesPage = () => {
   const [consultations, setConsultations] = useState([]);
@@ -9,6 +10,9 @@ const AIVisitNotesPage = () => {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedDoctor, setSelectedDoctor] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(null);
+
+  const dispatch = useDispatch();
+  const { paginationMeta } = useSelector((state) => state.fetch);
 
   useEffect(() => {
     fetchConsultations();
@@ -74,6 +78,28 @@ const AIVisitNotesPage = () => {
     });
   }, [consultations, searchTerm, selectedDate, selectedDoctor]);
 
+  // Paginated consultations
+  const paginatedConsultations = useMemo(() => {
+    const startIndex =
+      (paginationMeta.currentPage - 1) * paginationMeta.limitPerPage;
+    const endIndex = startIndex + paginationMeta.limitPerPage;
+    return filteredConsultations.slice(startIndex, endIndex);
+  }, [
+    filteredConsultations,
+    paginationMeta.currentPage,
+    paginationMeta.limitPerPage,
+  ]);
+
+  // Update pagination meta when filtered consultations change
+  useEffect(() => {
+    dispatch({
+      type: "FETCH_SET_PAGINATION",
+      payload: {
+        totalData: filteredConsultations.length,
+      },
+    });
+  }, [filteredConsultations.length, dispatch]);
+
   const handleSearch = () => {
     const params = {};
 
@@ -89,8 +115,47 @@ const AIVisitNotesPage = () => {
       params.doctor = selectedDoctor;
     }
 
+    // Reset to first page when searching
+    dispatch({ type: "FETCH_SET_PAGINATION", payload: { currentPage: 1 } });
     fetchConsultations(params);
   };
+
+  const handlePageChange = (page) => {
+    dispatch({ type: "FETCH_SET_PAGINATION", payload: { currentPage: page } });
+  };
+
+  const handleNextPage = () => {
+    const totalPages = Math.ceil(
+      filteredConsultations.length / paginationMeta.limitPerPage
+    );
+    if (paginationMeta.currentPage < totalPages) {
+      handlePageChange(paginationMeta.currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (paginationMeta.currentPage > 1) {
+      handlePageChange(paginationMeta.currentPage - 1);
+    }
+  };
+
+  const handlePageSizeChange = (e) => {
+    const newPageSize = parseInt(e.target.value);
+    dispatch({
+      type: "FETCH_SET_PAGINATION",
+      payload: {
+        limitPerPage: newPageSize,
+        currentPage: 1,
+      },
+    });
+  };
+
+  // Pagination calculations
+  const totalPages = Math.ceil(
+    filteredConsultations.length / paginationMeta.limitPerPage
+  );
+  const hasPrevPage = paginationMeta.currentPage > 1;
+  const hasNextPage = paginationMeta.currentPage < totalPages;
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -250,7 +315,7 @@ const AIVisitNotesPage = () => {
               </tr>
             </thead>
             <tbody className="text-body">
-              {filteredConsultations.length === 0 ? (
+              {paginatedConsultations.length === 0 ? (
                 <tr>
                   <td
                     colSpan="7"
@@ -260,7 +325,7 @@ const AIVisitNotesPage = () => {
                   </td>
                 </tr>
               ) : (
-                filteredConsultations.map((consultation) => {
+                paginatedConsultations.map((consultation) => {
                   const patient = consultation.appointment?.patient;
                   const doctor = consultation.appointment?.doctor;
 
@@ -362,6 +427,161 @@ const AIVisitNotesPage = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination - Same Style as Appointment Page */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-6 border-t border-gray-100">
+          {/* Data Summary */}
+          <div className="text-sm text-gray-600 order-2 sm:order-1">
+            Showing{" "}
+            <span className="font-semibold text-gray-900">
+              {filteredConsultations.length > 0
+                ? (paginationMeta.currentPage - 1) *
+                    paginationMeta.limitPerPage +
+                  1
+                : 0}
+            </span>{" "}
+            to{" "}
+            <span className="font-semibold text-gray-900">
+              {Math.min(
+                paginationMeta.currentPage * paginationMeta.limitPerPage,
+                filteredConsultations.length
+              )}
+            </span>{" "}
+            of{" "}
+            <span className="font-semibold text-gray-900">
+              {filteredConsultations.length}
+            </span>{" "}
+            consultations
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center gap-2 order-1 sm:order-2">
+            {/* Previous Button */}
+            <button
+              onClick={handlePrevPage}
+              disabled={!hasPrevPage || loading}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                hasPrevPage && !loading
+                  ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+                  : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              <i className="material-icons text-sm">chevron_left</i>
+              <span className="hidden sm:inline">Previous</span>
+            </button>
+
+            {/* Page Numbers Container */}
+            <div className="flex items-center gap-1 mx-2">
+              {/* Loading Indicator */}
+              {loading && (
+                <div className="flex items-center px-3 py-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                </div>
+              )}
+
+              {/* Page Numbers - Hide when loading */}
+              {!loading && totalPages > 0 && (
+                <>
+                  {/* First Page */}
+                  {paginationMeta.currentPage > 3 && (
+                    <>
+                      <button
+                        onClick={() => handlePageChange(1)}
+                        className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
+                      >
+                        1
+                      </button>
+                      {paginationMeta.currentPage > 4 && (
+                        <span className="px-2 text-gray-400">...</span>
+                      )}
+                    </>
+                  )}
+
+                  {/* Current Page Range */}
+                  {Array.from(
+                    { length: Math.min(5, totalPages) },
+                    (_, index) => {
+                      let pageNumber;
+                      if (totalPages <= 5) {
+                        pageNumber = index + 1;
+                      } else if (paginationMeta.currentPage <= 3) {
+                        pageNumber = index + 1;
+                      } else if (paginationMeta.currentPage >= totalPages - 2) {
+                        pageNumber = totalPages - 4 + index;
+                      } else {
+                        pageNumber = paginationMeta.currentPage - 2 + index;
+                      }
+
+                      if (pageNumber > 0 && pageNumber <= totalPages) {
+                        return (
+                          <button
+                            key={pageNumber}
+                            onClick={() => handlePageChange(pageNumber)}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                              pageNumber === paginationMeta.currentPage
+                                ? "bg-primary text-white shadow-sm"
+                                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                            }`}
+                          >
+                            {pageNumber}
+                          </button>
+                        );
+                      }
+                      return null;
+                    }
+                  )}
+
+                  {/* Last Page */}
+                  {paginationMeta.currentPage < totalPages - 2 &&
+                    totalPages > 5 && (
+                      <>
+                        {paginationMeta.currentPage < totalPages - 3 && (
+                          <span className="px-2 text-gray-400">...</span>
+                        )}
+                        <button
+                          onClick={() => handlePageChange(totalPages)}
+                          className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
+                        >
+                          {totalPages}
+                        </button>
+                      </>
+                    )}
+                </>
+              )}
+            </div>
+
+            {/* Next Button */}
+            <button
+              onClick={handleNextPage}
+              disabled={!hasNextPage || loading}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                hasNextPage && !loading
+                  ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+                  : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              <span className="hidden sm:inline">Next</span>
+              <i className="material-icons text-sm">chevron_right</i>
+            </button>
+          </div>
+
+          {/* Page Size Selector */}
+          <div className="flex items-center gap-2 text-sm text-gray-600 order-3">
+            <span>Show:</span>
+            <select
+              value={paginationMeta.limitPerPage}
+              onChange={handlePageSizeChange}
+              disabled={loading}
+              className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+            <span>per page</span>
+          </div>
         </div>
       </div>
     </>
