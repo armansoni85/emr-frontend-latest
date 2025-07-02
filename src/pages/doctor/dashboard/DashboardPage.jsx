@@ -3,6 +3,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import "flatpickr/dist/themes/material_blue.css";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "@src/context/ThemeContext"; // <-- import theme
 import {
   getMonthlyPatient,
   getPatientStatistics,
@@ -13,6 +14,7 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [selectedPeriod, setSelectedPeriod] = useState("monthly");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -23,7 +25,6 @@ const DashboardPage = () => {
   const [error, setError] = useState(null);
   const [selectedDateAppointments, setSelectedDateAppointments] = useState([]);
 
-  // Add appointments state
   const [appointments, setAppointments] = useState([]);
   const [appointmentsLoading, setAppointmentsLoading] = useState(false);
 
@@ -41,7 +42,6 @@ const DashboardPage = () => {
     is_increase: false,
   });
 
-  // Fetch appointments function
   const fetchAppointments = async () => {
     try {
       setAppointmentsLoading(true);
@@ -308,8 +308,6 @@ const DashboardPage = () => {
     );
   };
 
-  // ... (keep all the chart data and other existing code the same)
-
   const chartData = {
     weekly: {
       labels: [
@@ -450,112 +448,113 @@ const DashboardPage = () => {
     }
   };
 
+  // Helper for gradient backgrounds using theme
+  const getGradient = (from, to) =>
+    `linear-gradient(90deg, ${from} 0%, ${to} 100%)`;
+
   return (
     <>
-      {/* Keep existing cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 md:grid-cols-2 gap-4">
-        {/* All existing cards remain the same */}
-        {/* Total Patients Card */}
-        <div className="p-4 rounded-lg bg-gradient-to-r from-orange-400 to-red-500 text-white shadow-md">
-          <div className="flex justify-between">
-            <div>
-              <p className="text-lg font-semibold font-dashboard">
-                Total Patients
-              </p>
-              <div className="bg-white bg-opacity-50 p-2 rounded-xl w-14">
-                {/* SVG content */}
-              </div>
-            </div>
-            <div className="flex flex-col items-center mt-auto">
-              <p className="font-dashboard-number text-4xl font-bold">
-                {patientStatistics.total_patients}
-              </p>
-              <p className="font-dashboard-trend text-sm mt-2">
-                {patientStatistics.difference_from_last_month}{" "}
-                {patientStatistics.is_increase ? "↑" : "↓"} vs Last Month
-              </p>
+      {/* Cards Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Total Patients */}
+        <div className="p-4 rounded-lg bg-gradient-to-r from-orange-400 to-red-500 text-white shadow-md flex flex-col justify-between">
+          <div>
+            <p className="text-lg font-semibold font-dashboard">
+              Total Patients
+            </p>
+            <div className="bg-white bg-opacity-50 p-2 rounded-xl w-14 my-2">
+              {/* SVG */}
             </div>
           </div>
-        </div>
-
-        {/* New Patients Card */}
-        <div className="p-4 rounded-lg bg-gradient-to-r from-blue-400 to-blue-600 text-white shadow-md">
-          <div className="flex justify-between">
-            <div>
-              <p className="text-lg font-semibold font-dashboard">
-                New Patients
-              </p>
-              <div className="bg-white bg-opacity-50 p-2 rounded-xl w-14">
-                {/* SVG content */}
-              </div>
-            </div>
-            <div className="flex flex-col items-center mt-auto">
-              <p className="font-dashboard-number text-4xl font-bold">
-                {todayPatientData.patients_today}
-              </p>
-              <p className="font-dashboard-trend text-sm mt-2">
-                {todayPatientData.difference_from_yesterday}{" "}
-                {todayPatientData.is_increase ? "↑" : "↓"} vs Yesterday
-              </p>
-            </div>
+          <div className="flex flex-col items-center mt-auto">
+            <p className="font-dashboard-number text-4xl font-bold">
+              {patientStatistics.total_patients}
+            </p>
+            <p className="font-dashboard-trend text-sm mt-2">
+              {patientStatistics.difference_from_last_month}{" "}
+              {patientStatistics.is_increase ? "↑" : "↓"} vs Last Month
+            </p>
           </div>
         </div>
-
-        {/* Total Appointments Card */}
-        <div className="p-4 rounded-lg bg-gradient-to-r from-pink-400 to-pink-600 text-white shadow-md">
-          <div className="flex justify-between">
-            <div>
-              <p className="text-lg font-semibold font-dashboard">
-                Total Appointments
-              </p>
-              <div className="bg-white bg-opacity-50 p-2 rounded-xl w-14">
-                {/* SVG content */}
-              </div>
-            </div>
-            <div className="flex flex-col items-center mt-auto">
-              <p className="font-dashboard-number text-4xl font-bold">
-                {appointments.length}
-              </p>
-              <p className="font-dashboard-trend text-sm mt-2">
-                0 ↑ vs Yesterday
-              </p>
+        {/* New Patients */}
+        <div className="p-4 rounded-lg bg-gradient-to-r from-blue-400 to-blue-600 text-white shadow-md flex flex-col justify-between">
+          <div>
+            <p className="text-lg font-semibold font-dashboard">New Patients</p>
+            <div className="bg-white bg-opacity-50 p-2 rounded-xl w-14 my-2">
+              {/* SVG */}
             </div>
           </div>
+          <div className="flex flex-col items-center mt-auto">
+            <p className="font-dashboard-number text-4xl font-bold">
+              {todayPatientData.patients_today}
+            </p>
+            <p className="font-dashboard-trend text-sm mt-2">
+              {todayPatientData.difference_from_yesterday}{" "}
+              {todayPatientData.is_increase ? "↑" : "↓"} vs Yesterday
+            </p>
+          </div>
         </div>
-
-        {/* Online Appointments Card */}
-        <div className="p-4 rounded-lg bg-gradient-to-r from-[#DF00FF] to-[#8100FF] text-white shadow-md">
-          <div className="flex justify-between">
-            <div>
-              <p className="text-lg font-semibold font-dashboard">
-                Online Appointments
-              </p>
-              <div className="bg-white bg-opacity-50 p-2 rounded-xl w-14">
-                {/* SVG content */}
-              </div>
+        {/* Total Appointments */}
+        <div className="p-4 rounded-lg bg-gradient-to-r from-pink-400 to-pink-600 text-white shadow-md flex flex-col justify-between">
+          <div>
+            <p className="text-lg font-semibold font-dashboard">
+              Total Appointments
+            </p>
+            <div className="bg-white bg-opacity-50 p-2 rounded-xl w-14 my-2">
+              {/* SVG */}
             </div>
-            <div className="flex flex-col items-center mt-auto">
-              <p className="font-dashboard-number text-4xl font-bold">45</p>
-              <p className="font-dashboard-trend text-sm mt-2">
-                5 ↑ vs Yesterday
-              </p>
+          </div>
+          <div className="flex flex-col items-center mt-auto">
+            <p className="font-dashboard-number text-4xl font-bold">
+              {appointments.length}
+            </p>
+            <p className="font-dashboard-trend text-sm mt-2">
+              0 ↑ vs Yesterday
+            </p>
+          </div>
+        </div>
+        {/* Online Appointments */}
+        <div className="p-4 rounded-lg bg-gradient-to-r from-[#DF00FF] to-[#8100FF] text-white shadow-md flex flex-col justify-between">
+          <div>
+            <p className="text-lg font-semibold font-dashboard">
+              Online Appointments
+            </p>
+            <div className="bg-white bg-opacity-50 p-2 rounded-xl w-14 my-2">
+              {/* SVG */}
             </div>
+          </div>
+          <div className="flex flex-col items-center mt-auto">
+            <p className="font-dashboard-number text-4xl font-bold">45</p>
+            <p className="font-dashboard-trend text-sm mt-2">
+              5 ↑ vs Yesterday
+            </p>
           </div>
         </div>
       </div>
-      <br />
 
-      <div className="grid xl:grid-cols-8 lg:grid-cols-2 md:grid-cols-1 gap-4 grid-cols-1">
-        {/* Calendar Section - Updated */}
-        <div className="bg-white rounded-[20px] shadow-lg overflow-x-auto col-span-3">
-          <div className="flex justify-between p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-8 gap-4">
+        {/* Calendar */}
+        <div
+          className="bg-white rounded-[20px] shadow-lg overflow-x-auto col-span-1 xl:col-span-6"
+          style={{
+            borderColor: theme.borderColor,
+            fontFamily: theme.fontFamily,
+          }}
+        >
+          <div
+            className="flex justify-between p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b"
+            style={{
+              borderColor: theme.borderColor,
+              color: theme.headingColor,
+              fontFamily: theme.fontFamily,
+            }}
+          >
             <h3 className="2xl:text-xl lg:text-sm font-semibold">
               Appointments Calendar
             </h3>
-
-            {/* Appointment Statistics */}
             <div className="flex items-center space-x-4 text-sm">
-              <span className="text-blue-600 font-medium">
+              <span className="font-medium" style={{ color: theme.linkColor }}>
                 Total: {appointments.length}
               </span>
               {appointmentsLoading && (
@@ -563,8 +562,9 @@ const DashboardPage = () => {
               )}
             </div>
           </div>
-
-          <div className="p-4">
+          <div className="p-6">
+            {" "}
+            {/* Increased padding for more space */}
             {/* Loading and Error States */}
             {appointmentsLoading && (
               <div className="text-center py-2 text-blue-600">
@@ -576,7 +576,6 @@ const DashboardPage = () => {
                 {error}
               </div>
             )}
-
             {/* Month/Year Navigation */}
             <div className="flex items-center justify-between mb-4">
               <button
@@ -598,10 +597,10 @@ const DashboardPage = () => {
                 </svg>
               </button>
               <div className="flex items-center space-x-2">
-                <h2 className="text-lg font-semibold text-gray-800">
+                <h2 className="text-2xl font-semibold text-gray-800">
                   {months[currentDate.getMonth()]}
                 </h2>
-                <h2 className="text-lg font-semibold text-gray-800">
+                <h2 className="text-2xl font-semibold text-gray-800">
                   {currentDate.getFullYear()}
                 </h2>
               </div>
@@ -624,26 +623,23 @@ const DashboardPage = () => {
                 </svg>
               </button>
             </div>
-
             {/* Days of Week Header */}
-            <div className="grid grid-cols-7 gap-1 mb-2">
+            <div className="grid grid-cols-7 gap-2 mb-2">
               {daysOfWeek.map((day, index) => (
                 <div
                   key={index}
-                  className="text-center py-2 text-sm font-medium text-gray-500"
+                  className="text-center py-2 text-base font-medium text-gray-500"
                 >
                   {day}
                 </div>
               ))}
             </div>
-
-            {/* Calendar Grid - Updated with appointments */}
-            <div className="grid grid-cols-7 gap-1">
+            {/* Calendar Grid - Larger cells */}
+            <div className="grid grid-cols-7 gap-2">
               {calendarDays.map((dateObj, index) => {
                 const appointmentCount = dateObj.isCurrentMonth
                   ? getAppointmentCount(dateObj.day)
                   : 0;
-
                 return (
                   <button
                     key={index}
@@ -651,7 +647,7 @@ const DashboardPage = () => {
                       handleDateClick(dateObj.day, dateObj.isCurrentMonth)
                     }
                     className={`
-                      h-12 w-full flex flex-col items-center justify-center text-sm rounded-lg transition-colors relative hover:bg-blue-50 cursor-pointer
+                      h-20 w-full flex flex-col items-center justify-center text-base rounded-lg transition-colors relative hover:bg-blue-50 cursor-pointer
                       ${
                         dateObj.isCurrentMonth
                           ? "text-gray-900 hover:bg-gray-100"
@@ -669,14 +665,13 @@ const DashboardPage = () => {
                       }
                     `}
                   >
-                    <span className="text-sm">{dateObj.day}</span>
-
+                    <span className="text-base">{dateObj.day}</span>
                     {/* Appointment indicators */}
                     {dateObj.isCurrentMonth && appointmentCount > 0 && (
-                      <div className="flex items-center mt-1">
-                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                      <div className="flex items-center mt-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         {appointmentCount > 1 && (
-                          <span className="text-xs ml-1 bg-green-500 text-white rounded-full px-1.5 py-0.5 leading-none">
+                          <span className="text-xs ml-1 bg-green-500 text-white rounded-full px-2 py-0.5 leading-none">
                             {appointmentCount}
                           </span>
                         )}
@@ -686,10 +681,9 @@ const DashboardPage = () => {
                 );
               })}
             </div>
-
             {/* Selected Date Appointments */}
             {selectedDateAppointments.length > 0 && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <h4 className="font-semibold text-blue-800 mb-3">
                   Appointments for {months[currentDate.getMonth()]}{" "}
                   {selectedDate}, {currentDate.getFullYear()}
@@ -761,10 +755,9 @@ const DashboardPage = () => {
                 </div>
               </div>
             )}
-
             {/* Show message when no appointments for selected date */}
             {selectedDate && selectedDateAppointments.length === 0 && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
                 <div className="text-gray-500">
                   <svg
                     className="w-8 h-8 mx-auto mb-2 text-gray-400"
@@ -779,7 +772,7 @@ const DashboardPage = () => {
                       d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4M8 7H3a1 1 0 00-1 1v10a1 1 0 001 1h18a1 1 0 001-1V8a1 1 0 00-1-1h-5M8 7h8m-8 0V5m8 2V5"
                     />
                   </svg>
-                  <p className="text-sm">
+                  <p className="text-base">
                     No appointments scheduled for{" "}
                     {months[currentDate.getMonth()]} {selectedDate},{" "}
                     {currentDate.getFullYear()}
@@ -787,13 +780,12 @@ const DashboardPage = () => {
                 </div>
               </div>
             )}
-
             {/* Monthly Statistics */}
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <h4 className="font-semibold text-gray-800 mb-2 text-sm">
+            <div className="mt-6 p-3 bg-gray-50 rounded-lg">
+              <h4 className="font-semibold text-gray-800 mb-2 text-base">
                 Monthly Appointment Summary
               </h4>
-              <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-gray-600">Total Appointments:</span>
                   <span className="ml-2 font-medium">
@@ -810,116 +802,32 @@ const DashboardPage = () => {
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-[20px] shadow-lg overflow-x-auto lg:col-span-3 col-span-4">
-          <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-gray-100 bg-opacity-40 shadow">
-            <h2 className="2xl:text-lg lg:text-sm font-medium">
-              Diseases Chart
-            </h2>
-            {/* Dropdown for time period selection */}
-            <div className="relative inline-block">
-              <button
-                onClick={toggleDropdown}
-                className="text-blue-600 font-medium flex items-center 2xl:text-lg text-sm hover:text-blue-800 transition-colors"
-              >
-                {getPeriodLabel(selectedPeriod)}
-                <span className="ml-1 text-sm">
-                  {isDropdownOpen ? "▲" : "▼"}
-                </span>
-              </button>
 
-              {isDropdownOpen && (
-                <ul className="absolute right-0 bg-white shadow-lg mt-2 rounded-lg p-2 w-32 z-10 border">
-                  <li
-                    className="py-2 px-3 cursor-pointer hover:bg-gray-100 rounded text-sm"
-                    onClick={() => handlePeriodChange("weekly")}
-                  >
-                    This Week
-                  </li>
-                  <li
-                    className="py-2 px-3 cursor-pointer hover:bg-gray-100 rounded text-sm"
-                    onClick={() => handlePeriodChange("monthly")}
-                  >
-                    This Month
-                  </li>
-                  <li
-                    className="py-2 px-3 cursor-pointer hover:bg-gray-100 rounded text-sm"
-                    onClick={() => handlePeriodChange("yearly")}
-                  >
-                    This Year
-                  </li>
-                </ul>
-              )}
-            </div>
-          </div>
-
-          <div className="p-4">
-            {/* Chart Container */}
-            <div className="relative w-full h-[400px] flex items-center justify-center">
-              <div className="relative w-full max-w-xl">
-                <Doughnut
-                  data={data}
-                  options={{
-                    ...chartOptions,
-                    plugins: {
-                      ...chartOptions.plugins,
-                      datalabels: { display: false },
-                    },
-                  }}
-                  width={400}
-                  height={400}
-                />
-
-                {/* Center text overlay */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="text-center">
-                    <h2 className="text-3xl font-bold text-gray-800">
-                      {currentData.totalPatients.toLocaleString()}
-                    </h2>
-                    <p className="text-gray-500 text-base">Patients</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Custom Legend */}
-            <div className="mt-8">
-              <ul className="space-y-3">
-                {currentData.labels.map((label, index) => {
-                  const total = currentData.data.reduce((a, b) => a + b, 0);
-                  const percentage = (
-                    (currentData.data[index] / total) *
-                    100
-                  ).toFixed(1);
-
-                  return (
-                    <li key={label} className="flex items-center text-base">
-                      <span
-                        className="inline-block w-4 h-4 rounded-full mr-3"
-                        style={{
-                          backgroundColor:
-                            data.datasets[0].backgroundColor[index],
-                        }}
-                      ></span>
-                      <span className="flex-1">{label}</span>
-                      <span className="text-gray-500 ml-auto">
-                        {currentData.data[index]} ({percentage}%)
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </div>
-        </div>
-        {/* This cell will merge with the row below (spans 2 rows) */}
-        <div className="bg-white rounded-[20px] shadow-lg row-span-2 overflow-x-auto lg:col-span-2 col-span-4">
-          <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
+        {/* Appointments */}
+        <div
+          className="bg-white rounded-[20px] shadow-lg row-span-2 overflow-x-auto col-span-1 xl:col-span-2 flex flex-col"
+          style={{
+            borderColor: theme.borderColor,
+            fontFamily: theme.fontFamily,
+          }}
+        >
+          <div
+            className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b"
+            style={{
+              borderColor: theme.borderColor,
+              color: theme.headingColor,
+              fontFamily: theme.fontFamily,
+            }}
+          >
             <h2 className="2xl:text-lg text-sm font-medium">Appointments</h2>
-            <span className="text-primary font-medium cursor-pointer 2xl:text-lg text-sm">
+            <span
+              className="cursor-pointer 2xl:text-lg text-sm"
+              style={{ color: theme.linkColor }}
+            >
               Upcoming ({getUpcomingAppointments().length})
             </span>
           </div>
-          <div className="p-4 2xl:text-lg lg:text-sm">
+          <div className="p-4 2xl:text-lg lg:text-sm flex-1">
             {appointmentsLoading ? (
               <div className="flex justify-center items-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -1043,13 +951,33 @@ const DashboardPage = () => {
               )}
           </div>
         </div>
-        {/* Second row, first and second columns */}
-        <div className="bg-white rounded-[20px] shadow-lg overflow-x-auto lg:col-span-2 col-span-4">
-          <div className="flex justify-between items-center mb-4 p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
+
+        {/* Reminders */}
+        <div
+          className="bg-white rounded-[20px] shadow-lg overflow-x-auto col-span-1 xl:col-span-2 flex flex-col"
+          style={{
+            borderColor: theme.borderColor,
+            fontFamily: theme.fontFamily,
+          }}
+        >
+          <div
+            className="flex justify-between items-center mb-4 p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b"
+            style={{
+              borderColor: theme.borderColor,
+              color: theme.headingColor,
+              fontFamily: theme.fontFamily,
+            }}
+          >
             <h3 className="2xl:text-lg text-sm font-semibold">Reminders</h3>
             <span
-              className="material-icons add_circle text-gray-400 cursor-pointer"
-              onClick="showPopup('reminderPopup');"
+              className="material-icons add_circle cursor-pointer"
+              style={{ color: theme.linkColor }}
+              onClick={() => {
+                // showPopup('reminderPopup');
+                document
+                  .getElementById("reminderPopup")
+                  .classList.remove("hidden");
+              }}
             >
               add_circle
             </span>
@@ -1097,12 +1025,27 @@ const DashboardPage = () => {
             </ul>
           </div>
         </div>
-        <div className="bg-white rounded-[20px] shadow-lg overflow-x-auto col-span-4">
-          <div className="flex justify-between p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
+
+        {/* Lab Results */}
+        <div
+          className="bg-white rounded-[20px] shadow-lg overflow-x-auto col-span-1 xl:col-span-4 flex flex-col"
+          style={{
+            borderColor: theme.borderColor,
+            fontFamily: theme.fontFamily,
+          }}
+        >
+          <div
+            className="flex justify-between p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b"
+            style={{
+              borderColor: theme.borderColor,
+              color: theme.headingColor,
+              fontFamily: theme.fontFamily,
+            }}
+          >
             <h3 className="2xl:text-lg text-sm font-semibold">
               Recent Lab Results
             </h3>
-            <p className="text-blue-500">Upcoming</p>
+            <p style={{ color: theme.linkColor }}>Upcoming</p>
           </div>
           <div className="p-4">
             <div className="overflow-x-auto">
@@ -1177,7 +1120,7 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
-      {/* All pop-ups here */}
+
       {/* Add Reminder Popup */}
       <div
         id="reminderPopup"

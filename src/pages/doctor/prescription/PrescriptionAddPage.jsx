@@ -11,7 +11,79 @@ import { useNavigate } from "react-router-dom";
 import { getRoutePath } from "@src/utils/routeUtils";
 import { getUserById } from "@src/services/userService";
 
+const useCustomTheme = () => {
+  const [customTheme, setCustomTheme] = useState(() => {
+    try {
+      const theme = localStorage.getItem("customColorTheme");
+      return theme ? JSON.parse(theme) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    const reloadTheme = () => {
+      try {
+        const theme = localStorage.getItem("customColorTheme");
+        setCustomTheme(theme ? JSON.parse(theme) : {});
+      } catch {
+        setCustomTheme({});
+      }
+    };
+    window.addEventListener("customColorThemeChanged", reloadTheme);
+    window.addEventListener("storage", (e) => {
+      if (e.key === "customColorTheme") reloadTheme();
+    });
+    return () => {
+      window.removeEventListener("customColorThemeChanged", reloadTheme);
+      window.removeEventListener("storage", reloadTheme);
+    };
+  }, []);
+
+  return customTheme;
+};
+
 const PrescriptionAddPage = () => {
+  const customTheme = useCustomTheme();
+
+  const getButtonStyle = (filled = true, color = "primary") => {
+    const colorMap = {
+      primary: customTheme.primaryColor || "#002952",
+      danger: customTheme.secondaryColor || "#CF0000",
+      success: "#22C55E",
+      white: "#fff",
+    };
+    const mainColor = colorMap[color] || colorMap.primary;
+    return {
+      backgroundColor: filled ? mainColor : "#fff",
+      color: filled ? "#fff" : mainColor,
+      border: `1.5px solid ${mainColor}`,
+      fontFamily: customTheme.fontFamily || "inherit",
+      fontWeight: customTheme.fontWeight || 400,
+      fontSize: customTheme.fontSize || "16px",
+      transition: "all 0.15s",
+    };
+  };
+
+  const getIconButtonStyle = (color = "primary") => {
+    const colorMap = {
+      primary: customTheme.primaryColor || "#002952",
+      danger: customTheme.secondaryColor || "#CF0000",
+      success: "#22C55E",
+      white: "#fff",
+    };
+    const mainColor = colorMap[color] || colorMap.primary;
+    return {
+      backgroundColor: "#fff",
+      color: mainColor,
+      border: `1.5px solid ${mainColor}`,
+      fontFamily: customTheme.fontFamily || "inherit",
+      fontWeight: customTheme.fontWeight || 400,
+      fontSize: customTheme.fontSize || "16px",
+      transition: "all 0.15s",
+    };
+  };
+
   const navigate = useNavigate();
   const [form, setForm] = useState({});
   const [patientList, setPatientList] = useState([]);
@@ -19,7 +91,6 @@ const PrescriptionAddPage = () => {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [isLoadingPatientDetail, setIsLoadingPatientDetail] = useState(false); // Loading state
 
-  // Get logged-in doctor data from localStorage
   const getLoggedInDoctor = () => {
     try {
       const authData = localStorage.getItem("persist:root");
@@ -60,11 +131,9 @@ const PrescriptionAddPage = () => {
     },
   });
 
-  // Tambahkan mutation untuk get user by ID dengan loading state
   const { mutate: getPatientDetail } = useMutation({
     mutationFn: getUserById,
     onMutate: () => {
-      // Set loading to true when mutation starts
       setIsLoadingPatientDetail(true);
     },
     onSuccess: (data) => {
@@ -72,7 +141,6 @@ const PrescriptionAddPage = () => {
         const patient = data.data;
         setSelectedPatient(patient);
 
-        // Autofill form dengan data patient
         setForm((prevForm) => ({
           ...prevForm,
           dob: patient.dob || "",
@@ -89,12 +157,10 @@ const PrescriptionAddPage = () => {
       toast.error("Failed to load patient details");
     },
     onSettled: () => {
-      // Set loading to false when mutation completes (success or error)
       setIsLoadingPatientDetail(false);
     },
   });
 
-  // Updated mutation for saving complete prescription
   const { mutate: savePrescription, isLoading: isSavingPrescription } =
     useMutation({
       mutationFn: createPrescription,
@@ -102,7 +168,6 @@ const PrescriptionAddPage = () => {
         if (data.id) {
           toast.success("Prescription saved successfully");
 
-          // Reset form and medication list after successful save
           setForm({});
           setMedicationList([]);
           navigate(getRoutePath("doctor.prescriptions.list"));
@@ -132,7 +197,6 @@ const PrescriptionAddPage = () => {
     searchPatient({ search, role: RoleId.PATIENT });
   };
 
-  // Add medication to local list (not to database yet)
   const handleAddCurrentMedication = () => {
     if (
       !form.medicineName ||
@@ -156,7 +220,6 @@ const PrescriptionAddPage = () => {
 
     setMedicationList((prev) => [...prev, newMedication]);
 
-    // Clear medication form fields
     setForm((prevForm) => ({
       ...prevForm,
       medicineName: "",
@@ -169,9 +232,7 @@ const PrescriptionAddPage = () => {
     console.log("Medication added to list");
   };
 
-  // Save complete prescription to database
   const handleSavePrescription = () => {
-    // Validate required fields
     if (!form.patient || !form.disease) {
       toast.error("Please fill in Patient, Doctor, and Disease fields");
       return;
@@ -182,7 +243,6 @@ const PrescriptionAddPage = () => {
       return;
     }
 
-    // Prepare prescription data according to your API structure
     const prescriptionData = {
       patient: form.patient,
       doctor: form.doctor ?? "db0a9534-d52a-4a49-b49d-a899db467cc3",
@@ -204,23 +264,30 @@ const PrescriptionAddPage = () => {
     setMedicationList((prev) => prev.filter((med) => med.id !== medicationId));
   };
 
-  // Handler untuk ketika patient dipilih
   const handlePatientSelect = (option) => {
     handleFormChange("patient", option.id, setForm);
-    // Fetch detail patient untuk autofill
     getPatientDetail(option.id);
   };
 
   return (
     <>
       <div className="flex justify-end mb-4 gap-2">
-        <button className="bg-primary border border-primary text-white px-8 py-2 rounded-full text-sm font-light hover:bg-opacity-[0.9] transition-all duration-150">
+        <button
+          style={getButtonStyle(true, "primary")}
+          className="px-8 py-2 rounded-full text-sm font-light hover:bg-opacity-[0.9] transition-all duration-150"
+        >
           Download
         </button>
-        <button className="bg-primary border border-primary text-white px-8 py-2 rounded-full text-sm font-light hover:bg-opacity-[0.9] transition-all duration-150">
+        <button
+          style={getButtonStyle(true, "primary")}
+          className="px-8 py-2 rounded-full text-sm font-light hover:bg-opacity-[0.9] transition-all duration-150"
+        >
           Print
         </button>
-        <button className="px-8 py-1 text-sm bg-white border border-danger rounded-full text-danger hover:bg-danger hover:text-white transition-all duration-150">
+        <button
+          style={getButtonStyle(false, "danger")}
+          className="px-8 py-1 text-sm rounded-full hover:bg-danger hover:text-white transition-all duration-150"
+        >
           Cancel
         </button>
       </div>
@@ -379,7 +446,8 @@ const PrescriptionAddPage = () => {
               <div className="flex justify-between">
                 <button
                   onClick={handleAddCurrentMedication}
-                  className="px-4 py-3 text-sm bg-primary border border-primary rounded-full text-white hover:bg-opacity-[0.9] transition-all duration-150"
+                  style={getButtonStyle(true, "primary")}
+                  className="px-4 py-3 text-sm rounded-full text-white hover:bg-opacity-[0.9] transition-all duration-150"
                 >
                   Add to List
                 </button>
@@ -405,7 +473,8 @@ const PrescriptionAddPage = () => {
                             onClick={() =>
                               handleRemoveMedication(medication.id)
                             }
-                            className="bg-danger text-white rounded-full px-3 py-2 text-xs hover:bg-opacity-80 transition-all duration-150"
+                            style={getButtonStyle(true, "danger")}
+                            className="rounded-full px-3 py-2 text-xs hover:bg-opacity-80 transition-all duration-150"
                           >
                             Remove
                           </button>
@@ -432,7 +501,8 @@ const PrescriptionAddPage = () => {
                 <button
                   onClick={handleSavePrescription}
                   disabled={isSavingPrescription || medicationList.length === 0}
-                  className="px-6 py-3 text-sm bg-success border border-success rounded-full text-white hover:bg-opacity-[0.9] transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  style={getButtonStyle(true, "success")}
+                  className="px-6 py-3 text-sm rounded-full text-white hover:bg-opacity-[0.9] transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                 >
                   {isSavingPrescription && (
                     <SpinnerComponent

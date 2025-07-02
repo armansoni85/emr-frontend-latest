@@ -12,16 +12,25 @@ export default {
         info: '#00AEEF',
         success: '#00C49F',
         purple: '#DF00FF',
-        heading: '#242424',
-        body: '#585858',
+        heading: 'var(--heading-color, #242424)',
+        body: 'var(--body-text-color, #585858)',
+        link: 'var(--link-color, #00AEEF)',
         grey: '#F4F7F9',
         grey2: '#EAECEF',
         darkBlue: '#002952',
         black: '#111111',
         muted: '#8A94A4'
       },
+      fontFamily: {
+        base: 'var(--font-family, sans-serif)',
+      },
+      fontSize: {
+        base: 'var(--font-size, 1rem)',
+      },
+      fontWeight: {
+        base: 'var(--font-weight, 400)',
+      }
     },
   },
   plugins: [],
 }
-

@@ -301,6 +301,34 @@ const PatientAddPage = () => {
     navigate(getRoutePath("doctor.patients.list"));
   };
 
+  const [customTheme, setCustomTheme] = useState(() => {
+    try {
+      const theme = localStorage.getItem("customColorTheme");
+      return theme ? JSON.parse(theme) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    const reloadTheme = () => {
+      try {
+        const theme = localStorage.getItem("customColorTheme");
+        setCustomTheme(theme ? JSON.parse(theme) : {});
+      } catch {
+        setCustomTheme({});
+      }
+    };
+    window.addEventListener("customColorThemeChanged", reloadTheme);
+    window.addEventListener("storage", (e) => {
+      if (e.key === "customColorTheme") reloadTheme();
+    });
+    return () => {
+      window.removeEventListener("customColorThemeChanged", reloadTheme);
+      window.removeEventListener("storage", reloadTheme);
+    };
+  }, []);
+
   if (isEditMode && isLoadingPatient) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -308,6 +336,19 @@ const PatientAddPage = () => {
       </div>
     );
   }
+
+  const getGenderButtonStyle = (selected) => ({
+    backgroundColor: selected ? customTheme.primaryColor : "#F3F4F6",
+    color: selected ? "#fff" : customTheme.primaryColor || "#002952",
+    border: `1.5px solid ${
+      selected ? customTheme.primaryColor : "transparent"
+    }`,
+    fontFamily: customTheme.fontFamily || "inherit",
+    fontWeight: customTheme.fontWeight || 400,
+    fontSize: customTheme.fontSize || "16px",
+    transition: "all 0.15s",
+    cursor: "pointer",
+  });
 
   return (
     <>
@@ -395,9 +436,8 @@ const PatientAddPage = () => {
             <label className="block text-nowrap my-auto">Gender:</label>
             <div className="flex items-center w-full col-span-2">
               <label
-                className={`mr-2 px-3 py-1 border border-transparent text-lg w-full text-center rounded-full text-muted cursor-pointer hover:bg-primary hover:text-white transition-all duration-150 ${
-                  form.gender == "male" ? "bg-primary text-white" : "bg-grey2"
-                }`}
+                className="mr-2 px-3 py-1 w-full text-center rounded-full cursor-pointer"
+                style={getGenderButtonStyle(form.gender === "male")}
                 onClick={() => handleFormChange("gender", "male", setForm)}
               >
                 <input
@@ -410,9 +450,8 @@ const PatientAddPage = () => {
                 Male
               </label>
               <label
-                className={`mr-2 px-3 py-1 border border-transparent text-lg w-full text-center rounded-full text-muted cursor-pointer hover:bg-primary hover:text-white transition-all duration-150 ${
-                  form.gender == "female" ? "bg-primary text-white" : "bg-grey2"
-                }`}
+                className="mr-2 px-3 py-1 w-full text-center rounded-full cursor-pointer"
+                style={getGenderButtonStyle(form.gender === "female")}
                 onClick={() => handleFormChange("gender", "female", setForm)}
               >
                 <input
@@ -425,9 +464,8 @@ const PatientAddPage = () => {
                 Female
               </label>
               <label
-                className={`mr-2 px-3 py-1 border border-transparent text-lg w-full text-center rounded-full text-muted cursor-pointer hover:bg-primary hover:text-white transition-all duration-150 ${
-                  form.gender == "other" ? "bg-primary text-white" : "bg-grey2"
-                }`}
+                className="mr-2 px-3 py-1 w-full text-center rounded-full cursor-pointer"
+                style={getGenderButtonStyle(form.gender === "other")}
                 onClick={() => handleFormChange("gender", "other", setForm)}
               >
                 <input

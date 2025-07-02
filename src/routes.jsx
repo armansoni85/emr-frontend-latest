@@ -308,25 +308,7 @@ const privateRoutes = {
       },
       doctors: {
         path: "doctors",
-        element: <DoctorProfileLayout />,
-        childRoutes: {
-          personal_details: {
-            index: true,
-            element: <PersonalDetailPage />,
-          },
-          professional_information: {
-            path: "professional-information",
-            element: <ProfessionalInformationPage />,
-          },
-          schedule_availability: {
-            path: "work-schedule",
-            element: <ScheduleAndAvailabilityPage />,
-          },
-          change_password: {
-            path: "change-password",
-            element: <ChangePassword />,
-          },
-        },
+        element: <DoctorPage />,
       },
       super_bills: {
         path: "super-bills",
@@ -341,7 +323,7 @@ const privateRoutes = {
             element: <CustomColorThemePage />,
           },
           notification_preferences: {
-            path: "notification-preferences",
+            path: "notification",
             element: <CustomNotificationPage />,
           },
           integration: {

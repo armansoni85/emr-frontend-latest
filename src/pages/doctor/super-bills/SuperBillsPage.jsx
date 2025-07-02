@@ -2,7 +2,40 @@ import React, { useState, useEffect } from "react";
 import { getIcd, getCpt } from "@src/services/superbillService";
 import apiClient from "@src/utils/apiClient";
 
+const useCustomTheme = () => {
+  const [customTheme, setCustomTheme] = useState(() => {
+    try {
+      const theme = localStorage.getItem("customColorTheme");
+      return theme ? JSON.parse(theme) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    const reloadTheme = () => {
+      try {
+        const theme = localStorage.getItem("customColorTheme");
+        setCustomTheme(theme ? JSON.parse(theme) : {});
+      } catch {
+        setCustomTheme({});
+      }
+    };
+    window.addEventListener("customColorThemeChanged", reloadTheme);
+    window.addEventListener("storage", (e) => {
+      if (e.key === "customColorTheme") reloadTheme();
+    });
+    return () => {
+      window.removeEventListener("customColorThemeChanged", reloadTheme);
+      window.removeEventListener("storage", reloadTheme);
+    };
+  }, []);
+
+  return customTheme;
+};
+
 const SuperBillsPage = () => {
+  const customTheme = useCustomTheme();
   const [icdCodes, setIcdCodes] = useState([]);
   const [cptCodes, setCptCodes] = useState([]);
   const [selectedIcdCode, setSelectedIcdCode] = useState(null);
@@ -208,6 +241,34 @@ const SuperBillsPage = () => {
     }
   };
 
+  // Button and icon style helpers
+  const getButtonStyle = (filled = true) => ({
+    backgroundColor: filled ? customTheme.primaryColor : "#fff",
+    color: filled ? "#fff" : customTheme.primaryColor,
+    border: `1.5px solid ${customTheme.primaryColor}`,
+    fontFamily: customTheme.fontFamily || "inherit",
+    fontWeight: customTheme.fontWeight || 400,
+    fontSize: customTheme.fontSize || "16px",
+    transition: "all 0.15s",
+  });
+
+  const getIconButtonStyle = () => ({
+    backgroundColor: "#fff",
+    color: customTheme.primaryColor,
+    border: `1.5px solid ${customTheme.primaryColor}`,
+    fontFamily: customTheme.fontFamily || "inherit",
+    fontWeight: customTheme.fontWeight || 400,
+    fontSize: customTheme.fontSize || "16px",
+    transition: "all 0.15s",
+  });
+
+  const getIconStyle = () => ({
+    color: customTheme.primaryColor,
+    fontSize: customTheme.fontSize || "20px",
+    fontFamily: customTheme.fontFamily || "inherit",
+    fontWeight: customTheme.fontWeight || 400,
+  });
+
   return (
     <>
       <div className="grid md:gap-4 md:grid-cols-2">
@@ -235,7 +296,8 @@ const SuperBillsPage = () => {
                   </span>
                   <button
                     onClick={handleIcdSearch}
-                    className="absolute right-2 top-[6px] px-5 2xl:py-2 py-1 text-sm rounded-full text-white bg-primary hover:bg-primary-dark transition-colors"
+                    style={getButtonStyle(true)}
+                    className="absolute right-2 top-[6px] px-5 2xl:py-2 py-1 text-sm rounded-full text-white transition-colors"
                   >
                     Search
                   </button>
@@ -261,7 +323,10 @@ const SuperBillsPage = () => {
                       <tr>
                         <td colSpan="2" className="py-4 px-4 text-center">
                           <div className="flex justify-center items-center">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                            <div
+                              className="animate-spin rounded-full h-6 w-6 border-b-2"
+                              style={{ borderColor: customTheme.primaryColor }}
+                            ></div>
                             <span className="ml-2">Loading...</span>
                           </div>
                         </td>
@@ -282,9 +347,14 @@ const SuperBillsPage = () => {
                           onClick={() => handleIcdCodeClick(icd)}
                           className={`cursor-pointer hover:bg-gray-50 transition-colors ${
                             selectedIcdCode?.code === icd.code
-                              ? "bg-blue-50 border-l-4 border-primary"
+                              ? "bg-blue-50 border-l-4"
                               : ""
                           }`}
+                          style={
+                            selectedIcdCode?.code === icd.code
+                              ? { borderColor: customTheme.primaryColor }
+                              : {}
+                          }
                         >
                           <td className="py-2 px-4 border-b font-medium">
                             {icd.code}
@@ -316,9 +386,13 @@ const SuperBillsPage = () => {
                       <button
                         onClick={handleIcdPreviousPage}
                         disabled={!icdPagination.previous}
+                        style={getButtonStyle(false)}
                         className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                       >
-                        <span className="material-icons text-sm mr-1">
+                        <span
+                          className="material-icons text-sm mr-1"
+                          style={getIconStyle()}
+                        >
                           chevron_left
                         </span>
                         Previous
@@ -326,10 +400,14 @@ const SuperBillsPage = () => {
                       <button
                         onClick={handleIcdNextPage}
                         disabled={!icdPagination.next}
+                        style={getButtonStyle(false)}
                         className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                       >
                         Next
-                        <span className="material-icons text-sm ml-1">
+                        <span
+                          className="material-icons text-sm ml-1"
+                          style={getIconStyle()}
+                        >
                           chevron_right
                         </span>
                       </button>
@@ -368,7 +446,8 @@ const SuperBillsPage = () => {
                   <button
                     onClick={handleCptSearch}
                     disabled={!selectedIcdCode}
-                    className="absolute right-2 top-[6px] px-5 2xl:py-2 py-1 text-sm rounded-full text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={getButtonStyle(true)}
+                    className="absolute right-2 top-[6px] px-5 2xl:py-2 py-1 text-sm rounded-full text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Search
                   </button>
@@ -410,7 +489,10 @@ const SuperBillsPage = () => {
                       <tr>
                         <td colSpan="2" className="py-4 px-4 text-center">
                           <div className="flex justify-center items-center">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                            <div
+                              className="animate-spin rounded-full h-6 w-6 border-b-2"
+                              style={{ borderColor: customTheme.primaryColor }}
+                            ></div>
                             <span className="ml-2">Loading CPT codes...</span>
                           </div>
                         </td>
@@ -460,9 +542,13 @@ const SuperBillsPage = () => {
                       <button
                         onClick={handleCptPreviousPage}
                         disabled={!cptPagination.previous}
+                        style={getButtonStyle(false)}
                         className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                       >
-                        <span className="material-icons text-sm mr-1">
+                        <span
+                          className="material-icons text-sm mr-1"
+                          style={getIconStyle()}
+                        >
                           chevron_left
                         </span>
                         Previous
@@ -470,10 +556,14 @@ const SuperBillsPage = () => {
                       <button
                         onClick={handleCptNextPage}
                         disabled={!cptPagination.next}
+                        style={getButtonStyle(false)}
                         className="px-3 py-1 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                       >
                         Next
-                        <span className="material-icons text-sm ml-1">
+                        <span
+                          className="material-icons text-sm ml-1"
+                          style={getIconStyle()}
+                        >
                           chevron_right
                         </span>
                       </button>

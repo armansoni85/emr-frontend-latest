@@ -70,3 +70,26 @@ export const analyzeRecording = async (consultationId) => {
         throw error
     }
 }
+
+export const sendConsultationEmail = async (data) => {
+    try {
+        const formData = new FormData();
+        formData.append("recipient_email", data.recipient_email);
+        formData.append("recipient_name", data.recipient_name);
+        formData.append("subject", data.subject);
+        formData.append("custom_message", data.custom_message);
+        if (data.document) {
+            formData.append("document", data.document);
+        }
+
+        const response = await apiClient.post(
+            "/emailconsultation/consultation-emails/",
+            formData,
+            { headers: { "Content-Type": "multipart/form-data" } }
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error sending consultation email:", error);
+        throw error;
+    }
+}

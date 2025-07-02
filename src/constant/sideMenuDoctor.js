@@ -127,14 +127,14 @@ const sideMenuDoctor = [
                 text: "AI Chat Support",
                 path: getRoutePath( "doctor.ai_supports.chat" ),
             },
-            {
-                id: "tab-chat-with-agent",
-                parentId: "tab-chat_support",
-                icon: "fiber_manual_record",
-                iconType: "material-icon",
-                text: "Chat With Agent",
-                path: getRoutePath( "doctor.ai_supports.chat_with_agent" ),
-            },
+            // {
+            //     id: "tab-chat-with-agent",
+            //     parentId: "tab-chat_support",
+            //     icon: "fiber_manual_record",
+            //     iconType: "material-icon",
+            //     text: "Chat With Agent",
+            //     path: getRoutePath( "doctor.ai_supports.chat_with_agent" ),
+            // },
             {
                 id: "tab-email-support",
                 parentId: "tab-chat_support",
@@ -149,7 +149,7 @@ const sideMenuDoctor = [
         id: "tab-doctors",
         icon: "medical_services",
         iconType: "material-icon",
-        text: "Doctors",
+        text: "Consultant",
         path: getRoutePath( "doctor.doctors" ),
     },
     {
