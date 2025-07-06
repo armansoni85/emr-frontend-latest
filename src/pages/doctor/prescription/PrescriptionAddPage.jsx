@@ -11,6 +11,55 @@ import { useNavigate } from "react-router-dom";
 import { getRoutePath } from "@src/utils/routeUtils";
 import { getUserById } from "@src/services/userService";
 
+const THEME_STORAGE_KEY = "customColorTheme";
+const getFontTheme = () => {
+  try {
+    const theme = localStorage.getItem(THEME_STORAGE_KEY);
+    return theme ? JSON.parse(theme) : {};
+  } catch {
+    return {};
+  }
+};
+const getFontStyle = (fontTheme, type = "main") => {
+  if (!fontTheme) return {};
+  if (type === "subHeading") {
+    return {
+      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
+      color: fontTheme.headingColor || "#333333",
+    };
+  }
+  if (type === "body1") {
+    return {
+      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
+      color:
+        fontTheme.bodyTextColor === "#FFFFFF"
+          ? "#333333"
+          : fontTheme.bodyTextColor || "#333333",
+    };
+  }
+  if (type === "body2") {
+    return {
+      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
+      color:
+        fontTheme.bodyTextColor === "#FFFFFF"
+          ? "#666666"
+          : fontTheme.bodyTextColor || "#666666",
+    };
+  }
+  return {
+    fontFamily: fontTheme.fontFamily,
+    fontWeight: fontTheme.fontWeight,
+    fontSize: fontTheme.fontSize,
+    color: fontTheme.headingColor || "#333333",
+  };
+};
+
 const useCustomTheme = () => {
   const [customTheme, setCustomTheme] = useState(() => {
     try {
@@ -45,6 +94,31 @@ const useCustomTheme = () => {
 
 const PrescriptionAddPage = () => {
   const customTheme = useCustomTheme();
+  const [fontTheme, setFontTheme] = useState(getFontTheme());
+
+  useEffect(() => {
+    const reloadTheme = () => setFontTheme(getFontTheme());
+    window.addEventListener("customColorThemeChanged", reloadTheme);
+    window.addEventListener("storage", (e) => {
+      if (e.key === THEME_STORAGE_KEY) reloadTheme();
+    });
+    return () => {
+      window.removeEventListener("customColorThemeChanged", reloadTheme);
+      window.removeEventListener("storage", reloadTheme);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!fontTheme) return;
+    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
+    document.body.style.fontWeight = fontTheme.fontWeight || 400;
+    document.body.style.fontSize = fontTheme.fontSize || "16px";
+    return () => {
+      document.body.style.fontFamily = "";
+      document.body.style.fontWeight = "";
+      document.body.style.fontSize = "";
+    };
+  }, [fontTheme]);
 
   const getButtonStyle = (filled = true, color = "primary") => {
     const colorMap = {
@@ -58,9 +132,9 @@ const PrescriptionAddPage = () => {
       backgroundColor: filled ? mainColor : "#fff",
       color: filled ? "#fff" : mainColor,
       border: `1.5px solid ${mainColor}`,
-      fontFamily: customTheme.fontFamily || "inherit",
-      fontWeight: customTheme.fontWeight || 400,
-      fontSize: customTheme.fontSize || "16px",
+      fontFamily: fontTheme.fontFamily || "inherit",
+      fontWeight: fontTheme.fontWeight || 400,
+      fontSize: fontTheme.fontSize || "16px",
       transition: "all 0.15s",
     };
   };
@@ -77,9 +151,9 @@ const PrescriptionAddPage = () => {
       backgroundColor: "#fff",
       color: mainColor,
       border: `1.5px solid ${mainColor}`,
-      fontFamily: customTheme.fontFamily || "inherit",
-      fontWeight: customTheme.fontWeight || 400,
-      fontSize: customTheme.fontSize || "16px",
+      fontFamily: fontTheme.fontFamily || "inherit",
+      fontWeight: fontTheme.fontWeight || 400,
+      fontSize: fontTheme.fontSize || "16px",
       transition: "all 0.15s",
     };
   };
@@ -89,7 +163,7 @@ const PrescriptionAddPage = () => {
   const [patientList, setPatientList] = useState([]);
   const [medicationList, setMedicationList] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [isLoadingPatientDetail, setIsLoadingPatientDetail] = useState(false); // Loading state
+  const [isLoadingPatientDetail, setIsLoadingPatientDetail] = useState(false);
 
   const getLoggedInDoctor = () => {
     try {
@@ -293,7 +367,12 @@ const PrescriptionAddPage = () => {
       </div>
       <div className="bg-white shadow-md rounded-2xl pb-4">
         <div className="flex gap-2 items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
-          <h2 className="text-lg font-medium">Create New Prescription</h2>
+          <h2
+            className="text-lg font-medium"
+            style={getFontStyle(fontTheme, "subHeading")}
+          >
+            Create New Prescription
+          </h2>
           <VoiceRecorder />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2">
@@ -308,7 +387,7 @@ const PrescriptionAddPage = () => {
             keyValue={"id"}
             keyLabel={(option) => option.first_name + " " + option.last_name}
             wrapperClassName="p-5 z-20"
-            disabled={isLoadingPatientDetail} // Disable saat loading
+            disabled={isLoadingPatientDetail}
           />
           <InputWithLabel
             label={"Doctor's Name:"}
@@ -319,12 +398,22 @@ const PrescriptionAddPage = () => {
             wrapperClassName="p-4"
           />
           <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
-            <label className="block text-nowrap my-auto">Date of Birth:</label>
+            <label
+              className="block text-nowrap my-auto"
+              style={getFontStyle(fontTheme, "body1")}
+            >
+              Date of Birth:
+            </label>
             <div className="flex items-center w-full col-span-2">
               {isLoadingPatientDetail ? (
                 <div className="flex items-center justify-center w-full mt-1 px-5 py-3 bg-grey border rounded-full">
                   <SpinnerComponent size="sm" className="mr-2" />
-                  <span className="text-muted">Loading patient data...</span>
+                  <span
+                    className="text-muted"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
+                    Loading patient data...
+                  </span>
                 </div>
               ) : (
                 <input
@@ -334,17 +423,28 @@ const PrescriptionAddPage = () => {
                   onChange={(e) => handleFormChange("dob", e, setForm)}
                   className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey border rounded-full"
                   readOnly={true}
+                  style={getFontStyle(fontTheme, "body2")}
                 />
               )}
             </div>
           </div>
           <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
-            <label className="block text-nowrap my-auto">Disease:</label>
+            <label
+              className="block text-nowrap my-auto"
+              style={getFontStyle(fontTheme, "body1")}
+            >
+              Disease:
+            </label>
             <div className="flex items-center w-full col-span-2">
               {isLoadingPatientDetail ? (
                 <div className="flex items-center justify-center w-full mt-1 px-5 py-3 bg-grey border rounded-full">
                   <SpinnerComponent size="sm" className="mr-2" />
-                  <span className="text-muted">Loading disease info...</span>
+                  <span
+                    className="text-muted"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
+                    Loading disease info...
+                  </span>
                 </div>
               ) : (
                 <select
@@ -352,6 +452,7 @@ const PrescriptionAddPage = () => {
                   value={form.disease || ""}
                   onChange={(e) => handleFormChange("disease", e, setForm)}
                   className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey border rounded-full"
+                  style={getFontStyle(fontTheme, "body2")}
                 >
                   <option value="" disabled>
                     Select Disease
@@ -368,7 +469,6 @@ const PrescriptionAddPage = () => {
                   </option>
                   <option value="Iatrogenic">Iatrogenic</option>
                   <option value="Idiopathic">Idiopathic</option>
-                  {/* Dynamic option for custom disease */}
                   {selectedPatient &&
                     selectedPatient.disease &&
                     ![
@@ -392,7 +492,12 @@ const PrescriptionAddPage = () => {
 
           <div className="bg-grey rounded-2xl mx-3">
             <div className="rounded-t-2xl py-3 px-5 border-b flex gap-2">
-              <h6 className="text-xl">Add Medication</h6>
+              <h6
+                className="text-xl"
+                style={getFontStyle(fontTheme, "subHeading")}
+              >
+                Add Medication
+              </h6>
               <VoiceRecorder />
             </div>
             <div className="p-6">
@@ -456,7 +561,12 @@ const PrescriptionAddPage = () => {
           </div>
           <div className="bg-grey rounded-2xl mx-3">
             <div className="rounded-t-2xl py-3 px-5 border-b">
-              <h6 className="text-xl">Current Medication List</h6>
+              <h6
+                className="text-xl"
+                style={getFontStyle(fontTheme, "subHeading")}
+              >
+                Current Medication List
+              </h6>
             </div>
             <div className="p-6">
               {medicationList.length > 0 ? (
@@ -464,9 +574,14 @@ const PrescriptionAddPage = () => {
                   {medicationList.map((medication, index) => (
                     <li key={medication.id} className="ps-3 mb-4">
                       <div className="relative bg-white text-body rounded-full px-5 py-3">
-                        <span>{medication.medicine_name}</span>
+                        <span style={getFontStyle(fontTheme, "body1")}>
+                          {medication.medicine_name}
+                        </span>
                         <div className="absolute right-1 top-[4px] flex gap-2">
-                          <span className="bg-grey rounded-full px-5 py-2 cursor-pointer">
+                          <span
+                            className="bg-grey rounded-full px-5 py-2 cursor-pointer"
+                            style={getFontStyle(fontTheme, "body2")}
+                          >
                             {medication.frequency}
                           </span>
                           <button
@@ -484,7 +599,10 @@ const PrescriptionAddPage = () => {
                   ))}
                 </ol>
               ) : (
-                <p className="text-gray-500 text-center py-4">
+                <p
+                  className="text-gray-500 text-center py-4"
+                  style={getFontStyle(fontTheme, "body2")}
+                >
                   No medications added yet
                 </p>
               )}

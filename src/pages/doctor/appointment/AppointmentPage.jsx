@@ -27,6 +27,45 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getRoutePath } from "@src/utils/routeUtils";
 
+const THEME_STORAGE_KEY = "customColorTheme";
+const getFontTheme = () => {
+  try {
+    const theme = localStorage.getItem(THEME_STORAGE_KEY);
+    return theme ? JSON.parse(theme) : {};
+  } catch {
+    return {};
+  }
+};
+const getFontStyle = (fontTheme, type = "main") => {
+  if (!fontTheme) return {};
+  if (type === "subHeading") {
+    return {
+      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body1") {
+    return {
+      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body2") {
+    return {
+      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
+    };
+  }
+  return {
+    fontFamily: fontTheme.fontFamily,
+    fontWeight: fontTheme.fontWeight,
+    fontSize: fontTheme.fontSize,
+  };
+};
+
 const AppointmentPage = () => {
   const { paginationMeta } = useSelector((state) => state.fetch);
   const { user } = useSelector((state) => state.auth);
@@ -35,6 +74,30 @@ const AppointmentPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [fontTheme, setFontTheme] = useState(getFontTheme());
+  useEffect(() => {
+    const reloadTheme = () => setFontTheme(getFontTheme());
+    window.addEventListener("customColorThemeChanged", reloadTheme);
+    window.addEventListener("storage", (e) => {
+      if (e.key === THEME_STORAGE_KEY) reloadTheme();
+    });
+    return () => {
+      window.removeEventListener("customColorThemeChanged", reloadTheme);
+      window.removeEventListener("storage", reloadTheme);
+    };
+  }, []);
+  useEffect(() => {
+    if (!fontTheme) return;
+    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
+    document.body.style.fontWeight = fontTheme.fontWeight || 400;
+    document.body.style.fontSize = fontTheme.fontSize || "16px";
+    return () => {
+      document.body.style.fontFamily = "";
+      document.body.style.fontWeight = "";
+      document.body.style.fontSize = "";
+    };
+  }, [fontTheme]);
 
   const [filter, setFilter] = useState({
     search: "",
@@ -61,18 +124,12 @@ const AppointmentPage = () => {
           offset: 0,
         };
 
-        console.log("Fetching ALL appointments with params:", params);
-
         const data = await getAppointments(params);
-
-        if (data.success) {
-          console.log("Total appointments fetched:", data.data.results.length);
-        }
 
         return data;
       },
       enabled: !!user.id,
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 5,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
     });
@@ -95,11 +152,6 @@ const AppointmentPage = () => {
           appointmentDate.getDate() === selectedDate.getDate()
         );
       });
-
-      console.log(
-        `Filtered appointments for date ${filter.date}:`,
-        appointments.length
-      );
     }
 
     return appointments;
@@ -192,7 +244,6 @@ const AppointmentPage = () => {
             }
           })
           .catch((err) => {
-            console.error("Error deleting appointment:", err);
             toast("Error deleting appointment", { type: "error" });
           });
       }
@@ -268,6 +319,8 @@ const AppointmentPage = () => {
           }
           value={filter.search}
           onChange={handleChangeFilter}
+          style={getFontStyle(fontTheme, "body1")}
+          labelStyle={getFontStyle(fontTheme, "body1")}
         />
         {/* <InputWithLabel
           labelOnTop={true}
@@ -277,7 +330,9 @@ const AppointmentPage = () => {
           placeholder={"Filter by disease..."}
           value={filter.disease}
           onChange={handleChangeFilter}
-        /> */}
+          style={getFontStyle(fontTheme, "body1")}
+          labelStyle={getFontStyle(fontTheme, "body1")}
+        />
         <InputWithLabel
           labelOnTop={true}
           label={"Date"}
@@ -287,13 +342,26 @@ const AppointmentPage = () => {
           inputClassName="!pe-4 !ps-10 !py-2"
           value={filter.date}
           onChange={handleChangeFilter}
+          style={getFontStyle(fontTheme, "body1")}
+          labelStyle={getFontStyle(fontTheme, "body1")}
         />
       </div>
       <div className="bg-white shadow-md rounded-2xl pb-4">
-        <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
-          <h2 className="text-lg font-medium">All Appointments</h2>
+        <div
+          className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b"
+          style={getFontStyle(fontTheme, "subHeading")}
+        >
+          <h2
+            className="text-lg font-medium"
+            style={getFontStyle(fontTheme, "subHeading")}
+          >
+            All Appointments
+          </h2>
           <div className="text-end inline-block">
-            <button className="text-primary rounded-full text-lg flex">
+            <button
+              className="text-primary rounded-full text-lg flex"
+              style={getFontStyle(fontTheme, "body2")}
+            >
               Summary <i className="material-icons pt-1">expand_more</i>
             </button>
           </div>
@@ -307,7 +375,7 @@ const AppointmentPage = () => {
             isLoading={isPending}
             theadChildren={
               <>
-                <tr>
+                <tr style={getFontStyle(fontTheme, "body2")}>
                   <Th>Patient Name</Th>
                   <Th>Date of Birth</Th>
                   <Th>Mobile Number</Th>
@@ -321,7 +389,7 @@ const AppointmentPage = () => {
             rowCallback={(item, index) => {
               return (
                 <>
-                  <tr>
+                  <tr style={getFontStyle(fontTheme, "body1")}>
                     <Td>
                       <div className="flex items-center cursor-pointer">
                         <CircleAvatar
@@ -333,15 +401,16 @@ const AppointmentPage = () => {
                           className="mr-3"
                         />
                         <div className="text-start">
-                          <p>
+                          <p style={getFontStyle(fontTheme, "body1")}>
                             {!item?.patient?.first_name &&
-                              !item?.patient?.last_name ? (
+                            !item?.patient?.last_name ? (
                               <span className="text-gray-400">
                                 Not provided
                               </span>
                             ) : (
-                              `${item?.patient?.first_name || ""} ${item?.patient?.last_name || ""
-                                }`.trim()
+                              `${item?.patient?.first_name || ""} ${
+                                item?.patient?.last_name || ""
+                              }`.trim()
                             )}
                           </p>
                         </div>
@@ -349,43 +418,74 @@ const AppointmentPage = () => {
                     </Td>
                     <Td>
                       {item?.patient?.dob ? (
-                        <Moment
-                          date={item?.patient?.dob}
-                          format="MMMM D, YYYY"
-                        />
+                        <span style={getFontStyle(fontTheme, "body2")}>
+                          <Moment
+                            date={item?.patient?.dob}
+                            format="MMMM D, YYYY"
+                          />
+                        </span>
                       ) : (
-                        <span className="text-gray-400">Not provided</span>
+                        <span
+                          className="text-gray-400"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
+                          Not provided
+                        </span>
                       )}
                     </Td>
                     <Td>
                       {item?.patient?.phone_number ? (
-                        <span className="font-mono text-sm">
+                        <span
+                          className="font-mono text-sm"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
                           {item?.patient?.phone_number}
                         </span>
                       ) : (
-                        <span className="text-gray-400">Not provided</span>
+                        <span
+                          className="text-gray-400"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
+                          Not provided
+                        </span>
                       )}
                     </Td>
                     <Td>
                       <Badge color="info">
-                        {item?.disease || "Not provided"}
+                        <span style={getFontStyle(fontTheme, "body2")}>
+                          {item?.disease || "Not provided"}
+                        </span>
                       </Badge>
                     </Td>
                     <Td>
                       {item.appointment_datetime ? (
-                        <Moment
-                          date={item?.appointment_datetime}
-                          format="MMMM D, YYYY - h:mmA"
-                        />
+                        <span style={getFontStyle(fontTheme, "body2")}>
+                          <Moment
+                            date={item?.appointment_datetime}
+                            format="MMMM D, YYYY - h:mmA"
+                          />
+                        </span>
                       ) : (
-                        <span className="text-gray-400">Not provided</span>
+                        <span
+                          className="text-gray-400"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
+                          Not provided
+                        </span>
                       )}
                     </Td>
                     <Td>
                       {item.appointment_status ? (
-                        <StatusText status={item.appointment_status} />
+                        <span style={getFontStyle(fontTheme, "body2")}>
+                          <StatusText status={item.appointment_status} />
+                        </span>
                       ) : (
-                        <span className="text-gray-400">Not provided</span>
+                        <span
+                          className="text-gray-400"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
+                          Not provided
+                        </span>
                       )}
                     </Td>
                     <Td>
@@ -402,6 +502,7 @@ const AppointmentPage = () => {
                           disabled={
                             !item?.appointment_datetime || !item?.patient
                           }
+                          style={getFontStyle(fontTheme, "body2")}
                         >
                           Start
                         </Button>
@@ -461,13 +562,16 @@ const AppointmentPage = () => {
         {/* Pagination - Same Style as PatientListPage */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-6 border-t border-gray-100">
           {/* Data Summary */}
-          <div className="text-sm text-gray-600 order-2 sm:order-1">
+          <div
+            className="text-sm text-gray-600 order-2 sm:order-1"
+            style={getFontStyle(fontTheme, "body2")}
+          >
             Showing{" "}
             <span className="font-semibold text-gray-900">
               {filteredAppointments.length > 0
                 ? (paginationMeta.currentPage - 1) *
-                paginationMeta.limitPerPage +
-                1
+                    paginationMeta.limitPerPage +
+                  1
                 : 0}
             </span>{" "}
             to{" "}
@@ -490,10 +594,12 @@ const AppointmentPage = () => {
             <button
               onClick={handlePrevPage}
               disabled={!hasPrevPage || isFetching}
-              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${hasPrevPage && !isFetching
-                ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
-                : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
-                }`}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                hasPrevPage && !isFetching
+                  ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+                  : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+              style={getFontStyle(fontTheme, "body2")}
             >
               <i className="material-icons text-sm">chevron_left</i>
               <span className="hidden sm:inline">Previous</span>
@@ -517,6 +623,7 @@ const AppointmentPage = () => {
                       <button
                         onClick={() => handlePageChange(1)}
                         className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
+                        style={getFontStyle(fontTheme, "body2")}
                       >
                         1
                       </button>
@@ -546,10 +653,12 @@ const AppointmentPage = () => {
                           <button
                             key={pageNumber}
                             onClick={() => handlePageChange(pageNumber)}
-                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${pageNumber === paginationMeta.currentPage
-                              ? "bg-primary text-white shadow-sm"
-                              : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
-                              }`}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                              pageNumber === paginationMeta.currentPage
+                                ? "bg-primary text-white shadow-sm"
+                                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                            }`}
+                            style={getFontStyle(fontTheme, "body2")}
                           >
                             {pageNumber}
                           </button>
@@ -569,6 +678,7 @@ const AppointmentPage = () => {
                         <button
                           onClick={() => handlePageChange(totalPages)}
                           className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
+                          style={getFontStyle(fontTheme, "body2")}
                         >
                           {totalPages}
                         </button>
@@ -582,10 +692,12 @@ const AppointmentPage = () => {
             <button
               onClick={handleNextPage}
               disabled={!hasNextPage || isFetching}
-              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${hasNextPage && !isFetching
-                ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
-                : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
-                }`}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                hasNextPage && !isFetching
+                  ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+                  : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+              style={getFontStyle(fontTheme, "body2")}
             >
               <span className="hidden sm:inline">Next</span>
               <i className="material-icons text-sm">chevron_right</i>
@@ -593,13 +705,17 @@ const AppointmentPage = () => {
           </div>
 
           {/* Page Size Selector */}
-          <div className="flex items-center gap-2 text-sm text-gray-600 order-3">
+          <div
+            className="flex items-center gap-2 text-sm text-gray-600 order-3"
+            style={getFontStyle(fontTheme, "body2")}
+          >
             <span>Show:</span>
             <select
               value={paginationMeta.limitPerPage}
               onChange={handlePageSizeChange}
               disabled={isFetching}
               className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              style={getFontStyle(fontTheme, "body2")}
             >
               <option value={5}>5</option>
               <option value={10}>10</option>
@@ -623,16 +739,27 @@ const AppointmentPage = () => {
               />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3
+            className="text-lg font-medium text-gray-900 mb-2"
+            style={getFontStyle(fontTheme, "subHeading")}
+          >
             No appointments found
           </h3>
-          <p className="text-gray-500 mb-6">
-            {filter.date || filter.search
+          <p
+            className="text-gray-500 mb-6"
+            style={getFontStyle(fontTheme, "body2")}
+          >
+            {filter.date || filter.search || filter.disease
               ? "Try adjusting your filters to see more results."
               : "You don't have any appointments yet."}
           </p>
-          {(filter.date || filter.search) && (
-            <Button color="primary" onClick={handleClearFilter} isOutline>
+          {(filter.date || filter.search || filter.disease) && (
+            <Button
+              color="primary"
+              onClick={handleClearFilter}
+              isOutline
+              style={getFontStyle(fontTheme, "body2")}
+            >
               Clear All Filters
             </Button>
           )}

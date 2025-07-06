@@ -2,60 +2,96 @@ import { useEffect, useState } from "react";
 import { NavLinkButton } from "@src/components";
 import { getRoutePath } from "@src/utils/routeUtils";
 
+const THEME_STORAGE_KEY = "customColorTheme";
+const getFontTheme = () => {
+  try {
+    const theme = localStorage.getItem(THEME_STORAGE_KEY);
+    return theme ? JSON.parse(theme) : {};
+  } catch {
+    return {};
+  }
+};
+const getFontStyle = (fontTheme, type = "main") => {
+  if (!fontTheme) return {};
+  if (type === "subHeading") {
+    return {
+      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body1") {
+    return {
+      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body2") {
+    return {
+      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
+    };
+  }
+  return {
+    fontFamily: fontTheme.fontFamily,
+    fontWeight: fontTheme.fontWeight,
+    fontSize: fontTheme.fontSize,
+  };
+};
+
 const EFaxDeliveryPage = () => {
-  const [customTheme, setCustomTheme] = useState(() => {
-    try {
-      const theme = localStorage.getItem("customColorTheme");
-      return theme ? JSON.parse(theme) : {};
-    } catch {
-      return {};
-    }
-  });
+  const [fontTheme, setFontTheme] = useState(getFontTheme());
 
   useEffect(() => {
-    const reloadTheme = () => {
-      try {
-        const theme = localStorage.getItem("customColorTheme");
-        setCustomTheme(theme ? JSON.parse(theme) : {});
-      } catch {
-        setCustomTheme({});
-      }
-    };
+    const reloadTheme = () => setFontTheme(getFontTheme());
     window.addEventListener("customColorThemeChanged", reloadTheme);
     window.addEventListener("storage", (e) => {
-      if (e.key === "customColorTheme") reloadTheme();
+      if (e.key === THEME_STORAGE_KEY) reloadTheme();
     });
     return () => {
       window.removeEventListener("customColorThemeChanged", reloadTheme);
       window.removeEventListener("storage", reloadTheme);
     };
   }, []);
+  useEffect(() => {
+    if (!fontTheme) return;
+    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
+    document.body.style.fontWeight = fontTheme.fontWeight || 400;
+    document.body.style.fontSize = fontTheme.fontSize || "16px";
+    return () => {
+      document.body.style.fontFamily = "";
+      document.body.style.fontWeight = "";
+      document.body.style.fontSize = "";
+    };
+  }, [fontTheme]);
 
   const getButtonStyle = (filled = true) => ({
-    backgroundColor: filled ? customTheme.primaryColor : "#fff",
-    color: filled ? "#fff" : customTheme.primaryColor,
-    border: `1.5px solid ${customTheme.primaryColor}`,
-    fontFamily: customTheme.fontFamily || "inherit",
-    fontWeight: customTheme.fontWeight || 400,
-    fontSize: customTheme.fontSize || "16px",
+    backgroundColor: filled ? fontTheme.primaryColor : "#fff",
+    color: filled ? "#fff" : fontTheme.primaryColor,
+    border: `1.5px solid ${fontTheme.primaryColor}`,
+    fontFamily: fontTheme.fontFamily || "inherit",
+    fontWeight: fontTheme.fontWeight || 400,
+    fontSize: fontTheme.fontSize || "16px",
     transition: "all 0.15s",
   });
 
   const getIconButtonStyle = () => ({
     backgroundColor: "#fff",
-    color: customTheme.primaryColor,
-    border: `1.5px solid ${customTheme.primaryColor}`,
-    fontFamily: customTheme.fontFamily || "inherit",
-    fontWeight: customTheme.fontWeight || 400,
-    fontSize: customTheme.fontSize || "16px",
+    color: fontTheme.primaryColor,
+    border: `1.5px solid ${fontTheme.primaryColor}`,
+    fontFamily: fontTheme.fontFamily || "inherit",
+    fontWeight: fontTheme.fontWeight || 400,
+    fontSize: fontTheme.fontSize || "16px",
     transition: "all 0.15s",
   });
 
   const getIconStyle = () => ({
-    color: customTheme.primaryColor,
-    fontSize: customTheme.fontSize || "20px",
-    fontFamily: customTheme.fontFamily || "inherit",
-    fontWeight: customTheme.fontWeight || 400,
+    color: fontTheme.primaryColor,
+    fontSize: fontTheme.fontSize || "20px",
+    fontFamily: fontTheme.fontFamily || "inherit",
+    fontWeight: fontTheme.fontWeight || 400,
   });
 
   return (
@@ -65,6 +101,12 @@ const EFaxDeliveryPage = () => {
           to={getRoutePath("doctor.consultation.efax")}
           color="primary"
           className={"px-5"}
+          style={{
+            ...getFontStyle(fontTheme, "main"),
+            backgroundColor: fontTheme.primaryColor,
+            color: "#fff",
+            border: `1.5px solid ${fontTheme.primaryColor}`,
+          }}
         >
           eFax Delivery
         </NavLinkButton>
@@ -72,22 +114,31 @@ const EFaxDeliveryPage = () => {
           to={getRoutePath("doctor.consultation.email")}
           color="primary"
           className={"px-5"}
+          style={{
+            ...getFontStyle(fontTheme, "main"),
+            border: `1.5px solid ${fontTheme.primaryColor}`,
+          }}
         >
           Email Delivery
         </NavLinkButton>
       </div>
       <div className="grid md:gap-4 md:grid-cols-3 grid-cols-1">
         <div className="bg-white rounded-[20px] shadow-lg mb-4 flex flex-col">
-          {/* Recordings */}
           <div className=" h-full">
             <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
-              <h2 className="text-lg font-medium">History</h2>
+              <h2
+                className="text-lg font-medium"
+                style={getFontStyle(fontTheme, "subHeading")}
+              >
+                History
+              </h2>
             </div>
             <div className="relative">
               {[1, 2, 3, 4].map((_, idx) => (
                 <div
                   key={idx}
                   className="flex justify-content-between border-b px-3 pt-4 pb-2 cursor-pointer hover:bg-black hover:bg-opacity-[0.1]"
+                  style={getFontStyle(fontTheme, "body1")}
                 >
                   <div className="flex gap-2 w-full">
                     <span
@@ -97,10 +148,18 @@ const EFaxDeliveryPage = () => {
                       <i className="material-icons text-sm">chat</i>
                     </span>
                     <div className="text-medium text-start">
-                      <p className="leading-none">
+                      <p
+                        className="leading-none"
+                        style={getFontStyle(fontTheme, "body1")}
+                      >
                         Advanced Pharmacology and Drug Management
                       </p>
-                      <span className="text-muted text-sm">Just Now</span>
+                      <span
+                        className="text-muted text-sm"
+                        style={getFontStyle(fontTheme, "body2")}
+                      >
+                        Just Now
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -108,14 +167,22 @@ const EFaxDeliveryPage = () => {
             </div>
           </div>
         </div>
-        {/* Recordings Output */}
         <div className="bg-white rounded-[20px] shadow-lg mb-4 col-span-2">
           <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
-            <h2 className="text-lg font-medium">Sending eFax</h2>
+            <h2
+              className="text-lg font-medium"
+              style={getFontStyle(fontTheme, "subHeading")}
+            >
+              Sending eFax
+            </h2>
           </div>
           <div className="p-4">
             <div className="p-4 grid lg:grid-cols-5 grid-cols-1">
-              <label htmlFor="recipientFax" className="block my-auto">
+              <label
+                htmlFor="recipientFax"
+                className="block my-auto"
+                style={getFontStyle(fontTheme, "body1")}
+              >
                 Recipient eFax Number:
               </label>
               <div className="flex items-center w-full col-span-4">
@@ -124,11 +191,16 @@ const EFaxDeliveryPage = () => {
                   type="text"
                   className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey text-muted border rounded-full"
                   placeholder="Enter eFax Number"
+                  style={getFontStyle(fontTheme, "body2")}
                 />
               </div>
             </div>
             <div className="p-4 grid lg:grid-cols-5 grid-cols-1">
-              <label htmlFor="recipientName" className="block my-auto">
+              <label
+                htmlFor="recipientName"
+                className="block my-auto"
+                style={getFontStyle(fontTheme, "body1")}
+              >
                 Recipient Name:
               </label>
               <div className="flex items-center w-full col-span-4">
@@ -137,11 +209,16 @@ const EFaxDeliveryPage = () => {
                   type="text"
                   className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey text-muted border rounded-full"
                   placeholder="Enter Recipient Name"
+                  style={getFontStyle(fontTheme, "body2")}
                 />
               </div>
             </div>
             <div className="p-4 grid lg:grid-cols-5 grid-cols-1">
-              <label htmlFor="subject" className="block my-auto">
+              <label
+                htmlFor="subject"
+                className="block my-auto"
+                style={getFontStyle(fontTheme, "body1")}
+              >
                 Subject:
               </label>
               <div className="flex items-center w-full col-span-4">
@@ -150,11 +227,16 @@ const EFaxDeliveryPage = () => {
                   type="text"
                   className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey text-muted border rounded-full"
                   placeholder="Enter Subject"
+                  style={getFontStyle(fontTheme, "body2")}
                 />
               </div>
             </div>
             <div className="p-4 grid lg:grid-cols-5 grid-cols-1">
-              <label htmlFor="consultationDocument" className="block my-auto">
+              <label
+                htmlFor="consultationDocument"
+                className="block my-auto"
+                style={getFontStyle(fontTheme, "body1")}
+              >
                 Consultation Document:
               </label>
               <div className="flex items-center w-full col-span-4 relative">
@@ -162,6 +244,7 @@ const EFaxDeliveryPage = () => {
                   id="consultationDocument"
                   type="file"
                   className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey text-muted border rounded-full"
+                  style={getFontStyle(fontTheme, "body2")}
                 />
                 <button
                   style={getButtonStyle(false)}
@@ -172,7 +255,11 @@ const EFaxDeliveryPage = () => {
               </div>
             </div>
             <div className="p-4 grid lg:grid-cols-5 grid-cols-1">
-              <label htmlFor="reasonsOfVisit" className="block mb-auto mt-2">
+              <label
+                htmlFor="reasonsOfVisit"
+                className="block mb-auto mt-2"
+                style={getFontStyle(fontTheme, "body1")}
+              >
                 Custom Message:
               </label>
               <div className="flex items-center w-full col-span-4 relative">
@@ -183,6 +270,7 @@ const EFaxDeliveryPage = () => {
                   rows={10}
                   cols={30}
                   defaultValue={""}
+                  style={getFontStyle(fontTheme, "body2")}
                 />
                 <div className="flex absolute bottom-0 p-2 gap-2">
                   <button

@@ -18,7 +18,6 @@ const DEFAULT_THEME = {
   borderColorOpacity: 100,
   linkColor: "#1A73E8",
   linkColorOpacity: 100,
-  // Typography defaults
   fontFamily: "Poppins",
   fontWeight: 400,
   fontSize: "16px",
@@ -33,6 +32,39 @@ const DEFAULT_THEME = {
   bodyText2FontSize: "12px",
 };
 
+const COLOR_PALETTE = [
+  "#FF0000",
+  "#FF4500",
+  "#FFA500",
+  "#FFD700",
+  "#FFFF00",
+  "#ADFF2F",
+  "#00FF00",
+  "#00FF7F",
+  "#00FFFF",
+  "#0080FF",
+  "#0000FF",
+  "#8000FF",
+  "#FF00FF",
+  "#FF1493",
+  "#000000",
+  "#333333",
+  "#666666",
+  "#999999",
+  "#CCCCCC",
+  "#FFFFFF",
+  "#8B4513",
+  "#A0522D",
+  "#CD853F",
+  "#D2691E",
+  "#FF6347",
+  "#FF7F50",
+  "#DC143C",
+  "#B22222",
+  "#8B0000",
+  "#800080",
+];
+
 const LOCAL_STORAGE_KEY = "customColorTheme";
 
 const CustomColorThemePage = () => {
@@ -40,6 +72,16 @@ const CustomColorThemePage = () => {
   const [localTheme, setLocalTheme] = useState(theme);
   const [originalTheme, setOriginalTheme] = useState(DEFAULT_THEME);
   const [showSavedPopup, setShowSavedPopup] = useState(false);
+  const [showColorPalette, setShowColorPalette] = useState(null);
+
+  const [fontTheme, setFontTheme] = useState(() => {
+    try {
+      const theme = localStorage.getItem(LOCAL_STORAGE_KEY);
+      return theme ? JSON.parse(theme) : {};
+    } catch {
+      return {};
+    }
+  });
 
   useEffect(() => {
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -48,19 +90,58 @@ const CustomColorThemePage = () => {
         const parsed = JSON.parse(stored);
         setLocalTheme({ ...DEFAULT_THEME, ...parsed });
         setOriginalTheme({ ...DEFAULT_THEME, ...parsed });
+        setFontTheme(parsed);
       } catch {
         setLocalTheme(DEFAULT_THEME);
         setOriginalTheme(DEFAULT_THEME);
+        setFontTheme(DEFAULT_THEME);
       }
     }
   }, []);
 
+  useEffect(() => {
+    if (!fontTheme) return;
+    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
+    document.body.style.fontWeight = fontTheme.fontWeight || 400;
+    document.body.style.fontSize = fontTheme.fontSize || "16px";
+    return () => {
+      document.body.style.fontFamily = "";
+      document.body.style.fontWeight = "";
+      document.body.style.fontSize = "";
+    };
+  }, [fontTheme]);
+
+  const formatColorToUppercase = (color) => {
+    if (color.startsWith("#")) {
+      return color.toUpperCase();
+    }
+    return color.charAt(0) === "#" ? color : `#${color}`.toUpperCase();
+  };
+
   const handleChange = (e) => {
     const { id, value, type } = e.target;
+    let processedValue = type === "number" ? Number(value) : value;
+
+    if (
+      id.includes("Color") &&
+      !id.includes("Opacity") &&
+      typeof processedValue === "string"
+    ) {
+      processedValue = formatColorToUppercase(processedValue);
+    }
+
     setLocalTheme((prev) => ({
       ...prev,
-      [id]: type === "number" ? Number(value) : value,
+      [id]: processedValue,
     }));
+  };
+
+  const handleColorPaletteSelect = (colorField, color) => {
+    setLocalTheme((prev) => ({
+      ...prev,
+      [colorField]: formatColorToUppercase(color),
+    }));
+    setShowColorPalette(null);
   };
 
   const handleTypographyChange = (prefix, field, value) => {
@@ -77,6 +158,7 @@ const CustomColorThemePage = () => {
   const handleSave = () => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localTheme));
     setTheme(localTheme);
+    setFontTheme(localTheme);
     setShowSavedPopup(true);
     setTimeout(() => setShowSavedPopup(false), 2000);
   };
@@ -90,9 +172,61 @@ const CustomColorThemePage = () => {
     opacity: Math.max(0, Math.min(1, opacity / 100)),
   });
 
+  const getFontStyle = (type = "main") => {
+    if (type === "subHeading") {
+      return {
+        fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
+        fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
+        fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
+      };
+    }
+    if (type === "body1") {
+      return {
+        fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
+        fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
+        fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
+      };
+    }
+    if (type === "body2") {
+      return {
+        fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
+        fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
+        fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
+      };
+    }
+    return {
+      fontFamily: fontTheme.fontFamily,
+      fontWeight: fontTheme.fontWeight,
+      fontSize: fontTheme.fontSize,
+    };
+  };
+
+  const ColorPalettePopup = ({ colorField, onClose }) => (
+    <div className="absolute z-50 bg-white border rounded-lg shadow-lg p-4 mt-2">
+      <div className="grid grid-cols-6 gap-2 w-48">
+        {COLOR_PALETTE.map((color) => (
+          <button
+            key={color}
+            type="button"
+            className="w-8 h-8 rounded border-2 border-gray-300 hover:border-gray-500 transition-all"
+            style={{ backgroundColor: color }}
+            onClick={() => handleColorPaletteSelect(colorField, color)}
+            title={color}
+          />
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-3 text-sm text-gray-500 hover:text-gray-700"
+      >
+        Close
+      </button>
+    </div>
+  );
+
   return (
-    <>
-      {/* Popup for saved */}
+    <div style={getFontStyle("main")}>
       {showSavedPopup && (
         <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50">
           <div className="px-6 py-3 rounded-lg shadow-lg text-white font-semibold bg-green-600">
@@ -107,6 +241,12 @@ const CustomColorThemePage = () => {
             to={getRoutePath("doctor.customizations.color_theme")}
             color="primary"
             className="px-5 py-2 rounded-full font-light"
+            style={{
+              ...getFontStyle("main"),
+              backgroundColor: fontTheme.primaryColor,
+              color: "#fff",
+              border: `1.5px solid ${fontTheme.primaryColor}`,
+            }}
           >
             Color Theme
           </NavLinkButton>
@@ -114,6 +254,12 @@ const CustomColorThemePage = () => {
             to={getRoutePath("doctor.customizations.notification_preferences")}
             color="primary"
             className="px-5 py-2 rounded-full font-light transition-all duration-150 hover:bg-primary hover:text-white text-primary"
+            style={{
+              ...getFontStyle("main"),
+              backgroundColor: "#fff",
+              color: fontTheme.primaryColor,
+              border: `1.5px solid ${fontTheme.primaryColor}`,
+            }}
           >
             Notification Preferences
           </NavLinkButton>
@@ -121,6 +267,12 @@ const CustomColorThemePage = () => {
             to={getRoutePath("doctor.customizations.integration")}
             color="primary"
             className="px-5 py-2 rounded-full font-light transition-all duration-150 hover:bg-primary hover:text-white text-primary"
+            style={{
+              ...getFontStyle("main"),
+              backgroundColor: "#fff",
+              color: fontTheme.primaryColor,
+              border: `1.5px solid ${fontTheme.primaryColor}`,
+            }}
           >
             Integration Preferences
           </NavLinkButton>
@@ -131,6 +283,7 @@ const CustomColorThemePage = () => {
               className="px-8 py-1 text-sm bg-white border border-danger rounded-full text-danger hover:bg-danger hover:text-white transition-all duration-150"
               onClick={handleCancel}
               type="button"
+              style={getFontStyle("main")}
             >
               Cancel
             </button>
@@ -138,6 +291,7 @@ const CustomColorThemePage = () => {
               className="bg-primary border border-primary text-white px-8 py-2 rounded-full text-sm font-light hover:bg-opacity-[0.9] transition-all duration-150"
               onClick={handleSave}
               type="button"
+              style={getFontStyle("main")}
             >
               Save
             </button>
@@ -146,21 +300,28 @@ const CustomColorThemePage = () => {
       </div>
       <div className="grid lg:grid-cols-2 grid-cols-1 px-3 py-3 gap-3">
         <div className="bg-white rounded-[20px] shadow-lg mb-4 flex flex-col">
-          {/* Recordings */}
           <div className="h-full">
-            <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
-              <h2 className="text-lg font-medium">Set Color Theme</h2>
+            <div
+              className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]"
+              style={getFontStyle("main")}
+            >
+              <h2 className="text-lg font-medium" style={getFontStyle("main")}>
+                Set Color Theme
+              </h2>
               <button
                 className="text-primary"
                 type="button"
                 onClick={handleResetDefault}
+                style={getFontStyle("main")}
               >
                 Reset to Default
               </button>
             </div>
             <div className="relative">
-              {/* Primary Color */}
-              <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
+              <div
+                className="p-4 grid lg:grid-cols-3 grid-cols-1"
+                style={getFontStyle("body1")}
+              >
                 <label
                   htmlFor="primaryColor"
                   className="block text-nowrap my-auto"
@@ -175,6 +336,7 @@ const CustomColorThemePage = () => {
                     value={localTheme.primaryColor}
                     onChange={handleChange}
                     className="focus:outline-none w-full px-5 py-3 bg-grey rounded-full"
+                    style={getFontStyle("body1")}
                   />
                   <input
                     id="primaryColorOpacity"
@@ -186,14 +348,34 @@ const CustomColorThemePage = () => {
                     placeholder="Opacity"
                     value={localTheme.primaryColorOpacity}
                     onChange={handleChange}
+                    style={getFontStyle("body1")}
                   />
-                  <div
-                    className="w-6 h-6 rounded-full ms-1 p-5 border-8 border-grey outline outline-white"
-                    style={getColorStyle(
-                      localTheme.primaryColor,
-                      localTheme.primaryColorOpacity
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="w-6 h-6 rounded-full ms-1 p-5 border-8 border-grey outline outline-white cursor-pointer hover:scale-110 transition-transform"
+                      style={{
+                        ...getColorStyle(
+                          localTheme.primaryColor,
+                          localTheme.primaryColorOpacity
+                        ),
+                        ...getFontStyle("body1"),
+                      }}
+                      onClick={() =>
+                        setShowColorPalette(
+                          showColorPalette === "primaryColor"
+                            ? null
+                            : "primaryColor"
+                        )
+                      }
+                    />
+                    {showColorPalette === "primaryColor" && (
+                      <ColorPalettePopup
+                        colorField="primaryColor"
+                        onClose={() => setShowColorPalette(null)}
+                      />
                     )}
-                  />
+                  </div>
                   <div className="ml-2">
                     <button
                       className="bg-white rounded-full p-2 pb-1"
@@ -206,6 +388,7 @@ const CustomColorThemePage = () => {
                             DEFAULT_THEME.primaryColorOpacity,
                         }))
                       }
+                      style={getFontStyle("body1")}
                     >
                       <i
                         className="material-icons text-body"
@@ -222,8 +405,10 @@ const CustomColorThemePage = () => {
                   </div>
                 </div>
               </div>
-              {/* Secondary Color */}
-              <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
+              <div
+                className="p-4 grid lg:grid-cols-3 grid-cols-1"
+                style={getFontStyle("body1")}
+              >
                 <label
                   htmlFor="secondaryColor"
                   className="block text-nowrap my-auto"
@@ -238,6 +423,7 @@ const CustomColorThemePage = () => {
                     value={localTheme.secondaryColor}
                     onChange={handleChange}
                     className="focus:outline-none w-full px-5 py-3 bg-grey rounded-full"
+                    style={getFontStyle("body1")}
                   />
                   <input
                     id="secondaryColorOpacity"
@@ -249,14 +435,34 @@ const CustomColorThemePage = () => {
                     placeholder="Opacity"
                     value={localTheme.secondaryColorOpacity}
                     onChange={handleChange}
+                    style={getFontStyle("body1")}
                   />
-                  <div
-                    className="w-6 h-6 rounded-full ms-1 p-5 border-8 border-grey outline outline-white"
-                    style={getColorStyle(
-                      localTheme.secondaryColor,
-                      localTheme.secondaryColorOpacity
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="w-6 h-6 rounded-full ms-1 p-5 border-8 border-grey outline outline-white cursor-pointer hover:scale-110 transition-transform"
+                      style={{
+                        ...getColorStyle(
+                          localTheme.secondaryColor,
+                          localTheme.secondaryColorOpacity
+                        ),
+                        ...getFontStyle("body1"),
+                      }}
+                      onClick={() =>
+                        setShowColorPalette(
+                          showColorPalette === "secondaryColor"
+                            ? null
+                            : "secondaryColor"
+                        )
+                      }
+                    />
+                    {showColorPalette === "secondaryColor" && (
+                      <ColorPalettePopup
+                        colorField="secondaryColor"
+                        onClose={() => setShowColorPalette(null)}
+                      />
                     )}
-                  />
+                  </div>
                   <div className="ml-2">
                     <button
                       className="bg-white rounded-full p-2 pb-1"
@@ -269,6 +475,7 @@ const CustomColorThemePage = () => {
                             DEFAULT_THEME.secondaryColorOpacity,
                         }))
                       }
+                      style={getFontStyle("body1")}
                     >
                       <i
                         className="material-icons text-body"
@@ -285,8 +492,10 @@ const CustomColorThemePage = () => {
                   </div>
                 </div>
               </div>
-              {/* Tertiary Color */}
-              <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
+              <div
+                className="p-4 grid lg:grid-cols-3 grid-cols-1"
+                style={getFontStyle("body1")}
+              >
                 <label
                   htmlFor="tertiaryColor"
                   className="block text-nowrap my-auto"
@@ -301,6 +510,7 @@ const CustomColorThemePage = () => {
                     value={localTheme.tertiaryColor}
                     onChange={handleChange}
                     className="focus:outline-none w-full px-5 py-3 bg-grey rounded-full"
+                    style={getFontStyle("body1")}
                   />
                   <input
                     id="tertiaryColorOpacity"
@@ -312,14 +522,34 @@ const CustomColorThemePage = () => {
                     placeholder="Opacity"
                     value={localTheme.tertiaryColorOpacity}
                     onChange={handleChange}
+                    style={getFontStyle("body1")}
                   />
-                  <div
-                    className="w-6 h-6 rounded-full ms-1 p-5 border-8 border-grey outline outline-white"
-                    style={getColorStyle(
-                      localTheme.tertiaryColor,
-                      localTheme.tertiaryColorOpacity
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="w-6 h-6 rounded-full ms-1 p-5 border-8 border-grey outline outline-white cursor-pointer hover:scale-110 transition-transform"
+                      style={{
+                        ...getColorStyle(
+                          localTheme.tertiaryColor,
+                          localTheme.tertiaryColorOpacity
+                        ),
+                        ...getFontStyle("body1"),
+                      }}
+                      onClick={() =>
+                        setShowColorPalette(
+                          showColorPalette === "tertiaryColor"
+                            ? null
+                            : "tertiaryColor"
+                        )
+                      }
+                    />
+                    {showColorPalette === "tertiaryColor" && (
+                      <ColorPalettePopup
+                        colorField="tertiaryColor"
+                        onClose={() => setShowColorPalette(null)}
+                      />
                     )}
-                  />
+                  </div>
                   <div className="ml-2">
                     <button
                       className="bg-white rounded-full p-2 pb-1"
@@ -332,6 +562,7 @@ const CustomColorThemePage = () => {
                             DEFAULT_THEME.tertiaryColorOpacity,
                         }))
                       }
+                      style={getFontStyle("body1")}
                     >
                       <i
                         className="material-icons text-body"
@@ -348,8 +579,10 @@ const CustomColorThemePage = () => {
                   </div>
                 </div>
               </div>
-              {/* Heading Color */}
-              <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
+              <div
+                className="p-4 grid lg:grid-cols-3 grid-cols-1"
+                style={getFontStyle("body1")}
+              >
                 <label
                   htmlFor="headingColor"
                   className="block text-nowrap my-auto"
@@ -364,6 +597,7 @@ const CustomColorThemePage = () => {
                     value={localTheme.headingColor}
                     onChange={handleChange}
                     className="focus:outline-none w-full px-5 py-3 bg-grey rounded-full"
+                    style={getFontStyle("body1")}
                   />
                   <input
                     id="headingColorOpacity"
@@ -375,14 +609,34 @@ const CustomColorThemePage = () => {
                     placeholder="Opacity"
                     value={localTheme.headingColorOpacity}
                     onChange={handleChange}
+                    style={getFontStyle("body1")}
                   />
-                  <div
-                    className="w-6 h-6 rounded-full ms-1 p-5 border-8 border-grey outline outline-white"
-                    style={getColorStyle(
-                      localTheme.headingColor,
-                      localTheme.headingColorOpacity
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="w-6 h-6 rounded-full ms-1 p-5 border-8 border-grey outline outline-white cursor-pointer hover:scale-110 transition-transform"
+                      style={{
+                        ...getColorStyle(
+                          localTheme.headingColor,
+                          localTheme.headingColorOpacity
+                        ),
+                        ...getFontStyle("body1"),
+                      }}
+                      onClick={() =>
+                        setShowColorPalette(
+                          showColorPalette === "headingColor"
+                            ? null
+                            : "headingColor"
+                        )
+                      }
+                    />
+                    {showColorPalette === "headingColor" && (
+                      <ColorPalettePopup
+                        colorField="headingColor"
+                        onClose={() => setShowColorPalette(null)}
+                      />
                     )}
-                  />
+                  </div>
                   <div className="ml-2">
                     <button
                       className="bg-white rounded-full p-2 pb-1"
@@ -395,6 +649,7 @@ const CustomColorThemePage = () => {
                             DEFAULT_THEME.headingColorOpacity,
                         }))
                       }
+                      style={getFontStyle("body1")}
                     >
                       <i
                         className="material-icons text-body"
@@ -411,8 +666,10 @@ const CustomColorThemePage = () => {
                   </div>
                 </div>
               </div>
-              {/* Body Text Color */}
-              <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
+              <div
+                className="p-4 grid lg:grid-cols-3 grid-cols-1"
+                style={getFontStyle("body1")}
+              >
                 <label
                   htmlFor="bodyTextColor"
                   className="block text-nowrap my-auto"
@@ -427,6 +684,7 @@ const CustomColorThemePage = () => {
                     value={localTheme.bodyTextColor}
                     onChange={handleChange}
                     className="focus:outline-none w-full px-5 py-3 bg-grey rounded-full"
+                    style={getFontStyle("body1")}
                   />
                   <input
                     id="bodyTextColorOpacity"
@@ -438,14 +696,34 @@ const CustomColorThemePage = () => {
                     placeholder="Opacity"
                     value={localTheme.bodyTextColorOpacity}
                     onChange={handleChange}
+                    style={getFontStyle("body1")}
                   />
-                  <div
-                    className="w-6 h-6 rounded-full ms-1 p-5 border-8 border-grey outline outline-white"
-                    style={getColorStyle(
-                      localTheme.bodyTextColor,
-                      localTheme.bodyTextColorOpacity
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="w-6 h-6 rounded-full ms-1 p-5 border-8 border-grey outline outline-white cursor-pointer hover:scale-110 transition-transform"
+                      style={{
+                        ...getColorStyle(
+                          localTheme.bodyTextColor,
+                          localTheme.bodyTextColorOpacity
+                        ),
+                        ...getFontStyle("body1"),
+                      }}
+                      onClick={() =>
+                        setShowColorPalette(
+                          showColorPalette === "bodyTextColor"
+                            ? null
+                            : "bodyTextColor"
+                        )
+                      }
+                    />
+                    {showColorPalette === "bodyTextColor" && (
+                      <ColorPalettePopup
+                        colorField="bodyTextColor"
+                        onClose={() => setShowColorPalette(null)}
+                      />
                     )}
-                  />
+                  </div>
                   <div className="ml-2">
                     <button
                       className="bg-white rounded-full p-2 pb-1"
@@ -458,6 +736,7 @@ const CustomColorThemePage = () => {
                             DEFAULT_THEME.bodyTextColorOpacity,
                         }))
                       }
+                      style={getFontStyle("body1")}
                     >
                       <i
                         className="material-icons text-body"
@@ -474,8 +753,10 @@ const CustomColorThemePage = () => {
                   </div>
                 </div>
               </div>
-              {/* Border Color */}
-              <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
+              <div
+                className="p-4 grid lg:grid-cols-3 grid-cols-1"
+                style={getFontStyle("body1")}
+              >
                 <label
                   htmlFor="borderColor"
                   className="block text-nowrap my-auto"
@@ -490,6 +771,7 @@ const CustomColorThemePage = () => {
                     value={localTheme.borderColor}
                     onChange={handleChange}
                     className="focus:outline-none w-full px-5 py-3 bg-grey rounded-full"
+                    style={getFontStyle("body1")}
                   />
                   <input
                     id="borderColorOpacity"
@@ -501,14 +783,34 @@ const CustomColorThemePage = () => {
                     placeholder="Opacity"
                     value={localTheme.borderColorOpacity}
                     onChange={handleChange}
+                    style={getFontStyle("body1")}
                   />
-                  <div
-                    className="w-6 h-6 rounded-full ms-1 p-5 border-8 border-grey outline outline-white"
-                    style={getColorStyle(
-                      localTheme.borderColor,
-                      localTheme.borderColorOpacity
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="w-6 h-6 rounded-full ms-1 p-5 border-8 border-grey outline outline-white cursor-pointer hover:scale-110 transition-transform"
+                      style={{
+                        ...getColorStyle(
+                          localTheme.borderColor,
+                          localTheme.borderColorOpacity
+                        ),
+                        ...getFontStyle("body1"),
+                      }}
+                      onClick={() =>
+                        setShowColorPalette(
+                          showColorPalette === "borderColor"
+                            ? null
+                            : "borderColor"
+                        )
+                      }
+                    />
+                    {showColorPalette === "borderColor" && (
+                      <ColorPalettePopup
+                        colorField="borderColor"
+                        onClose={() => setShowColorPalette(null)}
+                      />
                     )}
-                  />
+                  </div>
                   <div className="ml-2">
                     <button
                       className="bg-white rounded-full p-2 pb-1"
@@ -520,6 +822,7 @@ const CustomColorThemePage = () => {
                           borderColorOpacity: DEFAULT_THEME.borderColorOpacity,
                         }))
                       }
+                      style={getFontStyle("body1")}
                     >
                       <i
                         className="material-icons text-body"
@@ -536,8 +839,10 @@ const CustomColorThemePage = () => {
                   </div>
                 </div>
               </div>
-              {/* Link Color */}
-              <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
+              <div
+                className="p-4 grid lg:grid-cols-3 grid-cols-1"
+                style={getFontStyle("body1")}
+              >
                 <label
                   htmlFor="linkColor"
                   className="block text-nowrap my-auto"
@@ -552,6 +857,7 @@ const CustomColorThemePage = () => {
                     value={localTheme.linkColor}
                     onChange={handleChange}
                     className="focus:outline-none w-full px-5 py-3 bg-grey rounded-full"
+                    style={getFontStyle("body1")}
                   />
                   <input
                     id="linkColorOpacity"
@@ -563,14 +869,32 @@ const CustomColorThemePage = () => {
                     placeholder="Opacity"
                     value={localTheme.linkColorOpacity}
                     onChange={handleChange}
+                    style={getFontStyle("body1")}
                   />
-                  <div
-                    className="w-6 h-6 rounded-full ms-1 p-5 border-8 border-grey outline outline-white"
-                    style={getColorStyle(
-                      localTheme.linkColor,
-                      localTheme.linkColorOpacity
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="w-6 h-6 rounded-full ms-1 p-5 border-8 border-grey outline outline-white cursor-pointer hover:scale-110 transition-transform"
+                      style={{
+                        ...getColorStyle(
+                          localTheme.linkColor,
+                          localTheme.linkColorOpacity
+                        ),
+                        ...getFontStyle("body1"),
+                      }}
+                      onClick={() =>
+                        setShowColorPalette(
+                          showColorPalette === "linkColor" ? null : "linkColor"
+                        )
+                      }
+                    />
+                    {showColorPalette === "linkColor" && (
+                      <ColorPalettePopup
+                        colorField="linkColor"
+                        onClose={() => setShowColorPalette(null)}
+                      />
                     )}
-                  />
+                  </div>
                   <div className="ml-2">
                     <button
                       className="bg-white rounded-full p-2 pb-1"
@@ -582,6 +906,7 @@ const CustomColorThemePage = () => {
                           linkColorOpacity: DEFAULT_THEME.linkColorOpacity,
                         }))
                       }
+                      style={getFontStyle("body1")}
                     >
                       <i
                         className="material-icons text-body"
@@ -601,10 +926,14 @@ const CustomColorThemePage = () => {
             </div>
           </div>
         </div>
-        {/* Typography Settings */}
         <div className="bg-white rounded-[20px] shadow-lg mb-4">
-          <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
-            <h2 className="text-lg font-medium">Set Typography</h2>
+          <div
+            className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]"
+            style={getFontStyle("main")}
+          >
+            <h2 className="text-lg font-medium" style={getFontStyle("main")}>
+              Set Typography
+            </h2>
             <button
               className="text-primary"
               type="button"
@@ -625,13 +954,18 @@ const CustomColorThemePage = () => {
                   bodyText2FontSize: DEFAULT_THEME.bodyText2FontSize,
                 }))
               }
+              style={getFontStyle("main")}
             >
               Reset to Default
             </button>
           </div>
-          <div className="p-4">
-            {/* Main Font */}
-            <label className="block text-nowrap my-auto mb-3">Main Font:</label>
+          <div className="p-4" style={getFontStyle("body1")}>
+            <label
+              className="block text-nowrap my-auto mb-3"
+              style={getFontStyle("body1")}
+            >
+              Main Font:
+            </label>
             <div className="flex items-center w-full col-span-2 mb-4">
               <select
                 id="fontFamily"
@@ -640,6 +974,7 @@ const CustomColorThemePage = () => {
                 onChange={(e) =>
                   handleTypographyChange("", "fontFamily", e.target.value)
                 }
+                style={getFontStyle("body1")}
               >
                 <option value="Poppins">Poppins</option>
                 <option value="Arial">Arial</option>
@@ -656,6 +991,7 @@ const CustomColorThemePage = () => {
                     Number(e.target.value)
                   )
                 }
+                style={getFontStyle("body1")}
               >
                 <option value={400}>Normal</option>
                 <option value={500}>Medium</option>
@@ -669,6 +1005,7 @@ const CustomColorThemePage = () => {
                 onChange={(e) =>
                   handleTypographyChange("", "fontSize", e.target.value)
                 }
+                style={getFontStyle("body1")}
               >
                 <option value="12px">12px</option>
                 <option value="14px">14px</option>
@@ -679,8 +1016,10 @@ const CustomColorThemePage = () => {
                 <option value="24px">24px</option>
               </select>
             </div>
-            {/* Sub Heading */}
-            <label className="block text-nowrap my-auto mb-3">
+            <label
+              className="block text-nowrap my-auto mb-3"
+              style={getFontStyle("body1")}
+            >
               Sub Heading:
             </label>
             <div className="flex items-center w-full col-span-2 mb-4">
@@ -695,6 +1034,7 @@ const CustomColorThemePage = () => {
                     e.target.value
                   )
                 }
+                style={getFontStyle("body1")}
               >
                 <option value="Poppins">Poppins</option>
                 <option value="Arial">Arial</option>
@@ -711,6 +1051,7 @@ const CustomColorThemePage = () => {
                     Number(e.target.value)
                   )
                 }
+                style={getFontStyle("body1")}
               >
                 <option value={400}>Normal</option>
                 <option value={500}>Medium</option>
@@ -728,6 +1069,7 @@ const CustomColorThemePage = () => {
                     e.target.value
                   )
                 }
+                style={getFontStyle("body1")}
               >
                 <option value="12px">12px</option>
                 <option value="14px">14px</option>
@@ -738,8 +1080,10 @@ const CustomColorThemePage = () => {
                 <option value="24px">24px</option>
               </select>
             </div>
-            {/* Body Text 1 */}
-            <label className="block text-nowrap my-auto mb-3">
+            <label
+              className="block text-nowrap my-auto mb-3"
+              style={getFontStyle("body1")}
+            >
               Body Text 1:
             </label>
             <div className="flex items-center w-full col-span-2 mb-4">
@@ -754,6 +1098,7 @@ const CustomColorThemePage = () => {
                     e.target.value
                   )
                 }
+                style={getFontStyle("body1")}
               >
                 <option value="Poppins">Poppins</option>
                 <option value="Arial">Arial</option>
@@ -770,6 +1115,7 @@ const CustomColorThemePage = () => {
                     Number(e.target.value)
                   )
                 }
+                style={getFontStyle("body1")}
               >
                 <option value={400}>Normal</option>
                 <option value={500}>Medium</option>
@@ -787,6 +1133,7 @@ const CustomColorThemePage = () => {
                     e.target.value
                   )
                 }
+                style={getFontStyle("body1")}
               >
                 <option value="12px">12px</option>
                 <option value="14px">14px</option>
@@ -797,8 +1144,10 @@ const CustomColorThemePage = () => {
                 <option value="24px">24px</option>
               </select>
             </div>
-            {/* Body Text 2 */}
-            <label className="block text-nowrap my-auto mb-3">
+            <label
+              className="block text-nowrap my-auto mb-3"
+              style={getFontStyle("body1")}
+            >
               Body Text 2:
             </label>
             <div className="flex items-center w-full col-span-2">
@@ -813,6 +1162,7 @@ const CustomColorThemePage = () => {
                     e.target.value
                   )
                 }
+                style={getFontStyle("body1")}
               >
                 <option value="Poppins">Poppins</option>
                 <option value="Arial">Arial</option>
@@ -829,6 +1179,7 @@ const CustomColorThemePage = () => {
                     Number(e.target.value)
                   )
                 }
+                style={getFontStyle("body1")}
               >
                 <option value={400}>Normal</option>
                 <option value={500}>Medium</option>
@@ -846,6 +1197,7 @@ const CustomColorThemePage = () => {
                     e.target.value
                   )
                 }
+                style={getFontStyle("body1")}
               >
                 <option value="12px">12px</option>
                 <option value="14px">14px</option>
@@ -859,7 +1211,7 @@ const CustomColorThemePage = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

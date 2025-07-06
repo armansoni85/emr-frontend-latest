@@ -2,6 +2,55 @@ import React, { useState, useEffect } from "react";
 import { getIcd, getCpt } from "@src/services/superbillService";
 import apiClient from "@src/utils/apiClient";
 
+const THEME_STORAGE_KEY = "customColorTheme";
+const getFontTheme = () => {
+  try {
+    const theme = localStorage.getItem(THEME_STORAGE_KEY);
+    return theme ? JSON.parse(theme) : {};
+  } catch {
+    return {};
+  }
+};
+const getFontStyle = (fontTheme, type = "main") => {
+  if (!fontTheme) return {};
+  if (type === "subHeading") {
+    return {
+      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
+      color: fontTheme.headingColor || "#333333",
+    };
+  }
+  if (type === "body1") {
+    return {
+      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
+      color:
+        fontTheme.bodyTextColor === "#FFFFFF"
+          ? "#333333"
+          : fontTheme.bodyTextColor || "#333333",
+    };
+  }
+  if (type === "body2") {
+    return {
+      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
+      color:
+        fontTheme.bodyTextColor === "#FFFFFF"
+          ? "#666666"
+          : fontTheme.bodyTextColor || "#666666",
+    };
+  }
+  return {
+    fontFamily: fontTheme.fontFamily,
+    fontWeight: fontTheme.fontWeight,
+    fontSize: fontTheme.fontSize,
+    color: fontTheme.headingColor || "#333333",
+  };
+};
+
 const useCustomTheme = () => {
   const [customTheme, setCustomTheme] = useState(() => {
     try {
@@ -55,6 +104,32 @@ const SuperBillsPage = () => {
     next: null,
     previous: null,
   });
+
+  const [fontTheme, setFontTheme] = useState(getFontTheme());
+
+  useEffect(() => {
+    const reloadTheme = () => setFontTheme(getFontTheme());
+    window.addEventListener("customColorThemeChanged", reloadTheme);
+    window.addEventListener("storage", (e) => {
+      if (e.key === THEME_STORAGE_KEY) reloadTheme();
+    });
+    return () => {
+      window.removeEventListener("customColorThemeChanged", reloadTheme);
+      window.removeEventListener("storage", reloadTheme);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!fontTheme) return;
+    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
+    document.body.style.fontWeight = fontTheme.fontWeight || 400;
+    document.body.style.fontSize = fontTheme.fontSize || "16px";
+    return () => {
+      document.body.style.fontFamily = "";
+      document.body.style.fontWeight = "";
+      document.body.style.fontSize = "";
+    };
+  }, [fontTheme]);
 
   useEffect(() => {
     fetchIcdCodes();
@@ -241,14 +316,13 @@ const SuperBillsPage = () => {
     }
   };
 
-  // Button and icon style helpers
   const getButtonStyle = (filled = true) => ({
     backgroundColor: filled ? customTheme.primaryColor : "#fff",
     color: filled ? "#fff" : customTheme.primaryColor,
     border: `1.5px solid ${customTheme.primaryColor}`,
-    fontFamily: customTheme.fontFamily || "inherit",
-    fontWeight: customTheme.fontWeight || 400,
-    fontSize: customTheme.fontSize || "16px",
+    fontFamily: fontTheme.fontFamily || "inherit",
+    fontWeight: fontTheme.fontWeight || 400,
+    fontSize: fontTheme.fontSize || "16px",
     transition: "all 0.15s",
   });
 
@@ -256,17 +330,17 @@ const SuperBillsPage = () => {
     backgroundColor: "#fff",
     color: customTheme.primaryColor,
     border: `1.5px solid ${customTheme.primaryColor}`,
-    fontFamily: customTheme.fontFamily || "inherit",
-    fontWeight: customTheme.fontWeight || 400,
-    fontSize: customTheme.fontSize || "16px",
+    fontFamily: fontTheme.fontFamily || "inherit",
+    fontWeight: fontTheme.fontWeight || 400,
+    fontSize: fontTheme.fontSize || "16px",
     transition: "all 0.15s",
   });
 
   const getIconStyle = () => ({
     color: customTheme.primaryColor,
-    fontSize: customTheme.fontSize || "20px",
-    fontFamily: customTheme.fontFamily || "inherit",
-    fontWeight: customTheme.fontWeight || 400,
+    fontSize: fontTheme.fontSize || "20px",
+    fontFamily: fontTheme.fontFamily || "inherit",
+    fontWeight: fontTheme.fontWeight || 400,
   });
 
   return (
@@ -275,8 +349,16 @@ const SuperBillsPage = () => {
         <div className="flex flex-col">
           <div className="bg-white min-h-[200px] rounded-[20px] shadow-lg mb-4">
             <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
-              <h2 className="text-lg font-medium">ICD Codes</h2>
-              <span className="text-sm text-gray-600">
+              <h2
+                className="text-lg font-medium"
+                style={getFontStyle(fontTheme, "subHeading")}
+              >
+                ICD Codes
+              </h2>
+              <span
+                className="text-sm"
+                style={getFontStyle(fontTheme, "body2")}
+              >
                 {icdPagination.count} total codes
               </span>
             </div>
@@ -290,6 +372,7 @@ const SuperBillsPage = () => {
                     onChange={(e) => setIcdSearch(e.target.value)}
                     onKeyPress={(e) => handleKeyPress(e, "icd")}
                     className="w-full rounded-full pe-4 ps-10 py-3 border border-grey bg-grey focus:outline-grey2"
+                    style={getFontStyle(fontTheme, "body1")}
                   />
                   <span className="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
                     search
@@ -305,7 +388,10 @@ const SuperBillsPage = () => {
               </div>
 
               {icdError && (
-                <div className="text-red-500 text-sm mb-4 p-2 bg-red-50 rounded">
+                <div
+                  className="text-red-500 text-sm mb-4 p-2 bg-red-50 rounded"
+                  style={getFontStyle(fontTheme, "body2")}
+                >
                   {icdError}
                 </div>
               )}
@@ -314,8 +400,18 @@ const SuperBillsPage = () => {
                 <table className="w-full text-left mt-4">
                   <thead className="sticky top-0 bg-white">
                     <tr>
-                      <th className="py-2 px-4 border-b-2">ICD Code</th>
-                      <th className="py-2 px-4 border-b-2">Description</th>
+                      <th
+                        className="py-2 px-4 border-b-2"
+                        style={getFontStyle(fontTheme, "body1")}
+                      >
+                        ICD Code
+                      </th>
+                      <th
+                        className="py-2 px-4 border-b-2"
+                        style={getFontStyle(fontTheme, "body1")}
+                      >
+                        Description
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -327,7 +423,12 @@ const SuperBillsPage = () => {
                               className="animate-spin rounded-full h-6 w-6 border-b-2"
                               style={{ borderColor: customTheme.primaryColor }}
                             ></div>
-                            <span className="ml-2">Loading...</span>
+                            <span
+                              className="ml-2"
+                              style={getFontStyle(fontTheme, "body1")}
+                            >
+                              Loading...
+                            </span>
                           </div>
                         </td>
                       </tr>
@@ -336,6 +437,7 @@ const SuperBillsPage = () => {
                         <td
                           colSpan="2"
                           className="py-4 px-4 text-center text-gray-500"
+                          style={getFontStyle(fontTheme, "body1")}
                         >
                           No ICD codes found
                         </td>
@@ -356,10 +458,16 @@ const SuperBillsPage = () => {
                               : {}
                           }
                         >
-                          <td className="py-2 px-4 border-b font-medium">
+                          <td
+                            className="py-2 px-4 border-b font-medium"
+                            style={getFontStyle(fontTheme, "body1")}
+                          >
                             {icd.code}
                           </td>
-                          <td className="py-2 px-4 border-b">
+                          <td
+                            className="py-2 px-4 border-b"
+                            style={getFontStyle(fontTheme, "body2")}
+                          >
                             {icd.description}
                           </td>
                         </tr>
@@ -373,7 +481,10 @@ const SuperBillsPage = () => {
                 icdCodes.length > 0 &&
                 (icdPagination.next || icdPagination.previous) && (
                   <div className="flex justify-between items-center mt-4 px-4 py-3 border-t">
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div
+                      className="flex items-center text-sm"
+                      style={getFontStyle(fontTheme, "body2")}
+                    >
                       <span>
                         Page {getIcdCurrentPageInfo().current} of{" "}
                         {getIcdCurrentPageInfo().total}
@@ -421,9 +532,17 @@ const SuperBillsPage = () => {
         <div className="flex flex-col">
           <div className="bg-white min-h-[200px] rounded-[20px] shadow-lg mb-4">
             <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
-              <h2 className="text-lg font-medium">CPT Codes</h2>
+              <h2
+                className="text-lg font-medium"
+                style={getFontStyle(fontTheme, "subHeading")}
+              >
+                CPT Codes
+              </h2>
               {selectedIcdCode && (
-                <span className="text-sm text-gray-600">
+                <span
+                  className="text-sm"
+                  style={getFontStyle(fontTheme, "body2")}
+                >
                   For ICD: {selectedIcdCode.code} | {cptPagination.count} codes
                 </span>
               )}
@@ -439,6 +558,7 @@ const SuperBillsPage = () => {
                     onKeyPress={(e) => handleKeyPress(e, "cpt")}
                     disabled={!selectedIcdCode}
                     className="w-full rounded-full pe-4 ps-10 py-3 border border-grey bg-grey focus:outline-grey2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={getFontStyle(fontTheme, "body1")}
                   />
                   <span className="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
                     search
@@ -455,7 +575,10 @@ const SuperBillsPage = () => {
               </div>
 
               {cptError && (
-                <div className="text-red-500 text-sm mb-4 p-2 bg-red-50 rounded">
+                <div
+                  className="text-red-500 text-sm mb-4 p-2 bg-red-50 rounded"
+                  style={getFontStyle(fontTheme, "body2")}
+                >
                   {cptError}
                 </div>
               )}
@@ -464,8 +587,18 @@ const SuperBillsPage = () => {
                 <table className="w-full text-left mt-4">
                   <thead className="sticky top-0 bg-white">
                     <tr>
-                      <th className="py-2 px-4 border-b-2">CPT Code</th>
-                      <th className="py-2 px-4 border-b-2">Description</th>
+                      <th
+                        className="py-2 px-4 border-b-2"
+                        style={getFontStyle(fontTheme, "body1")}
+                      >
+                        CPT Code
+                      </th>
+                      <th
+                        className="py-2 px-4 border-b-2"
+                        style={getFontStyle(fontTheme, "body1")}
+                      >
+                        Description
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -479,7 +612,7 @@ const SuperBillsPage = () => {
                             <span className="material-icons text-4xl mb-2 text-gray-300">
                               info
                             </span>
-                            <span>
+                            <span style={getFontStyle(fontTheme, "body1")}>
                               Select an ICD code to view related CPT codes
                             </span>
                           </div>
@@ -493,7 +626,12 @@ const SuperBillsPage = () => {
                               className="animate-spin rounded-full h-6 w-6 border-b-2"
                               style={{ borderColor: customTheme.primaryColor }}
                             ></div>
-                            <span className="ml-2">Loading CPT codes...</span>
+                            <span
+                              className="ml-2"
+                              style={getFontStyle(fontTheme, "body1")}
+                            >
+                              Loading CPT codes...
+                            </span>
                           </div>
                         </td>
                       </tr>
@@ -502,6 +640,7 @@ const SuperBillsPage = () => {
                         <td
                           colSpan="2"
                           className="py-4 px-4 text-center text-gray-500"
+                          style={getFontStyle(fontTheme, "body1")}
                         >
                           No CPT codes found for the selected ICD code
                         </td>
@@ -512,10 +651,16 @@ const SuperBillsPage = () => {
                           key={index}
                           className="hover:bg-gray-50 transition-colors"
                         >
-                          <td className="py-2 px-4 border-b font-medium">
+                          <td
+                            className="py-2 px-4 border-b font-medium"
+                            style={getFontStyle(fontTheme, "body1")}
+                          >
                             {cpt.code}
                           </td>
-                          <td className="py-2 px-4 border-b">
+                          <td
+                            className="py-2 px-4 border-b"
+                            style={getFontStyle(fontTheme, "body2")}
+                          >
                             {cpt.description || "No description available"}
                           </td>
                         </tr>
@@ -529,7 +674,10 @@ const SuperBillsPage = () => {
                 cptCodes.length > 0 &&
                 (cptPagination.next || cptPagination.previous) && (
                   <div className="flex justify-between items-center mt-4 px-4 py-3 border-t">
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div
+                      className="flex items-center text-sm"
+                      style={getFontStyle(fontTheme, "body2")}
+                    >
                       <span>
                         Page {getCptCurrentPageInfo().current} of{" "}
                         {getCptCurrentPageInfo().total}

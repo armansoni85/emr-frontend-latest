@@ -83,6 +83,72 @@ const PatientAddPage = () => {
     return foundCountry ? foundCountry.value : countryName;
   }, []);
 
+  const THEME_STORAGE_KEY = "customColorTheme";
+  const getFontTheme = () => {
+    try {
+      const theme = localStorage.getItem(THEME_STORAGE_KEY);
+      return theme ? JSON.parse(theme) : {};
+    } catch {
+      return {};
+    }
+  };
+  const getFontStyle = (fontTheme, type = "main") => {
+    if (!fontTheme) return {};
+    if (type === "subHeading") {
+      return {
+        fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
+        fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
+        fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
+      };
+    }
+    if (type === "body1") {
+      return {
+        fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
+        fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
+        fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
+      };
+    }
+    if (type === "body2") {
+      return {
+        fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
+        fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
+        fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
+      };
+    }
+    // main/heading
+    return {
+      fontFamily: fontTheme.fontFamily,
+      fontWeight: fontTheme.fontWeight,
+      fontSize: fontTheme.fontSize,
+    };
+  };
+
+  const [fontTheme, setFontTheme] = useState(getFontTheme());
+
+  useEffect(() => {
+    const reloadTheme = () => setFontTheme(getFontTheme());
+    window.addEventListener("customColorThemeChanged", reloadTheme);
+    window.addEventListener("storage", (e) => {
+      if (e.key === THEME_STORAGE_KEY) reloadTheme();
+    });
+    return () => {
+      window.removeEventListener("customColorThemeChanged", reloadTheme);
+      window.removeEventListener("storage", reloadTheme);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!fontTheme) return;
+    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
+    document.body.style.fontWeight = fontTheme.fontWeight || 400;
+    document.body.style.fontSize = fontTheme.fontSize || "16px";
+    return () => {
+      document.body.style.fontFamily = "";
+      document.body.style.fontWeight = "";
+      document.body.style.fontSize = "";
+    };
+  }, [fontTheme]);
+
   useEffect(() => {
     if (patientData?.success) {
       const patient = patientData.data;
@@ -343,9 +409,7 @@ const PatientAddPage = () => {
     border: `1.5px solid ${
       selected ? customTheme.primaryColor : "transparent"
     }`,
-    fontFamily: customTheme.fontFamily || "inherit",
-    fontWeight: customTheme.fontWeight || 400,
-    fontSize: customTheme.fontSize || "16px",
+    ...getFontStyle(fontTheme, "body1"),
     transition: "all 0.15s",
     cursor: "pointer",
   });
@@ -359,6 +423,7 @@ const PatientAddPage = () => {
           isOutline={true}
           className="px-8"
           onClick={handleCancel}
+          style={getFontStyle(fontTheme, "body1")}
         >
           Cancel
         </Button>
@@ -367,6 +432,7 @@ const PatientAddPage = () => {
           className="px-8"
           onClick={handleOnSubmit}
           disabled={isSubmitted || updatePatientMutation.isPending}
+          style={getFontStyle(fontTheme, "body1")}
         >
           {isSubmitted || updatePatientMutation.isPending ? (
             <SpinnerComponent color="white" className="mr-2" />
@@ -378,8 +444,14 @@ const PatientAddPage = () => {
         </Button>
       </div>
       <div className="bg-white shadow-md rounded-2xl pb-4">
-        <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
-          <h2 className="text-lg font-medium">
+        <div
+          className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b"
+          style={getFontStyle(fontTheme, "subHeading")}
+        >
+          <h2
+            className="text-lg font-medium"
+            style={getFontStyle(fontTheme, "subHeading")}
+          >
             {isEditMode ? "Edit Patient" : "Add New Patient"}
           </h2>
         </div>
@@ -391,6 +463,8 @@ const PatientAddPage = () => {
             value={form.patientName || ""}
             onChange={(e) => handleFormChange("patientName", e, setForm)}
             wrapperClassName="p-4"
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           />
           <InputWithLabel
             label={"Mobile Number:"}
@@ -399,6 +473,8 @@ const PatientAddPage = () => {
             value={form.mobileNumber || ""}
             onChange={(e) => handleFormChange("mobileNumber", e, setForm)}
             wrapperClassName="p-4"
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           />
           <InputWithLabel
             label={"Email ID:"}
@@ -407,6 +483,8 @@ const PatientAddPage = () => {
             value={form.email || ""}
             onChange={(e) => handleFormChange("email", e, setForm)}
             wrapperClassName="p-4"
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           />
           <InputWithLabel
             label={"Date of Birth:"}
@@ -415,6 +493,8 @@ const PatientAddPage = () => {
             value={form.dob || ""}
             onChange={(e) => handleFormChange("dob", e, setForm)}
             wrapperClassName="p-4"
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           />
 
           {/* Country Searchable Select */}
@@ -430,10 +510,20 @@ const PatientAddPage = () => {
             keyLabel={(option) => option.text}
             wrapperClassName="p-4 z-30"
             placeholder="Search and select country"
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           />
 
-          <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
-            <label className="block text-nowrap my-auto">Gender:</label>
+          <div
+            className="p-4 grid lg:grid-cols-3 grid-cols-1"
+            style={getFontStyle(fontTheme, "body1")}
+          >
+            <label
+              className="block text-nowrap my-auto"
+              style={getFontStyle(fontTheme, "body1")}
+            >
+              Gender:
+            </label>
             <div className="flex items-center w-full col-span-2">
               <label
                 className="mr-2 px-3 py-1 w-full text-center rounded-full cursor-pointer"
@@ -486,6 +576,8 @@ const PatientAddPage = () => {
             value={form.bloodGroup || ""}
             onChange={(e) => handleFormChange("bloodGroup", e, setForm)}
             wrapperClassName="p-4"
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           >
             <option value="">Select Blood Group</option>
             <option value="A+">A+</option>
@@ -497,8 +589,15 @@ const PatientAddPage = () => {
             <option value="O+">O+</option>
             <option value="O-">O-</option>
           </InputWithLabel>
-          <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
-            <label htmlFor="heightFeet" className="block text-nowrap my-auto">
+          <div
+            className="p-4 grid lg:grid-cols-3 grid-cols-1"
+            style={getFontStyle(fontTheme, "body1")}
+          >
+            <label
+              htmlFor="heightFeet"
+              className="block text-nowrap my-auto"
+              style={getFontStyle(fontTheme, "body1")}
+            >
               Height:
             </label>
             <div className="flex items-center w-full col-span-2">
@@ -511,8 +610,14 @@ const PatientAddPage = () => {
                   value={form.heightFeet || ""}
                   onChange={(e) => handleFormChange("heightFeet", e, setForm)}
                   className="focus:outline-none w-full px-5 py-3 border rounded-full"
+                  style={getFontStyle(fontTheme, "body2")}
                 />
-                <span className="flex items-center pr-3 text-muted">Feet</span>
+                <span
+                  className="flex items-center pr-3 text-muted"
+                  style={getFontStyle(fontTheme, "body2")}
+                >
+                  Feet
+                </span>
               </div>
               <div className="flex gap-2 mt-1 ml-2">
                 <input
@@ -523,15 +628,26 @@ const PatientAddPage = () => {
                   value={form.heightInches || ""}
                   onChange={(e) => handleFormChange("heightInches", e, setForm)}
                   className="focus:outline-none w-full px-5 py-3 border rounded-full"
+                  style={getFontStyle(fontTheme, "body2")}
                 />
-                <span className="flex items-center pr-3 text-muted">
+                <span
+                  className="flex items-center pr-3 text-muted"
+                  style={getFontStyle(fontTheme, "body2")}
+                >
                   Inches
                 </span>
               </div>
             </div>
           </div>
-          <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
-            <label htmlFor="weightFeet" className="block text-nowrap my-auto">
+          <div
+            className="p-4 grid lg:grid-cols-3 grid-cols-1"
+            style={getFontStyle(fontTheme, "body1")}
+          >
+            <label
+              htmlFor="weightFeet"
+              className="block text-nowrap my-auto"
+              style={getFontStyle(fontTheme, "body1")}
+            >
               Weight:
             </label>
             <div className="flex items-center w-full col-span-2">
@@ -544,8 +660,14 @@ const PatientAddPage = () => {
                   value={form.weightFeet || ""}
                   onChange={(e) => handleFormChange("weightFeet", e, setForm)}
                   className="focus:outline-none w-full px-5 py-3 border rounded-full"
+                  style={getFontStyle(fontTheme, "body2")}
                 />
-                <span className="flex items-center pr-3 text-muted">Kilo</span>
+                <span
+                  className="flex items-center pr-3 text-muted"
+                  style={getFontStyle(fontTheme, "body2")}
+                >
+                  Kilo
+                </span>
               </div>
               <div className="flex gap-2 mt-1 ml-2">
                 <input
@@ -556,8 +678,14 @@ const PatientAddPage = () => {
                   value={form.weightInches || ""}
                   onChange={(e) => handleFormChange("weightInches", e, setForm)}
                   className="focus:outline-none w-full px-5 py-3 border rounded-full"
+                  style={getFontStyle(fontTheme, "body2")}
                 />
-                <span className="flex items-center pr-3 text-muted">Grams</span>
+                <span
+                  className="flex items-center pr-3 text-muted"
+                  style={getFontStyle(fontTheme, "body2")}
+                >
+                  Grams
+                </span>
               </div>
             </div>
           </div>
@@ -568,16 +696,27 @@ const PatientAddPage = () => {
             value={form.disease || ""}
             onChange={(e) => handleFormChange("disease", e, setForm)}
             wrapperClassName="p-4"
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           />
 
-          <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
-            <label className="block text-nowrap my-auto">Doctor Name:</label>
+          <div
+            className="p-4 grid lg:grid-cols-3 grid-cols-1"
+            style={getFontStyle(fontTheme, "body1")}
+          >
+            <label
+              className="block text-nowrap my-auto"
+              style={getFontStyle(fontTheme, "body1")}
+            >
+              Doctor Name:
+            </label>
             <div className="flex items-center w-full col-span-2">
               <input
                 type="text"
                 value={doctorName}
                 readOnly
                 className="focus:outline-none w-full px-5 py-3 border rounded-full bg-gray-100 text-gray-600"
+                style={getFontStyle(fontTheme, "body2")}
               />
             </div>
           </div>
@@ -589,6 +728,8 @@ const PatientAddPage = () => {
             value={form.patientAddress || ""}
             onChange={(e) => handleFormChange("patientAddress", e, setForm)}
             wrapperClassName="p-4"
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           />
           {!isEditMode && (
             <div>
@@ -599,6 +740,8 @@ const PatientAddPage = () => {
                 value={form.password || ""}
                 onChange={(e) => handleFormChange("password", e, setForm)}
                 wrapperClassName="p-4"
+                style={getFontStyle(fontTheme, "body1")}
+                labelStyle={getFontStyle(fontTheme, "body1")}
               />
               <InputWithLabel
                 label={"Confirm Password:"}
@@ -609,6 +752,8 @@ const PatientAddPage = () => {
                   handleFormChange("confirmPassword", e, setForm)
                 }
                 wrapperClassName="p-4"
+                style={getFontStyle(fontTheme, "body1")}
+                labelStyle={getFontStyle(fontTheme, "body1")}
               />
             </div>
           )}

@@ -12,6 +12,45 @@ import { handleFormChange } from "@src/utils/handleForm";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
+const THEME_STORAGE_KEY = "customColorTheme";
+const getFontTheme = () => {
+  try {
+    const theme = localStorage.getItem(THEME_STORAGE_KEY);
+    return theme ? JSON.parse(theme) : {};
+  } catch {
+    return {};
+  }
+};
+const getFontStyle = (fontTheme, type = "main") => {
+  if (!fontTheme) return {};
+  if (type === "subHeading") {
+    return {
+      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body1") {
+    return {
+      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body2") {
+    return {
+      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
+    };
+  }
+  return {
+    fontFamily: fontTheme.fontFamily,
+    fontWeight: fontTheme.fontWeight,
+    fontSize: fontTheme.fontSize,
+  };
+};
+
 const AppointmentAddPage = () => {
   const [form, setForm] = useState({
     patient: "",
@@ -34,6 +73,30 @@ const AppointmentAddPage = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
 
+  const [fontTheme, setFontTheme] = useState(getFontTheme());
+  useEffect(() => {
+    const reloadTheme = () => setFontTheme(getFontTheme());
+    window.addEventListener("customColorThemeChanged", reloadTheme);
+    window.addEventListener("storage", (e) => {
+      if (e.key === THEME_STORAGE_KEY) reloadTheme();
+    });
+    return () => {
+      window.removeEventListener("customColorThemeChanged", reloadTheme);
+      window.removeEventListener("storage", reloadTheme);
+    };
+  }, []);
+  useEffect(() => {
+    if (!fontTheme) return;
+    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
+    document.body.style.fontWeight = fontTheme.fontWeight || 400;
+    document.body.style.fontSize = fontTheme.fontSize || "16px";
+    return () => {
+      document.body.style.fontFamily = "";
+      document.body.style.fontWeight = "";
+      document.body.style.fontSize = "";
+    };
+  }, [fontTheme]);
+
   // Fetch patients on component mount
   useEffect(() => {
     fetchPatients();
@@ -42,22 +105,16 @@ const AppointmentAddPage = () => {
   const fetchPatients = async (search = "") => {
     try {
       setPatientsLoading(true);
-
-      // Add search parameter if provided
       const params = { role: 3 };
       if (search) {
         params.search = search;
       }
-
       const response = await getUsers(params);
-
       if (response && response.data && response.data.results) {
         const patientsData = response.data.results;
-
         const patientsOnly = patientsData.filter(
           (user) => user.role === "3" || user.role === 3
         );
-
         setPatients(patientsOnly);
       } else if (response && response.results) {
         const patientsOnly = response.results.filter(
@@ -70,11 +127,9 @@ const AppointmentAddPage = () => {
         );
         setPatients(patientsOnly);
       } else {
-        console.warn("Unexpected response structure:", response);
         setPatients([]);
       }
     } catch (error) {
-      console.error("Error fetching patients:", error);
       toast.error("Failed to load patients");
       setPatients([]);
     } finally {
@@ -84,7 +139,6 @@ const AppointmentAddPage = () => {
 
   // Handle patient search for searchable select
   const handleGetPatientList = async (search) => {
-    console.log("Searching patients with:", search);
     await fetchPatients(search);
   };
 
@@ -100,24 +154,17 @@ const AppointmentAddPage = () => {
   }, [patients]);
   // Handle patient selection from searchable select
   const handlePatientSelect = (selectedPatient) => {
-    console.log("Patient selected from searchable select:", selectedPatient);
-
     if (selectedPatient) {
       setIsLoadingPatientDetail(true);
-
-      // Update form with selected patient
       setForm((prev) => ({
         ...prev,
         patient: selectedPatient.id,
-        // Auto-fill editable fields
         mobileNumber: selectedPatient.phone_number || "",
         email: selectedPatient.email || "",
         dob: selectedPatient.dob || "",
       }));
-
       setIsLoadingPatientDetail(false);
     } else {
-      // Clear form if no patient selected
       setForm((prev) => ({
         ...prev,
         patient: "",
@@ -141,7 +188,6 @@ const AppointmentAddPage = () => {
       setIsSubmitting(false);
       return;
     }
-
     try {
       const appointmentData = {
         patient: form.patient,
@@ -151,19 +197,7 @@ const AppointmentAddPage = () => {
         reason_of_visit: form.reasonOfVisit || "",
         status: "scheduled",
       };
-
-      console.log(
-        "Submitting appointment data (without mobile/email/dob):",
-        appointmentData
-      );
-      console.log("Form data (local only - mobile/email/dob):", {
-        mobileNumber: form.mobileNumber,
-        email: form.email,
-        dob: form.dob,
-      });
-
       const response = await createAppointment(appointmentData);
-
       if (response) {
         setForm({
           patient: "",
@@ -175,15 +209,10 @@ const AppointmentAddPage = () => {
           disease: "",
           reasonOfVisit: "",
         });
-
         toast.success("Appointment scheduled successfully!");
-        console.log("Appointment created:", response);
-
         navigate(getRoutePath("doctor.appointments.list"), { replace: true });
       }
     } catch (error) {
-      console.error("Error creating appointment:", error);
-
       if (error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else if (error.response?.data?.error) {
@@ -221,10 +250,16 @@ const AppointmentAddPage = () => {
           isOutline={true}
           className="px-8"
           onClick={() => isSubmitting && dispatch({ type: "SUBMISSION/RESET" })}
+          style={getFontStyle(fontTheme, "body2")}
         >
           Cancel
         </Button>
-        <Button color="primary" className="px-8" onClick={handleOnSubmit}>
+        <Button
+          color="primary"
+          className="px-8"
+          onClick={handleOnSubmit}
+          style={getFontStyle(fontTheme, "body2")}
+        >
           {isSubmitting ? (
             <SpinnerComponent color="white" className="mr-2" />
           ) : (
@@ -235,11 +270,15 @@ const AppointmentAddPage = () => {
 
       <div className="bg-white shadow-md rounded-2xl pb-4">
         <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
-          <h2 className="text-lg font-medium">Schedule New Appointment</h2>
+          <h2
+            className="text-lg font-medium"
+            style={getFontStyle(fontTheme, "subHeading")}
+          >
+            Schedule New Appointment
+          </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2">
-          {/* Searchable Patient Selection */}
           <InputWithLabel
             label={"Patient's Name:"}
             id={"patientName"}
@@ -255,6 +294,8 @@ const AppointmentAddPage = () => {
             }
             wrapperClassName="p-4 z-20"
             disabled={isLoadingPatientDetail}
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           />
 
           <InputWithLabel
@@ -266,6 +307,8 @@ const AppointmentAddPage = () => {
             wrapperClassName="p-4"
             disabled={false}
             className=""
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           />
 
           <InputWithLabel
@@ -278,6 +321,8 @@ const AppointmentAddPage = () => {
             wrapperClassName="p-4"
             disabled={false}
             className=""
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           />
 
           <InputWithLabel
@@ -289,6 +334,8 @@ const AppointmentAddPage = () => {
             placeholder="Enter date of birth"
             disabled={false}
             className=""
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           />
 
           <InputWithLabel
@@ -300,6 +347,8 @@ const AppointmentAddPage = () => {
             wrapperClassName="p-4"
             required
             min={new Date().toISOString().split("T")[0]}
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           />
 
           <InputWithLabel
@@ -309,6 +358,8 @@ const AppointmentAddPage = () => {
             value={form.time || ""}
             onChange={(e) => handleFormChange("time", e, setForm)}
             wrapperClassName="p-4"
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           />
 
           <InputWithLabel
@@ -318,6 +369,8 @@ const AppointmentAddPage = () => {
             value={form.disease || ""}
             onChange={(e) => handleFormChange("disease", e, setForm)}
             wrapperClassName="p-4"
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           >
             <option value="Acquired">Acquired</option>
             <option value="Acute">Acute</option>
@@ -338,13 +391,18 @@ const AppointmentAddPage = () => {
             value={form.reasonOfVisit || ""}
             onChange={(e) => handleFormChange("reasonOfVisit", e, setForm)}
             wrapperClassName="p-4"
+            style={getFontStyle(fontTheme, "body1")}
+            labelStyle={getFontStyle(fontTheme, "body1")}
           />
         </div>
       </div>
 
       {/* Loading indicator for patients */}
       {patientsLoading && (
-        <div className="mt-4 p-4 bg-gray-100 rounded-lg text-center">
+        <div
+          className="mt-4 p-4 bg-gray-100 rounded-lg text-center"
+          style={getFontStyle(fontTheme, "body2")}
+        >
           <SpinnerComponent className="mr-2" />
           Loading patients...
         </div>

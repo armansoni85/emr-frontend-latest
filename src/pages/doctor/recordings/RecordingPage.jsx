@@ -1,3 +1,4 @@
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@src/components";
 import {
   analyzeRecording,
@@ -7,10 +8,48 @@ import {
 } from "@src/services/consultation.service";
 import { getUserById } from "@src/services/userService";
 import { useQuery } from "@tanstack/react-query";
-import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { getRoutePath } from "@src/utils/routeUtils";
+
+const THEME_STORAGE_KEY = "customColorTheme";
+const getFontTheme = () => {
+  try {
+    const theme = localStorage.getItem(THEME_STORAGE_KEY);
+    return theme ? JSON.parse(theme) : {};
+  } catch {
+    return {};
+  }
+};
+const getFontStyle = (fontTheme, type = "main") => {
+  if (!fontTheme) return {};
+  if (type === "subHeading") {
+    return {
+      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body1") {
+    return {
+      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body2") {
+    return {
+      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
+    };
+  }
+  return {
+    fontFamily: fontTheme.fontFamily,
+    fontWeight: fontTheme.fontWeight,
+    fontSize: fontTheme.fontSize,
+  };
+};
 
 const RecordingPage = () => {
   const navigate = useNavigate();
@@ -21,6 +60,30 @@ const RecordingPage = () => {
   const [recordingStartTime, setRecordingStartTime] = useState(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [timerInterval, setTimerInterval] = useState(null);
+
+  const [fontTheme, setFontTheme] = useState(getFontTheme());
+  useEffect(() => {
+    const reloadTheme = () => setFontTheme(getFontTheme());
+    window.addEventListener("customColorThemeChanged", reloadTheme);
+    window.addEventListener("storage", (e) => {
+      if (e.key === THEME_STORAGE_KEY) reloadTheme();
+    });
+    return () => {
+      window.removeEventListener("customColorThemeChanged", reloadTheme);
+      window.removeEventListener("storage", reloadTheme);
+    };
+  }, []);
+  useEffect(() => {
+    if (!fontTheme) return;
+    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
+    document.body.style.fontWeight = fontTheme.fontWeight || 400;
+    document.body.style.fontSize = fontTheme.fontSize || "16px";
+    return () => {
+      document.body.style.fontFamily = "";
+      document.body.style.fontWeight = "";
+      document.body.style.fontSize = "";
+    };
+  }, [fontTheme]);
 
   const chunksRef = useRef([]);
 
@@ -270,11 +333,24 @@ const RecordingPage = () => {
         <div className="flex flex-col">
           {/* Current Patient */}
           <div className="bg-white rounded-[20px] shadow-lg mb-4">
-            <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] ">
-              <h2 className="text-lg font-medium">Current Patient</h2>
-              <span className="text-red-500">SKIP</span>
+            <div
+              className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]"
+              style={getFontStyle(fontTheme, "subHeading")}
+            >
+              <h2
+                className="text-lg font-medium"
+                style={getFontStyle(fontTheme, "subHeading")}
+              >
+                Current Patient
+              </h2>
+              <span
+                className="text-red-500"
+                style={getFontStyle(fontTheme, "body2")}
+              >
+                SKIP
+              </span>
             </div>
-            <div className="p-4">
+            <div className="p-4" style={getFontStyle(fontTheme, "body1")}>
               <div className="relative">
                 <div className="flex gap-3 lg:flex-row flex-col">
                   <div className="text-center">
@@ -288,12 +364,16 @@ const RecordingPage = () => {
                   </div>
                   <div className="text-start w-full">
                     <div className="flex justify-between flex-wrap w-full">
-                      <h6 className="2xl:text-xl text-sm text-darkBlue font-medium">
+                      <h6
+                        className="2xl:text-xl text-sm text-darkBlue font-medium"
+                        style={getFontStyle(fontTheme, "main")}
+                      >
                         {patient.first_name} {patient.last_name}
                       </h6>
                       <Button
                         color="link"
                         className="2xl:text-xl text-sm text-darkBlue"
+                        style={getFontStyle(fontTheme, "body2")}
                         onClick={() =>
                           navigate(
                             getRoutePath("doctor.patients.detail", {
@@ -305,17 +385,26 @@ const RecordingPage = () => {
                         View Profile
                       </Button>
                     </div>
-                    <div className="flex gap-1 text-xs">
+                    <div
+                      className="flex gap-1 text-xs"
+                      style={getFontStyle(fontTheme, "body2")}
+                    >
                       <span>Date of Birth :</span>
                       <span className="text-muted">{patient.dob || "-"}</span>
                     </div>
-                    <div className="flex gap-1 text-xs">
+                    <div
+                      className="flex gap-1 text-xs"
+                      style={getFontStyle(fontTheme, "body2")}
+                    >
                       <span>Phone Number :</span>
                       <span className="text-muted">
                         {patient.phone_number || "-"}
                       </span>
                     </div>
-                    <div className="flex gap-1 text-xs">
+                    <div
+                      className="flex gap-1 text-xs"
+                      style={getFontStyle(fontTheme, "body2")}
+                    >
                       <span>Appointment Date &amp; Time :</span>
                       <span className="text-muted">
                         {formatAppointmentDateTime(
@@ -326,14 +415,42 @@ const RecordingPage = () => {
                   </div>
                 </div>
                 <div className="bg-grey px-2 rounded-lg py-2 mt-3 overflow-x-auto">
-                  <table className="2xl:text-sm text-xs w-full text-nowrap">
+                  <table
+                    className="2xl:text-sm text-xs w-full text-nowrap"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
                     <tbody>
                       <tr>
-                        <th className="font-medium">Gender</th>
-                        <th className="font-medium">Age</th>
-                        <th className="font-medium">Weight</th>
-                        <th className="font-medium">Height</th>
-                        <th className="font-medium">Blood Group</th>
+                        <th
+                          className="font-medium"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
+                          Gender
+                        </th>
+                        <th
+                          className="font-medium"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
+                          Age
+                        </th>
+                        <th
+                          className="font-medium"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
+                          Weight
+                        </th>
+                        <th
+                          className="font-medium"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
+                          Height
+                        </th>
+                        <th
+                          className="font-medium"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
+                          Blood Group
+                        </th>
                       </tr>
                       <tr>
                         <td className="text-muted text-center">
@@ -368,6 +485,7 @@ const RecordingPage = () => {
                     isOutline
                     color="primary"
                     size="small"
+                    style={getFontStyle(fontTheme, "body2")}
                     onClick={handleFinishConsultation}
                   >
                     Finish Consultation
@@ -378,6 +496,7 @@ const RecordingPage = () => {
                       disabled={consultation?.is_finished}
                       color="primary"
                       size="small"
+                      style={getFontStyle(fontTheme, "body2")}
                       onClick={handleStartRecording}
                     >
                       Start Recording
@@ -387,6 +506,7 @@ const RecordingPage = () => {
                       disabled={consultation?.is_finished}
                       color="danger"
                       size="small"
+                      style={getFontStyle(fontTheme, "body2")}
                       onClick={handleStopRecording}
                     >
                       Stop Recording{" "}
@@ -400,14 +520,30 @@ const RecordingPage = () => {
           </div>
           {/* Recordings */}
           <div className="bg-white min-h-[200px] rounded-[20px] shadow-lg mb-4">
-            <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] ">
-              <h2 className="text-lg font-medium">Recordings</h2>
-              <h2 className="text-lg font-medium">Time</h2>
+            <div
+              className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]"
+              style={getFontStyle(fontTheme, "subHeading")}
+            >
+              <h2
+                className="text-lg font-medium"
+                style={getFontStyle(fontTheme, "subHeading")}
+              >
+                Recordings
+              </h2>
+              <h2
+                className="text-lg font-medium"
+                style={getFontStyle(fontTheme, "subHeading")}
+              >
+                Time
+              </h2>
             </div>
-            <div className="relative">
+            <div className="relative" style={getFontStyle(fontTheme, "body1")}>
               {consultation?.recordings?.length === 0 && (
                 <div className="my-32 text-center">
-                  <h1 className="text-muted text-2xl font-bold my-auto">
+                  <h1
+                    className="text-muted text-2xl font-bold my-auto"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
                     No Recordings to Show
                   </h1>
                 </div>
@@ -417,19 +553,31 @@ const RecordingPage = () => {
                 <div
                   key={idx}
                   className="flex justify-content-between border-b px-3 pt-4 pb-2"
+                  style={getFontStyle(fontTheme, "body1")}
                 >
                   <div className="flex gap-2 w-full">
                     <span className="inline-block bg-danger text-white rounded-full p-1 h-8 w-8 flex items-center justify-center">
                       <i className="material-icons">play_arrow</i>
                     </span>
                     <div className="text-medium text-start">
-                      <p className="leading-none">{`Recording ${idx + 1}`}</p>
-                      <span className="text-muted 2xl:text-sm text-xs">
+                      <p
+                        className="leading-none"
+                        style={getFontStyle(fontTheme, "body1")}
+                      >
+                        {`Recording ${idx + 1}`}
+                      </p>
+                      <span
+                        className="text-muted 2xl:text-sm text-xs"
+                        style={getFontStyle(fontTheme, "body2")}
+                      >
                         Just Now
                       </span>
                     </div>
                   </div>
-                  <span className="text-muted 2xl:text-sm text-xs text-nowrap my-auto">
+                  <span
+                    className="text-muted 2xl:text-sm text-xs text-nowrap my-auto"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
                     4 mins 35 secs
                   </span>
                 </div>
@@ -439,6 +587,7 @@ const RecordingPage = () => {
               <Button
                 color="primary"
                 size="small"
+                style={getFontStyle(fontTheme, "body2")}
                 disabled={
                   !consultation?.is_finished ||
                   isAnalyzing ||
@@ -453,22 +602,38 @@ const RecordingPage = () => {
         </div>
         {/* Recordings Output */}
         <div className="bg-white rounded-[20px] shadow-lg mb-4 col-span-2">
-          <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] ">
-            <h2 className="text-lg font-medium">Recordings Output</h2>
-            <a href="" className="text-primary">
+          <div
+            className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]"
+            style={getFontStyle(fontTheme, "subHeading")}
+          >
+            <h2
+              className="text-lg font-medium"
+              style={getFontStyle(fontTheme, "subHeading")}
+            >
+              Recordings Output
+            </h2>
+            <a
+              href=""
+              className="text-primary"
+              style={getFontStyle(fontTheme, "body2")}
+            >
               Update Data in Profile
             </a>
           </div>
           {!consultation?.is_finished &&
           !consultation?.recording_ai_voice_note ? (
             <div className="my-32 text-center">
-              <h1 className="text-muted text-2xl font-bold my-auto">
+              <h1
+                className="text-muted text-2xl font-bold my-auto"
+                style={getFontStyle(fontTheme, "body2")}
+              >
                 No Analysis Data Available
               </h1>
             </div>
           ) : (
             <div
               className="p-4"
+              style={getFontStyle(fontTheme, "body1")}
               dangerouslySetInnerHTML={{
                 __html: consultation?.recording_ai_voice_note?.replace(
                   /\n/g,

@@ -3,18 +3,93 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import "flatpickr/dist/themes/material_blue.css";
 import { useNavigate } from "react-router-dom";
-import { useTheme } from "@src/context/ThemeContext"; // <-- import theme
+import { useTheme } from "@src/context/ThemeContext";
 import {
   getMonthlyPatient,
   getPatientStatistics,
 } from "@src/services/patientService";
 import { getAppointments } from "@src/services/appointmentService";
 
+// --- Typography helpers ---
+const THEME_STORAGE_KEY = "customColorTheme";
+const getFontTheme = () => {
+  try {
+    const theme = localStorage.getItem(THEME_STORAGE_KEY);
+    return theme ? JSON.parse(theme) : {};
+  } catch {
+    return {};
+  }
+};
+const getFontStyle = (fontTheme, type = "main") => {
+  if (!fontTheme) return {};
+  if (type === "subHeading") {
+    return {
+      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body1") {
+    return {
+      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body2") {
+    return {
+      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
+    };
+  }
+  // main/heading
+  return {
+    fontFamily: fontTheme.fontFamily,
+    fontWeight: fontTheme.fontWeight,
+    fontSize: fontTheme.fontSize,
+  };
+};
+// --- End typography helpers ---
+
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
+
+  // --- Font theme state from localStorage ---
+  const [fontTheme, setFontTheme] = useState(getFontTheme());
+
+  // Listen for theme changes
+  useEffect(() => {
+    const reloadTheme = () => {
+      setFontTheme(getFontTheme());
+    };
+    window.addEventListener("customColorThemeChanged", reloadTheme);
+    window.addEventListener("storage", (e) => {
+      if (e.key === THEME_STORAGE_KEY) reloadTheme();
+    });
+    return () => {
+      window.removeEventListener("customColorThemeChanged", reloadTheme);
+      window.removeEventListener("storage", reloadTheme);
+    };
+  }, []);
+
+  // Auto-apply font customization to body
+  useEffect(() => {
+    if (!fontTheme) return;
+    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
+    document.body.style.fontWeight = fontTheme.fontWeight || 400;
+    document.body.style.fontSize = fontTheme.fontSize || "16px";
+    return () => {
+      document.body.style.fontFamily = "";
+      document.body.style.fontWeight = "";
+      document.body.style.fontSize = "";
+    };
+  }, [fontTheme]);
+  // --- End font theme state ---
+
   const [selectedPeriod, setSelectedPeriod] = useState("monthly");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -457,9 +532,15 @@ const DashboardPage = () => {
       {/* Cards Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Total Patients */}
-        <div className="p-4 rounded-lg bg-gradient-to-r from-orange-400 to-red-500 text-white shadow-md flex flex-col justify-between">
+        <div
+          className="p-4 rounded-lg bg-gradient-to-r from-orange-400 to-red-500 text-white shadow-md flex flex-col justify-between"
+          style={getFontStyle(fontTheme, "main")}
+        >
           <div>
-            <p className="text-lg font-semibold font-dashboard">
+            <p
+              className="text-lg font-semibold font-dashboard"
+              style={getFontStyle(fontTheme, "subHeading")}
+            >
               Total Patients
             </p>
             <div className="bg-white bg-opacity-50 p-2 rounded-xl w-14 my-2">
@@ -467,37 +548,63 @@ const DashboardPage = () => {
             </div>
           </div>
           <div className="flex flex-col items-center mt-auto">
-            <p className="font-dashboard-number text-4xl font-bold">
+            <p
+              className="font-dashboard-number text-4xl font-bold"
+              style={getFontStyle(fontTheme, "main")}
+            >
               {patientStatistics.total_patients}
             </p>
-            <p className="font-dashboard-trend text-sm mt-2">
+            <p
+              className="font-dashboard-trend text-sm mt-2"
+              style={getFontStyle(fontTheme, "body2")}
+            >
               {patientStatistics.difference_from_last_month}{" "}
               {patientStatistics.is_increase ? "↑" : "↓"} vs Last Month
             </p>
           </div>
         </div>
         {/* New Patients */}
-        <div className="p-4 rounded-lg bg-gradient-to-r from-blue-400 to-blue-600 text-white shadow-md flex flex-col justify-between">
+        <div
+          className="p-4 rounded-lg bg-gradient-to-r from-blue-400 to-blue-600 text-white shadow-md flex flex-col justify-between"
+          style={getFontStyle(fontTheme, "main")}
+        >
           <div>
-            <p className="text-lg font-semibold font-dashboard">New Patients</p>
+            <p
+              className="text-lg font-semibold font-dashboard"
+              style={getFontStyle(fontTheme, "subHeading")}
+            >
+              New Patients
+            </p>
             <div className="bg-white bg-opacity-50 p-2 rounded-xl w-14 my-2">
               {/* SVG */}
             </div>
           </div>
           <div className="flex flex-col items-center mt-auto">
-            <p className="font-dashboard-number text-4xl font-bold">
+            <p
+              className="font-dashboard-number text-4xl font-bold"
+              style={getFontStyle(fontTheme, "main")}
+            >
               {todayPatientData.patients_today}
             </p>
-            <p className="font-dashboard-trend text-sm mt-2">
+            <p
+              className="font-dashboard-trend text-sm mt-2"
+              style={getFontStyle(fontTheme, "body2")}
+            >
               {todayPatientData.difference_from_yesterday}{" "}
               {todayPatientData.is_increase ? "↑" : "↓"} vs Yesterday
             </p>
           </div>
         </div>
         {/* Total Appointments */}
-        <div className="p-4 rounded-lg bg-gradient-to-r from-pink-400 to-pink-600 text-white shadow-md flex flex-col justify-between">
+        <div
+          className="p-4 rounded-lg bg-gradient-to-r from-pink-400 to-pink-600 text-white shadow-md flex flex-col justify-between"
+          style={getFontStyle(fontTheme, "main")}
+        >
           <div>
-            <p className="text-lg font-semibold font-dashboard">
+            <p
+              className="text-lg font-semibold font-dashboard"
+              style={getFontStyle(fontTheme, "subHeading")}
+            >
               Total Appointments
             </p>
             <div className="bg-white bg-opacity-50 p-2 rounded-xl w-14 my-2">
@@ -505,18 +612,30 @@ const DashboardPage = () => {
             </div>
           </div>
           <div className="flex flex-col items-center mt-auto">
-            <p className="font-dashboard-number text-4xl font-bold">
+            <p
+              className="font-dashboard-number text-4xl font-bold"
+              style={getFontStyle(fontTheme, "main")}
+            >
               {appointments.length}
             </p>
-            <p className="font-dashboard-trend text-sm mt-2">
+            <p
+              className="font-dashboard-trend text-sm mt-2"
+              style={getFontStyle(fontTheme, "body2")}
+            >
               0 ↑ vs Yesterday
             </p>
           </div>
         </div>
         {/* Online Appointments */}
-        <div className="p-4 rounded-lg bg-gradient-to-r from-[#DF00FF] to-[#8100FF] text-white shadow-md flex flex-col justify-between">
+        <div
+          className="p-4 rounded-lg bg-gradient-to-r from-[#DF00FF] to-[#8100FF] text-white shadow-md flex flex-col justify-between"
+          style={getFontStyle(fontTheme, "main")}
+        >
           <div>
-            <p className="text-lg font-semibold font-dashboard">
+            <p
+              className="text-lg font-semibold font-dashboard"
+              style={getFontStyle(fontTheme, "subHeading")}
+            >
               Online Appointments
             </p>
             <div className="bg-white bg-opacity-50 p-2 rounded-xl w-14 my-2">
@@ -524,8 +643,16 @@ const DashboardPage = () => {
             </div>
           </div>
           <div className="flex flex-col items-center mt-auto">
-            <p className="font-dashboard-number text-4xl font-bold">45</p>
-            <p className="font-dashboard-trend text-sm mt-2">
+            <p
+              className="font-dashboard-number text-4xl font-bold"
+              style={getFontStyle(fontTheme, "main")}
+            >
+              45
+            </p>
+            <p
+              className="font-dashboard-trend text-sm mt-2"
+              style={getFontStyle(fontTheme, "body2")}
+            >
               5 ↑ vs Yesterday
             </p>
           </div>
@@ -539,7 +666,7 @@ const DashboardPage = () => {
           className="bg-white rounded-[20px] shadow-lg overflow-x-auto col-span-1 xl:col-span-6"
           style={{
             borderColor: theme.borderColor,
-            fontFamily: theme.fontFamily,
+            ...getFontStyle(fontTheme, "main"),
           }}
         >
           <div
@@ -547,24 +674,36 @@ const DashboardPage = () => {
             style={{
               borderColor: theme.borderColor,
               color: theme.headingColor,
-              fontFamily: theme.fontFamily,
+              ...getFontStyle(fontTheme, "subHeading"),
             }}
           >
-            <h3 className="2xl:text-xl lg:text-sm font-semibold">
+            <h3
+              className="2xl:text-xl lg:text-sm font-semibold"
+              style={getFontStyle(fontTheme, "subHeading")}
+            >
               Appointments Calendar
             </h3>
             <div className="flex items-center space-x-4 text-sm">
-              <span className="font-medium" style={{ color: theme.linkColor }}>
+              <span
+                className="font-medium"
+                style={{
+                  color: theme.linkColor,
+                  ...getFontStyle(fontTheme, "body1"),
+                }}
+              >
                 Total: {appointments.length}
               </span>
               {appointmentsLoading && (
-                <span className="text-gray-500">Loading...</span>
+                <span
+                  className="text-gray-500"
+                  style={getFontStyle(fontTheme, "body2")}
+                >
+                  Loading...
+                </span>
               )}
             </div>
           </div>
-          <div className="p-6">
-            {" "}
-            {/* Increased padding for more space */}
+          <div className="p-6" style={getFontStyle(fontTheme, "body1")}>
             {/* Loading and Error States */}
             {appointmentsLoading && (
               <div className="text-center py-2 text-blue-600">
@@ -629,12 +768,13 @@ const DashboardPage = () => {
                 <div
                   key={index}
                   className="text-center py-2 text-base font-medium text-gray-500"
+                  style={getFontStyle(fontTheme, "body2")}
                 >
                   {day}
                 </div>
               ))}
             </div>
-            {/* Calendar Grid - Larger cells */}
+            {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-2">
               {calendarDays.map((dateObj, index) => {
                 const appointmentCount = dateObj.isCurrentMonth
@@ -664,14 +804,23 @@ const DashboardPage = () => {
                           : ""
                       }
                     `}
+                    style={getFontStyle(fontTheme, "body1")}
                   >
-                    <span className="text-base">{dateObj.day}</span>
+                    <span
+                      className="text-base"
+                      style={getFontStyle(fontTheme, "body1")}
+                    >
+                      {dateObj.day}
+                    </span>
                     {/* Appointment indicators */}
                     {dateObj.isCurrentMonth && appointmentCount > 0 && (
                       <div className="flex items-center mt-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         {appointmentCount > 1 && (
-                          <span className="text-xs ml-1 bg-green-500 text-white rounded-full px-2 py-0.5 leading-none">
+                          <span
+                            className="text-xs ml-1 bg-green-500 text-white rounded-full px-2 py-0.5 leading-none"
+                            style={getFontStyle(fontTheme, "body2")}
+                          >
                             {appointmentCount}
                           </span>
                         )}
@@ -683,11 +832,20 @@ const DashboardPage = () => {
             </div>
             {/* Selected Date Appointments */}
             {selectedDateAppointments.length > 0 && (
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h4 className="font-semibold text-blue-800 mb-3">
+              <div
+                className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200"
+                style={getFontStyle(fontTheme, "body1")}
+              >
+                <h4
+                  className="font-semibold text-blue-800 mb-3"
+                  style={getFontStyle(fontTheme, "subHeading")}
+                >
                   Appointments for {months[currentDate.getMonth()]}{" "}
                   {selectedDate}, {currentDate.getFullYear()}
-                  <span className="ml-2 text-sm font-normal text-blue-600">
+                  <span
+                    className="ml-2 text-sm font-normal text-blue-600"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
                     ({selectedDateAppointments.length} appointment
                     {selectedDateAppointments.length !== 1 ? "s" : ""})
                   </span>
@@ -697,6 +855,7 @@ const DashboardPage = () => {
                     <div
                       key={appointment.id}
                       className="bg-white p-3 rounded-lg shadow-sm border"
+                      style={getFontStyle(fontTheme, "body2")}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -757,22 +916,16 @@ const DashboardPage = () => {
             )}
             {/* Show message when no appointments for selected date */}
             {selectedDate && selectedDateAppointments.length === 0 && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
+              <div
+                className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 text-center"
+                style={getFontStyle(fontTheme, "body2")}
+              >
                 <div className="text-gray-500">
-                  <svg
-                    className="w-8 h-8 mx-auto mb-2 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  {/* ...svg... */}
+                  <p
+                    className="text-base"
+                    style={getFontStyle(fontTheme, "body2")}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4M8 7H3a1 1 0 00-1 1v10a1 1 0 001 1h18a1 1 0 001-1V8a1 1 0 00-1-1h-5M8 7h8m-8 0V5m8 2V5"
-                    />
-                  </svg>
-                  <p className="text-base">
                     No appointments scheduled for{" "}
                     {months[currentDate.getMonth()]} {selectedDate},{" "}
                     {currentDate.getFullYear()}
@@ -781,20 +934,42 @@ const DashboardPage = () => {
               </div>
             )}
             {/* Monthly Statistics */}
-            <div className="mt-6 p-3 bg-gray-50 rounded-lg">
-              <h4 className="font-semibold text-gray-800 mb-2 text-base">
+            <div
+              className="mt-6 p-3 bg-gray-50 rounded-lg"
+              style={getFontStyle(fontTheme, "body1")}
+            >
+              <h4
+                className="font-semibold text-gray-800 mb-2 text-base"
+                style={getFontStyle(fontTheme, "subHeading")}
+              >
                 Monthly Appointment Summary
               </h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-600">Total Appointments:</span>
-                  <span className="ml-2 font-medium">
+                  <span
+                    className="text-gray-600"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
+                    Total Appointments:
+                  </span>
+                  <span
+                    className="ml-2 font-medium"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
                     {appointments.length}
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-600">This Month:</span>
-                  <span className="ml-2 font-medium">
+                  <span
+                    className="text-gray-600"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
+                    This Month:
+                  </span>
+                  <span
+                    className="ml-2 font-medium"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
                     {appointments.length}
                   </span>
                 </div>
@@ -808,7 +983,7 @@ const DashboardPage = () => {
           className="bg-white rounded-[20px] shadow-lg row-span-2 overflow-x-auto col-span-1 xl:col-span-2 flex flex-col"
           style={{
             borderColor: theme.borderColor,
-            fontFamily: theme.fontFamily,
+            ...getFontStyle(fontTheme, "main"),
           }}
         >
           <div
@@ -816,18 +991,29 @@ const DashboardPage = () => {
             style={{
               borderColor: theme.borderColor,
               color: theme.headingColor,
-              fontFamily: theme.fontFamily,
+              ...getFontStyle(fontTheme, "subHeading"),
             }}
           >
-            <h2 className="2xl:text-lg text-sm font-medium">Appointments</h2>
+            <h2
+              className="2xl:text-lg text-sm font-medium"
+              style={getFontStyle(fontTheme, "subHeading")}
+            >
+              Appointments
+            </h2>
             <span
               className="cursor-pointer 2xl:text-lg text-sm"
-              style={{ color: theme.linkColor }}
+              style={{
+                color: theme.linkColor,
+                ...getFontStyle(fontTheme, "body1"),
+              }}
             >
               Upcoming ({getUpcomingAppointments().length})
             </span>
           </div>
-          <div className="p-4 2xl:text-lg lg:text-sm flex-1">
+          <div
+            className="p-4 2xl:text-lg lg:text-sm flex-1"
+            style={getFontStyle(fontTheme, "body1")}
+          >
             {appointmentsLoading ? (
               <div className="flex justify-center items-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -957,7 +1143,7 @@ const DashboardPage = () => {
           className="bg-white rounded-[20px] shadow-lg overflow-x-auto col-span-1 xl:col-span-2 flex flex-col"
           style={{
             borderColor: theme.borderColor,
-            fontFamily: theme.fontFamily,
+            ...getFontStyle(fontTheme, "main"),
           }}
         >
           <div
@@ -965,15 +1151,22 @@ const DashboardPage = () => {
             style={{
               borderColor: theme.borderColor,
               color: theme.headingColor,
-              fontFamily: theme.fontFamily,
+              ...getFontStyle(fontTheme, "subHeading"),
             }}
           >
-            <h3 className="2xl:text-lg text-sm font-semibold">Reminders</h3>
+            <h3
+              className="2xl:text-lg text-sm font-semibold"
+              style={getFontStyle(fontTheme, "subHeading")}
+            >
+              Reminders
+            </h3>
             <span
               className="material-icons add_circle cursor-pointer"
-              style={{ color: theme.linkColor }}
+              style={{
+                color: theme.linkColor,
+                ...getFontStyle(fontTheme, "body1"),
+              }}
               onClick={() => {
-                // showPopup('reminderPopup');
                 document
                   .getElementById("reminderPopup")
                   .classList.remove("hidden");
@@ -982,42 +1175,94 @@ const DashboardPage = () => {
               add_circle
             </span>
           </div>
-          <div className="p-4">
+          <div className="p-4" style={getFontStyle(fontTheme, "body1")}>
             <ul>
               <li className="border-b py-3">
                 <div className="flex justify-between 2xl:text-sm text-xs">
-                  <p className="font-semibold">Upcoming Appointment</p>
-                  <p className="text-gray-500">3:00 PM</p>
+                  <p
+                    className="font-semibold"
+                    style={getFontStyle(fontTheme, "body1")}
+                  >
+                    Upcoming Appointment
+                  </p>
+                  <p
+                    className="text-gray-500"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
+                    3:00 PM
+                  </p>
                 </div>
-                <p className="text-gray-500 2xl:text-sm text-xs">
+                <p
+                  className="text-gray-500 2xl:text-sm text-xs"
+                  style={getFontStyle(fontTheme, "body2")}
+                >
                   Dr. Williams, your next appointment with Mrs. Taylor is in 15
                   minutes.
                 </p>
               </li>
               <li className="border-b py-3">
                 <div className="flex justify-between 2xl:text-sm text-xs">
-                  <p className="font-semibold">Medication Review Due</p>
-                  <p className="text-gray-500">3:00 PM</p>
+                  <p
+                    className="font-semibold"
+                    style={getFontStyle(fontTheme, "body1")}
+                  >
+                    Medication Review Due
+                  </p>
+                  <p
+                    className="text-gray-500"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
+                    3:00 PM
+                  </p>
                 </div>
-                <p className="text-gray-500 2xl:text-sm text-xs">
+                <p
+                  className="text-gray-500 2xl:text-sm text-xs"
+                  style={getFontStyle(fontTheme, "body2")}
+                >
                   You have 30 minutes left to review Mr. Adams' medication list.
                 </p>
               </li>
               <li className="border-b py-3">
                 <div className="flex justify-between 2xl:text-sm text-xs">
-                  <p className="font-semibold">Surgery Preparation</p>
-                  <p className="text-gray-500">3:00 PM</p>
+                  <p
+                    className="font-semibold"
+                    style={getFontStyle(fontTheme, "body1")}
+                  >
+                    Surgery Preparation
+                  </p>
+                  <p
+                    className="text-gray-500"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
+                    3:00 PM
+                  </p>
                 </div>
-                <p className="text-gray-500 2xl:text-sm text-xs">
+                <p
+                  className="text-gray-500 2xl:text-sm text-xs"
+                  style={getFontStyle(fontTheme, "body2")}
+                >
                   Prepare for Mr. Patel's surgery in 30 minutes.
                 </p>
               </li>
               <li className="border-b py-3">
                 <div className="flex justify-between 2xl:text-sm text-xs">
-                  <p className="font-semibold">Patient Follow-Up Call</p>
-                  <p className="text-gray-500">3:00 PM</p>
+                  <p
+                    className="font-semibold"
+                    style={getFontStyle(fontTheme, "body1")}
+                  >
+                    Patient Follow-Up Call
+                  </p>
+                  <p
+                    className="text-gray-500"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
+                    3:00 PM
+                  </p>
                 </div>
-                <p className="text-gray-500 2xl:text-sm text-xs">
+                <p
+                  className="text-gray-500 2xl:text-sm text-xs"
+                  style={getFontStyle(fontTheme, "body2")}
+                >
                   Follow up with Mr. Brown about his treatment progress in 15
                   minutes.
                 </p>
@@ -1031,7 +1276,7 @@ const DashboardPage = () => {
           className="bg-white rounded-[20px] shadow-lg overflow-x-auto col-span-1 xl:col-span-4 flex flex-col"
           style={{
             borderColor: theme.borderColor,
-            fontFamily: theme.fontFamily,
+            ...getFontStyle(fontTheme, "main"),
           }}
         >
           <div
@@ -1039,19 +1284,32 @@ const DashboardPage = () => {
             style={{
               borderColor: theme.borderColor,
               color: theme.headingColor,
-              fontFamily: theme.fontFamily,
+              ...getFontStyle(fontTheme, "subHeading"),
             }}
           >
-            <h3 className="2xl:text-lg text-sm font-semibold">
+            <h3
+              className="2xl:text-lg text-sm font-semibold"
+              style={getFontStyle(fontTheme, "subHeading")}
+            >
               Recent Lab Results
             </h3>
-            <p style={{ color: theme.linkColor }}>Upcoming</p>
+            <p
+              style={{
+                color: theme.linkColor,
+                ...getFontStyle(fontTheme, "body1"),
+              }}
+            >
+              Upcoming
+            </p>
           </div>
-          <div className="p-4">
+          <div className="p-4" style={getFontStyle(fontTheme, "body1")}>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-nowrap 2xl:text-sm text-xs">
                 <thead>
-                  <tr className="text-gray-500">
+                  <tr
+                    className="text-gray-500"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
                     <th className="pb-3">Report/Test Name</th>
                     <th className="pb-3">Lab Name</th>
                     <th className="pb-3">Patient Name</th>

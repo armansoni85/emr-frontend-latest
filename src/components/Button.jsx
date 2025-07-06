@@ -25,29 +25,17 @@ const Button = ({
       "secondaryColor",
       "#CF0000"
     )}] text-white hover:bg-opacity-90`,
-    danger: `bg-[${getThemeColor(
-      "dangerColor",
-      "#DC2626"
-    )}] text-white hover:bg-opacity-90`,
-    success: `bg-[${getThemeColor(
-      "successColor",
-      "#22C55E"
-    )}] text-white hover:bg-opacity-90`,
-    warning: `bg-[${getThemeColor(
-      "warningColor",
-      "#F59E42"
-    )}] text-white hover:bg-opacity-90`,
-    grey: `bg-[${getThemeColor("greyColor", "#F3F4F6")}] text-[${getThemeColor(
+    danger: `bg-[#DC2626] text-white hover:bg-opacity-90`,
+    success: `bg-[#22C55E] text-white hover:bg-opacity-90`,
+    warning: `bg-[#F59E42] text-white hover:bg-opacity-90`,
+    grey: `bg-[#F3F4F6] text-[${getThemeColor(
       "primaryColor",
       "#002952"
     )}] hover:bg-[${getThemeColor(
       "primaryColor",
       "#002952"
     )}] hover:text-white`,
-    info: `bg-[${getThemeColor(
-      "infoColor",
-      "#3B82F6"
-    )}] text-white hover:bg-opacity-90`,
+    info: `bg-[#3B82F6] text-white hover:bg-opacity-90`,
     white: `bg-white text-[${getThemeColor(
       "primaryColor",
       "#002952"

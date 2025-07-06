@@ -1,6 +1,55 @@
 import { useEffect, useState } from "react";
 import { getUsers } from "@src/services/userService";
 
+const THEME_STORAGE_KEY = "customColorTheme";
+const getFontTheme = () => {
+  try {
+    const theme = localStorage.getItem(THEME_STORAGE_KEY);
+    return theme ? JSON.parse(theme) : {};
+  } catch {
+    return {};
+  }
+};
+const getFontStyle = (fontTheme, type = "main") => {
+  if (!fontTheme) return {};
+  if (type === "subHeading") {
+    return {
+      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
+      color: fontTheme.headingColor || "#333333",
+    };
+  }
+  if (type === "body1") {
+    return {
+      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
+      color:
+        fontTheme.bodyTextColor === "#FFFFFF"
+          ? "#333333"
+          : fontTheme.bodyTextColor || "#333333",
+    };
+  }
+  if (type === "body2") {
+    return {
+      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
+      color:
+        fontTheme.bodyTextColor === "#FFFFFF"
+          ? "#666666"
+          : fontTheme.bodyTextColor || "#666666",
+    };
+  }
+  return {
+    fontFamily: fontTheme.fontFamily,
+    fontWeight: fontTheme.fontWeight,
+    fontSize: fontTheme.fontSize,
+    color: fontTheme.headingColor || "#333333",
+  };
+};
+
 const DoctorPage = () => {
   const [doctors, setDoctors] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -13,6 +62,8 @@ const DoctorPage = () => {
       return {};
     }
   });
+
+  const [fontTheme, setFontTheme] = useState(getFontTheme());
 
   useEffect(() => {
     const reloadTheme = () => {
@@ -33,13 +84,37 @@ const DoctorPage = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const reloadTheme = () => setFontTheme(getFontTheme());
+    window.addEventListener("customColorThemeChanged", reloadTheme);
+    window.addEventListener("storage", (e) => {
+      if (e.key === THEME_STORAGE_KEY) reloadTheme();
+    });
+    return () => {
+      window.removeEventListener("customColorThemeChanged", reloadTheme);
+      window.removeEventListener("storage", reloadTheme);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!fontTheme) return;
+    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
+    document.body.style.fontWeight = fontTheme.fontWeight || 400;
+    document.body.style.fontSize = fontTheme.fontSize || "16px";
+    return () => {
+      document.body.style.fontFamily = "";
+      document.body.style.fontWeight = "";
+      document.body.style.fontSize = "";
+    };
+  }, [fontTheme]);
+
   const getButtonStyle = (filled = true) => ({
     backgroundColor: filled ? customTheme.primaryColor : "#fff",
     color: filled ? "#fff" : customTheme.primaryColor,
     border: `1.5px solid ${customTheme.primaryColor}`,
-    fontFamily: customTheme.fontFamily || "inherit",
-    fontWeight: customTheme.fontWeight || 400,
-    fontSize: customTheme.fontSize || "16px",
+    fontFamily: fontTheme.fontFamily || "inherit",
+    fontWeight: fontTheme.fontWeight || 400,
+    fontSize: fontTheme.fontSize || "16px",
     transition: "all 0.15s",
   });
 
@@ -47,17 +122,17 @@ const DoctorPage = () => {
     backgroundColor: "#fff",
     color: customTheme.primaryColor,
     border: `1.5px solid ${customTheme.primaryColor}`,
-    fontFamily: customTheme.fontFamily || "inherit",
-    fontWeight: customTheme.fontWeight || 400,
-    fontSize: customTheme.fontSize || "16px",
+    fontFamily: fontTheme.fontFamily || "inherit",
+    fontWeight: fontTheme.fontWeight || 400,
+    fontSize: fontTheme.fontSize || "16px",
     transition: "all 0.15s",
   });
 
   const getIconStyle = () => ({
     color: customTheme.primaryColor,
-    fontSize: customTheme.fontSize || "20px",
-    fontFamily: customTheme.fontFamily || "inherit",
-    fontWeight: customTheme.fontWeight || 400,
+    fontSize: fontTheme.fontSize || "20px",
+    fontFamily: fontTheme.fontFamily || "inherit",
+    fontWeight: fontTheme.fontWeight || 400,
   });
 
   useEffect(() => {
@@ -78,12 +153,15 @@ const DoctorPage = () => {
     <>
       <div className="mb-3 grid grid-cols-1 md:grid-cols-3 md:gap-4">
         <div className="mb-3">
-          <label htmlFor="search">Search</label>
+          <label htmlFor="search" style={getFontStyle(fontTheme, "body1")}>
+            Search
+          </label>
           <div className="relative mt-2">
             <input
               type="text"
               placeholder="Search by Name or DOB"
               className="w-full rounded-full pe-4 ps-10 py-3 border-grey focus:outline-grey2"
+              style={getFontStyle(fontTheme, "body2")}
             />
             <span className="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
               search
@@ -97,16 +175,21 @@ const DoctorPage = () => {
           </div>
         </div>
         <div className="mb-3">
-          <label htmlFor="speciality-select">Select Speciality</label>
+          <label
+            htmlFor="speciality-select"
+            style={getFontStyle(fontTheme, "body1")}
+          >
+            Select Speciality
+          </label>
           <div className="relative mt-2 text-muted">
             <select
               id="speciality-select"
               className="w-full rounded-full px-4 py-3 border-grey focus:outline-grey2 appearance-none"
+              style={getFontStyle(fontTheme, "body2")}
             >
               <option value="" disabled="" selected="">
                 Search by Speciality
               </option>
-              {/* Add options here */}
             </select>
             <i className="material-icons absolute right-3 top-1/2 transform -translate-y-1/2">
               arrow_drop_down
@@ -114,16 +197,21 @@ const DoctorPage = () => {
           </div>
         </div>
         <div className="mb-3">
-          <label htmlFor="sub-speciality-select">Select Sub Speciality</label>
+          <label
+            htmlFor="sub-speciality-select"
+            style={getFontStyle(fontTheme, "body1")}
+          >
+            Select Sub Speciality
+          </label>
           <div className="relative mt-2 text-muted">
             <select
               id="sub-speciality-select"
               className="w-full rounded-full px-4 py-3 border-grey focus:outline-grey2 appearance-none"
+              style={getFontStyle(fontTheme, "body2")}
             >
               <option value="" disabled="" selected="">
                 Search by Sub Speciality
               </option>
-              {/* Add options here */}
             </select>
             <i className="material-icons absolute right-3 top-1/2 transform -translate-y-1/2">
               arrow_drop_down
@@ -133,9 +221,17 @@ const DoctorPage = () => {
       </div>
       <div className="bg-white shadow-md rounded-2xl pb-4">
         <div className="flex justify-between p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
-          <h2 className="text-lg font-medium">All Doctors</h2>
+          <h2
+            className="text-lg font-medium"
+            style={getFontStyle(fontTheme, "subHeading")}
+          >
+            All Doctors
+          </h2>
           <div className="text-end inline-block">
-            <span className="text-muted">
+            <span
+              className="text-muted"
+              style={getFontStyle(fontTheme, "body2")}
+            >
               Total {doctors.length} Results Found
             </span>
           </div>
@@ -143,7 +239,7 @@ const DoctorPage = () => {
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white overflow-x-auto text-nowrap">
             <thead>
-              <tr>
+              <tr style={getFontStyle(fontTheme, "body2")}>
                 <th className="py-2 px-4 border-b text-start font-medium">
                   Doctor Name
                 </th>
@@ -165,16 +261,27 @@ const DoctorPage = () => {
                 <th className="py-2 px-4 border-b text-start font-medium" />
               </tr>
             </thead>
-            <tbody className="text-body">
+            <tbody
+              className="text-body"
+              style={getFontStyle(fontTheme, "body1")}
+            >
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-4 text-muted">
+                  <td
+                    colSpan={7}
+                    className="text-center py-4 text-muted"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
                     Loading...
                   </td>
                 </tr>
               ) : doctors.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-4 text-muted">
+                  <td
+                    colSpan={7}
+                    className="text-center py-4 text-muted"
+                    style={getFontStyle(fontTheme, "body2")}
+                  >
                     No doctors found.
                   </td>
                 </tr>
@@ -192,7 +299,7 @@ const DoctorPage = () => {
                           className="w-10 h-10 rounded-full mr-3"
                         />
                         <div className="text-start">
-                          <p>
+                          <p style={getFontStyle(fontTheme, "body1")}>
                             {doctor.first_name || doctor.last_name
                               ? `Dr. ${doctor.first_name || ""} ${
                                   doctor.last_name || ""
@@ -202,19 +309,36 @@ const DoctorPage = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="py-2 px-4 border-b">
+                    <td
+                      className="py-2 px-4 border-b"
+                      style={getFontStyle(fontTheme, "body1")}
+                    >
                       {doctor.gender || "-"}
                     </td>
-                    <td className="py-2 px-4 border-b">
+                    <td
+                      className="py-2 px-4 border-b"
+                      style={getFontStyle(fontTheme, "body1")}
+                    >
                       {doctor.speciality || "-"}
                     </td>
-                    <td className="py-2 px-4 border-b">
+                    <td
+                      className="py-2 px-4 border-b"
+                      style={getFontStyle(fontTheme, "body1")}
+                    >
                       {doctor.sub_speciality || "-"}
                     </td>
-                    <td className="py-2 px-4 border-b">
+                    <td
+                      className="py-2 px-4 border-b"
+                      style={getFontStyle(fontTheme, "body1")}
+                    >
                       {doctor.mobile_number || "-"}
                     </td>
-                    <td className="py-2 px-4 border-b">{doctor.email}</td>
+                    <td
+                      className="py-2 px-4 border-b"
+                      style={getFontStyle(fontTheme, "body1")}
+                    >
+                      {doctor.email}
+                    </td>
                     <td className="py-2 px-4 border-b">
                       <div className="flex justify-between">
                         <div className="my-auto">

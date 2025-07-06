@@ -22,6 +22,45 @@ import Moment from "react-moment";
 import StatusText from "../components/StatusText";
 import { useNavigate } from "react-router-dom";
 
+const THEME_STORAGE_KEY = "customColorTheme";
+const getFontTheme = () => {
+  try {
+    const theme = localStorage.getItem(THEME_STORAGE_KEY);
+    return theme ? JSON.parse(theme) : {};
+  } catch {
+    return {};
+  }
+};
+const getFontStyle = (fontTheme, type = "main") => {
+  if (!fontTheme) return {};
+  if (type === "subHeading") {
+    return {
+      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body1") {
+    return {
+      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body2") {
+    return {
+      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
+    };
+  }
+  return {
+    fontFamily: fontTheme.fontFamily,
+    fontWeight: fontTheme.fontWeight,
+    fontSize: fontTheme.fontSize,
+  };
+};
+
 const PatientListPage = () => {
   const navigate = useNavigate();
   const { paginationMeta } = useSelector((state) => state.fetch);
@@ -35,6 +74,32 @@ const PatientListPage = () => {
   const dispatch = useDispatch();
   const memoizedDoctorList = useMemo(() => doctorList, [doctorList]);
   const debounceSearchTerm = useDebounce(filter.search, 500);
+
+  // --- Font theme state from localStorage ---
+  const [fontTheme, setFontTheme] = useState(getFontTheme());
+  useEffect(() => {
+    const reloadTheme = () => setFontTheme(getFontTheme());
+    window.addEventListener("customColorThemeChanged", reloadTheme);
+    window.addEventListener("storage", (e) => {
+      if (e.key === THEME_STORAGE_KEY) reloadTheme();
+    });
+    return () => {
+      window.removeEventListener("customColorThemeChanged", reloadTheme);
+      window.removeEventListener("storage", reloadTheme);
+    };
+  }, []);
+  useEffect(() => {
+    if (!fontTheme) return;
+    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
+    document.body.style.fontWeight = fontTheme.fontWeight || 400;
+    document.body.style.fontSize = fontTheme.fontSize || "16px";
+    return () => {
+      document.body.style.fontFamily = "";
+      document.body.style.fontWeight = "";
+      document.body.style.fontSize = "";
+    };
+  }, [fontTheme]);
+  // --- End font theme state ---
 
   const {
     data: patients,
@@ -239,12 +304,15 @@ const PatientListPage = () => {
               color={"primary"}
               size="small"
               className="absolute right-3 top-1/2 transform -translate-y-1/2 !px-5 mt-[2px] "
+              style={getFontStyle(fontTheme, "body2")}
             >
               Search
             </Button>
           }
           value={filter.search}
           onChange={handleChangeFilter}
+          style={getFontStyle(fontTheme, "body1")}
+          labelStyle={getFontStyle(fontTheme, "body1")}
         />
         <InputWithLabel
           labelOnTop={true}
@@ -263,12 +331,25 @@ const PatientListPage = () => {
             option.email
           }
           wrapperClassName="p-4"
+          style={getFontStyle(fontTheme, "body1")}
+          labelStyle={getFontStyle(fontTheme, "body1")}
         />
       </div>
       <div className="bg-white shadow-md rounded-2xl pb-4">
-        <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
-          <h2 className="text-lg font-medium">All Patients</h2>
-          <div className="text-sm text-gray-600">
+        <div
+          className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b"
+          style={getFontStyle(fontTheme, "subHeading")}
+        >
+          <h2
+            className="text-lg font-medium"
+            style={getFontStyle(fontTheme, "subHeading")}
+          >
+            All Patients
+          </h2>
+          <div
+            className="text-sm text-gray-600"
+            style={getFontStyle(fontTheme, "body2")}
+          >
             Total: {paginationMeta.totalData || 0} patients
           </div>
         </div>
@@ -278,7 +359,7 @@ const PatientListPage = () => {
           isLoading={isPending}
           theadChildren={
             <>
-              <tr>
+              <tr style={getFontStyle(fontTheme, "body2")}>
                 <Th>Patient Name</Th>
                 <Th>Date of Birth</Th>
                 <Th>Gender</Th>
@@ -302,6 +383,7 @@ const PatientListPage = () => {
                 <tr
                   key={item.id}
                   className="hover:bg-gray-50 transition-colors duration-150"
+                  style={getFontStyle(fontTheme, "body1")}
                 >
                   <Td>
                     <div className="flex items-center cursor-pointer">
@@ -316,14 +398,14 @@ const PatientListPage = () => {
                         className="mr-3"
                       />
                       <div className="text-start">
-                        <p className="font-medium text-gray-900">
+                        <p
+                          className="font-medium text-gray-900"
+                          style={getFontStyle(fontTheme, "body1")}
+                        >
                           {`${item?.first_name || ""} ${
                             item?.last_name || ""
                           }`.trim() || "No Name"}
                         </p>
-                        {/* <span className="text-muted text-xs">
-                          ID: {item?.id?.slice(0, 8)}...
-                        </span> */}
                       </div>
                     </div>
                   </Td>
@@ -334,7 +416,10 @@ const PatientListPage = () => {
                           date={item?.dob || patientDetail?.dob}
                           format="MMM D, YYYY"
                         />
-                        <div className="text-xs text-gray-500">
+                        <div
+                          className="text-xs text-gray-500"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
                           Age:{" "}
                           {new Date().getFullYear() -
                             new Date(
@@ -343,11 +428,19 @@ const PatientListPage = () => {
                         </div>
                       </div>
                     ) : (
-                      <span className="text-gray-400">Not provided</span>
+                      <span
+                        className="text-gray-400"
+                        style={getFontStyle(fontTheme, "body2")}
+                      >
+                        Not provided
+                      </span>
                     )}
                   </Td>
                   <Td>
-                    <span className="capitalize">
+                    <span
+                      className="capitalize"
+                      style={getFontStyle(fontTheme, "body2")}
+                    >
                       {item?.gender || patientDetail?.gender || (
                         <span className="text-gray-400">Not specified</span>
                       )}
@@ -355,13 +448,19 @@ const PatientListPage = () => {
                   </Td>
                   <Td>
                     {patientDetail ? (
-                      <Badge color="info">
+                      <Badge
+                        color="info"
+                        style={getFontStyle(fontTheme, "body2")}
+                      >
                         {disease || "No Disease Recorded"}
                       </Badge>
                     ) : (
                       <div className="flex items-center">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
-                        <span className="text-gray-500 text-xs">
+                        <span
+                          className="text-gray-500 text-xs"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
                           Loading...
                         </span>
                       </div>
@@ -370,13 +469,26 @@ const PatientListPage = () => {
                   <Td>
                     <div>
                       {phoneNumber ? (
-                        <span className="font-mono text-sm">{phoneNumber}</span>
+                        <span
+                          className="font-mono text-sm"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
+                          {phoneNumber}
+                        </span>
                       ) : patientDetail ? (
-                        <span className="text-gray-400">Not provided</span>
+                        <span
+                          className="text-gray-400"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
+                          Not provided
+                        </span>
                       ) : (
                         <div className="flex items-center">
                           <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-400 mr-2"></div>
-                          <span className="text-gray-500 text-xs">
+                          <span
+                            className="text-gray-500 text-xs"
+                            style={getFontStyle(fontTheme, "body2")}
+                          >
                             Loading...
                           </span>
                         </div>
@@ -384,7 +496,11 @@ const PatientListPage = () => {
                     </div>
                   </Td>
                   <Td>
-                    <div className="max-w-[200px] truncate" title={item?.email}>
+                    <div
+                      className="max-w-[200px] truncate"
+                      title={item?.email}
+                      style={getFontStyle(fontTheme, "body2")}
+                    >
                       {item?.email || (
                         <span className="text-gray-400">No email</span>
                       )}
@@ -399,6 +515,7 @@ const PatientListPage = () => {
                         color="primary"
                         size="small"
                         className="px-3"
+                        style={getFontStyle(fontTheme, "body2")}
                       >
                         View Profile
                       </NavLinkButton>
@@ -413,6 +530,7 @@ const PatientListPage = () => {
                               })
                             )
                           }
+                          style={getFontStyle(fontTheme, "body2")}
                         >
                           <i className="material-icons text-sm mr-2">edit</i>
                           Edit
@@ -427,6 +545,7 @@ const PatientListPage = () => {
                               })
                             )
                           }
+                          style={getFontStyle(fontTheme, "body2")}
                         >
                           <i className="material-icons text-sm mr-2">
                             visibility
@@ -444,14 +563,23 @@ const PatientListPage = () => {
 
         {/* Show message when no patients found */}
         {!isPending && patients?.data?.results?.length === 0 && (
-          <div className="text-center py-12">
+          <div
+            className="text-center py-12"
+            style={getFontStyle(fontTheme, "body1")}
+          >
             <div className="text-gray-400 text-lg mb-2">
               <i className="material-icons text-4xl">person_search</i>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">
+            <h3
+              className="text-lg font-medium text-gray-900 mb-1"
+              style={getFontStyle(fontTheme, "subHeading")}
+            >
               No patients found
             </h3>
-            <p className="text-gray-500 text-sm">
+            <p
+              className="text-gray-500 text-sm"
+              style={getFontStyle(fontTheme, "body2")}
+            >
               {filter.search || filter.doctor
                 ? "Try adjusting your search criteria"
                 : "No patients have been added yet"}
@@ -462,21 +590,33 @@ const PatientListPage = () => {
         {/* Pagination remains the same */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-6 border-t border-gray-100">
           {/* Data Summary */}
-          <div className="text-sm text-gray-600 order-2 sm:order-1">
+          <div
+            className="text-sm text-gray-600 order-2 sm:order-1"
+            style={getFontStyle(fontTheme, "body2")}
+          >
             Showing{" "}
-            <span className="font-semibold text-gray-900">
+            <span
+              className="font-semibold text-gray-900"
+              style={getFontStyle(fontTheme, "body2")}
+            >
               {(paginationMeta.currentPage - 1) * paginationMeta.limitPerPage +
                 1}
             </span>{" "}
             to{" "}
-            <span className="font-semibold text-gray-900">
+            <span
+              className="font-semibold text-gray-900"
+              style={getFontStyle(fontTheme, "body2")}
+            >
               {Math.min(
                 paginationMeta.currentPage * paginationMeta.limitPerPage,
                 paginationMeta.totalData
               )}
             </span>{" "}
             of{" "}
-            <span className="font-semibold text-gray-900">
+            <span
+              className="font-semibold text-gray-900"
+              style={getFontStyle(fontTheme, "body2")}
+            >
               {paginationMeta.totalData}
             </span>{" "}
             patients
@@ -492,6 +632,7 @@ const PatientListPage = () => {
                   ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
                   : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
               }`}
+              style={getFontStyle(fontTheme, "body2")}
             >
               <i className="material-icons text-sm">chevron_left</i>
               <span className="hidden sm:inline">Previous</span>
@@ -511,11 +652,17 @@ const PatientListPage = () => {
                       <button
                         onClick={() => handlePageChange(1)}
                         className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
+                        style={getFontStyle(fontTheme, "body2")}
                       >
                         1
                       </button>
                       {paginationMeta.currentPage > 4 && (
-                        <span className="px-2 text-gray-400">...</span>
+                        <span
+                          className="px-2 text-gray-400"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
+                          ...
+                        </span>
                       )}
                     </>
                   )}
@@ -544,6 +691,7 @@ const PatientListPage = () => {
                                 ? "bg-primary text-white shadow-sm"
                                 : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
                             }`}
+                            style={getFontStyle(fontTheme, "body2")}
                           >
                             {pageNumber}
                           </button>
@@ -557,11 +705,17 @@ const PatientListPage = () => {
                     totalPages > 5 && (
                       <>
                         {paginationMeta.currentPage < totalPages - 3 && (
-                          <span className="px-2 text-gray-400">...</span>
+                          <span
+                            className="px-2 text-gray-400"
+                            style={getFontStyle(fontTheme, "body2")}
+                          >
+                            ...
+                          </span>
                         )}
                         <button
                           onClick={() => handlePageChange(totalPages)}
                           className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
+                          style={getFontStyle(fontTheme, "body2")}
                         >
                           {totalPages}
                         </button>
@@ -579,19 +733,24 @@ const PatientListPage = () => {
                   ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
                   : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
               }`}
+              style={getFontStyle(fontTheme, "body2")}
             >
               <span className="hidden sm:inline">Next</span>
               <i className="material-icons text-sm">chevron_right</i>
             </button>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-gray-600 order-3">
+          <div
+            className="flex items-center gap-2 text-sm text-gray-600 order-3"
+            style={getFontStyle(fontTheme, "body2")}
+          >
             <span>Show:</span>
             <select
               value={paginationMeta.limitPerPage}
               onChange={handlePageSizeChange}
               disabled={isFetching}
               className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              style={getFontStyle(fontTheme, "body2")}
             >
               <option value={5}>5</option>
               <option value={10}>10</option>

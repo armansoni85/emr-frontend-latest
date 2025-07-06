@@ -8,6 +8,46 @@ import {
 import Moment from "react-moment";
 
 const EMAIL_SENT_KEY = "sentEmailIds";
+const THEME_STORAGE_KEY = "customColorTheme";
+
+const getFontTheme = () => {
+  try {
+    const theme = localStorage.getItem(THEME_STORAGE_KEY);
+    return theme ? JSON.parse(theme) : {};
+  } catch {
+    return {};
+  }
+};
+
+const getFontStyle = (fontTheme, type = "main") => {
+  if (!fontTheme) return {};
+  if (type === "subHeading") {
+    return {
+      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body1") {
+    return {
+      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body2") {
+    return {
+      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
+    };
+  }
+  return {
+    fontFamily: fontTheme.fontFamily,
+    fontWeight: fontTheme.fontWeight,
+    fontSize: fontTheme.fontSize,
+  };
+};
 
 const EmailDeliveryPage = () => {
   const [history, setHistory] = useState([]);
@@ -18,7 +58,7 @@ const EmailDeliveryPage = () => {
   const [recipientName, setRecipientName] = useState("");
   const [subject, setSubject] = useState("");
   const [customMessage, setCustomMessage] = useState("");
-  const [document, setDocument] = useState(null);
+  const [documentFile, setDocumentFile] = useState(null);
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
@@ -32,27 +72,13 @@ const EmailDeliveryPage = () => {
     }
   });
 
-  const [customTheme, setCustomTheme] = useState(() => {
-    try {
-      const theme = localStorage.getItem("customColorTheme");
-      return theme ? JSON.parse(theme) : {};
-    } catch {
-      return {};
-    }
-  });
+  const [fontTheme, setFontTheme] = useState(getFontTheme());
 
   useEffect(() => {
-    const reloadTheme = () => {
-      try {
-        const theme = localStorage.getItem("customColorTheme");
-        setCustomTheme(theme ? JSON.parse(theme) : {});
-      } catch {
-        setCustomTheme({});
-      }
-    };
+    const reloadTheme = () => setFontTheme(getFontTheme());
     window.addEventListener("customColorThemeChanged", reloadTheme);
     window.addEventListener("storage", (e) => {
-      if (e.key === "customColorTheme") reloadTheme();
+      if (e.key === THEME_STORAGE_KEY) reloadTheme();
     });
     return () => {
       window.removeEventListener("customColorThemeChanged", reloadTheme);
@@ -60,31 +86,43 @@ const EmailDeliveryPage = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!fontTheme) return;
+    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
+    document.body.style.fontWeight = fontTheme.fontWeight || 400;
+    document.body.style.fontSize = fontTheme.fontSize || "16px";
+    return () => {
+      document.body.style.fontFamily = "";
+      document.body.style.fontWeight = "";
+      document.body.style.fontSize = "";
+    };
+  }, [fontTheme]);
+
   const getButtonStyle = (filled = true) => ({
-    backgroundColor: filled ? customTheme.primaryColor : "#fff",
-    color: filled ? "#fff" : customTheme.primaryColor,
-    border: `1.5px solid ${customTheme.primaryColor}`,
-    fontFamily: customTheme.fontFamily || "inherit",
-    fontWeight: customTheme.fontWeight || 400,
-    fontSize: customTheme.fontSize || "16px",
+    backgroundColor: filled ? fontTheme.primaryColor : "#fff",
+    color: filled ? "#fff" : fontTheme.primaryColor,
+    border: `1.5px solid ${fontTheme.primaryColor}`,
+    fontFamily: fontTheme.fontFamily || "inherit",
+    fontWeight: fontTheme.fontWeight || 400,
+    fontSize: fontTheme.fontSize || "16px",
     transition: "all 0.15s",
   });
 
   const getIconButtonStyle = () => ({
     backgroundColor: "#fff",
-    color: customTheme.primaryColor,
-    border: `1.5px solid ${customTheme.primaryColor}`,
-    fontFamily: customTheme.fontFamily || "inherit",
-    fontWeight: customTheme.fontWeight || 400,
-    fontSize: customTheme.fontSize || "16px",
+    color: fontTheme.primaryColor,
+    border: `1.5px solid ${fontTheme.primaryColor}`,
+    fontFamily: fontTheme.fontFamily || "inherit",
+    fontWeight: fontTheme.fontWeight || 400,
+    fontSize: fontTheme.fontSize || "16px",
     transition: "all 0.15s",
   });
 
   const getIconStyle = () => ({
-    color: customTheme.primaryColor,
-    fontSize: customTheme.fontSize || "20px",
-    fontFamily: customTheme.fontFamily || "inherit",
-    fontWeight: customTheme.fontWeight || 400,
+    color: fontTheme.primaryColor,
+    fontSize: fontTheme.fontSize || "20px",
+    fontFamily: fontTheme.fontFamily || "inherit",
+    fontWeight: fontTheme.fontWeight || 400,
   });
 
   useEffect(() => {
@@ -123,14 +161,14 @@ const EmailDeliveryPage = () => {
         recipient_name: recipientName,
         subject,
         custom_message: customMessage,
-        document,
+        document: documentFile,
       });
       setSendResult({ success: true, message: "Email sent successfully!" });
       setRecipientEmail("");
       setRecipientName("");
       setSubject("");
       setCustomMessage("");
-      setDocument(null);
+      setDocumentFile(null);
 
       if (selectedId && !sentEmailIds.includes(selectedId)) {
         setSentEmailIds((prev) => [...prev, selectedId]);
@@ -150,6 +188,7 @@ const EmailDeliveryPage = () => {
             className={`px-6 py-3 rounded-lg shadow-lg text-white font-semibold ${
               sendResult.success ? "bg-green-600" : "bg-red-600"
             }`}
+            style={getFontStyle(fontTheme, "body2")}
           >
             {sendResult.message}
           </div>
@@ -161,6 +200,10 @@ const EmailDeliveryPage = () => {
           to={getRoutePath("doctor.consultation.efax")}
           color="primary"
           className={"px-5"}
+          style={{
+            ...getFontStyle(fontTheme, "main"),
+            border: `1.5px solid ${fontTheme.primaryColor}`,
+          }}
         >
           eFax Delivery
         </NavLinkButton>
@@ -168,6 +211,12 @@ const EmailDeliveryPage = () => {
           to={getRoutePath("doctor.consultation.email")}
           color="primary"
           className={"px-5"}
+          style={{
+            ...getFontStyle(fontTheme, "main"),
+            backgroundColor: fontTheme.primaryColor,
+            color: "#fff",
+            border: `1.5px solid ${fontTheme.primaryColor}`,
+          }}
         >
           Email Delivery
         </NavLinkButton>
@@ -178,7 +227,12 @@ const EmailDeliveryPage = () => {
           {/* Recordings */}
           <div className=" h-full">
             <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
-              <h2 className="text-lg font-medium">History</h2>
+              <h2
+                className="text-lg font-medium"
+                style={getFontStyle(fontTheme, "subHeading")}
+              >
+                History
+              </h2>
             </div>
             <div className="relative">
               {[1, 2, 3, 4].map((_, idx) => (
@@ -194,10 +248,18 @@ const EmailDeliveryPage = () => {
                       <i className="material-icons text-sm">chat</i>
                     </span>
                     <div className="text-medium text-start">
-                      <p className="leading-none">
+                      <p
+                        className="leading-none"
+                        style={getFontStyle(fontTheme, "body1")}
+                      >
                         Advanced Pharmacology and Drug Management
                       </p>
-                      <span className="text-muted text-sm">Just Now</span>
+                      <span
+                        className="text-muted text-sm"
+                        style={getFontStyle(fontTheme, "body2")}
+                      >
+                        Just Now
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -208,11 +270,20 @@ const EmailDeliveryPage = () => {
         {/* Email Sending Output */}
         <div className="bg-white rounded-[20px] shadow-lg mb-4 col-span-2">
           <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
-            <h2 className="text-lg font-medium">Send Consultation Email</h2>
+            <h2
+              className="text-lg font-medium"
+              style={getFontStyle(fontTheme, "subHeading")}
+            >
+              Send Consultation Email
+            </h2>
           </div>
           <form className="p-4" onSubmit={handleSendEmail}>
             <div className="p-4 grid lg:grid-cols-5 grid-cols-1">
-              <label htmlFor="recipientEmail" className="block my-auto">
+              <label
+                htmlFor="recipientEmail"
+                className="block my-auto"
+                style={getFontStyle(fontTheme, "body1")}
+              >
                 Recipient Email:
               </label>
               <div className="flex items-center w-full col-span-4">
@@ -224,11 +295,16 @@ const EmailDeliveryPage = () => {
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
                   required
+                  style={getFontStyle(fontTheme, "body2")}
                 />
               </div>
             </div>
             <div className="p-4 grid lg:grid-cols-5 grid-cols-1">
-              <label htmlFor="recipientName" className="block my-auto">
+              <label
+                htmlFor="recipientName"
+                className="block my-auto"
+                style={getFontStyle(fontTheme, "body1")}
+              >
                 Recipient Name:
               </label>
               <div className="flex items-center w-full col-span-4">
@@ -240,11 +316,16 @@ const EmailDeliveryPage = () => {
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
                   required
+                  style={getFontStyle(fontTheme, "body2")}
                 />
               </div>
             </div>
             <div className="p-4 grid lg:grid-cols-5 grid-cols-1">
-              <label htmlFor="subject" className="block my-auto">
+              <label
+                htmlFor="subject"
+                className="block my-auto"
+                style={getFontStyle(fontTheme, "body1")}
+              >
                 Subject:
               </label>
               <div className="flex items-center w-full col-span-4">
@@ -256,11 +337,16 @@ const EmailDeliveryPage = () => {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   required
+                  style={getFontStyle(fontTheme, "body2")}
                 />
               </div>
             </div>
             <div className="p-4 grid lg:grid-cols-5 grid-cols-1">
-              <label htmlFor="consultationDocument" className="block my-auto">
+              <label
+                htmlFor="consultationDocument"
+                className="block my-auto"
+                style={getFontStyle(fontTheme, "body1")}
+              >
                 Consultation Document:
               </label>
               <div className="flex items-center w-full col-span-4 relative">
@@ -268,15 +354,17 @@ const EmailDeliveryPage = () => {
                   id="consultationDocument"
                   type="file"
                   className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey text-muted border rounded-full"
-                  onChange={(e) => setDocument(e.target.files[0])}
+                  onChange={(e) => setDocumentFile(e.target.files[0])}
                   required
+                  style={getFontStyle(fontTheme, "body2")}
                 />
                 <button
                   type="button"
                   style={getButtonStyle(false)}
                   className="px-4 py-2 rounded-full ml-2 absolute right-2"
                   onClick={() =>
-                    document && window.open(URL.createObjectURL(document))
+                    documentFile &&
+                    window.open(URL.createObjectURL(documentFile))
                   }
                 >
                   Browse
@@ -284,7 +372,11 @@ const EmailDeliveryPage = () => {
               </div>
             </div>
             <div className="p-4 grid lg:grid-cols-5 grid-cols-1">
-              <label htmlFor="customMessage" className="block mb-auto mt-2">
+              <label
+                htmlFor="customMessage"
+                className="block mb-auto mt-2"
+                style={getFontStyle(fontTheme, "body1")}
+              >
                 Custom Message:
               </label>
               <div className="flex items-center w-full col-span-4 relative">
@@ -297,6 +389,7 @@ const EmailDeliveryPage = () => {
                   value={customMessage}
                   onChange={(e) => setCustomMessage(e.target.value)}
                   required
+                  style={getFontStyle(fontTheme, "body2")}
                 />
                 <div className="flex absolute bottom-0 p-2 gap-2">
                   <button
@@ -325,7 +418,7 @@ const EmailDeliveryPage = () => {
                       setRecipientName("");
                       setSubject("");
                       setCustomMessage("");
-                      setDocument(null);
+                      setDocumentFile(null);
                       setSendResult(null);
                     }}
                   >

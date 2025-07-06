@@ -11,6 +11,45 @@ import { toast } from "react-toastify";
 import { updateUser } from "@src/services/userService";
 import { validateForm } from "./../utils/validateForm";
 
+const THEME_STORAGE_KEY = "customColorTheme";
+const getFontTheme = () => {
+  try {
+    const theme = localStorage.getItem(THEME_STORAGE_KEY);
+    return theme ? JSON.parse(theme) : {};
+  } catch {
+    return {};
+  }
+};
+const getFontStyle = (fontTheme, type = "main") => {
+  if (!fontTheme) return {};
+  if (type === "subHeading") {
+    return {
+      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body1") {
+    return {
+      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
+    };
+  }
+  if (type === "body2") {
+    return {
+      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
+      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
+      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
+    };
+  }
+  return {
+    fontFamily: fontTheme.fontFamily,
+    fontWeight: fontTheme.fontWeight,
+    fontSize: fontTheme.fontSize,
+  };
+};
+
 const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
   const { isSubmitted, isReset, isReadOnly } = useSelector(
     (state) => state.submission
@@ -20,11 +59,9 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
 
   const activeUser = userData || user;
 
-  // Helper function to map country name to country code
   const getCountryCodeFromName = useCallback((countryName) => {
     if (!countryName) return "";
 
-    // Find country by name (case insensitive)
     const foundCountry = countryCodes.find(
       (country) => country.text.toLowerCase() === countryName.toLowerCase()
     );
@@ -32,11 +69,9 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
     return foundCountry ? foundCountry.value : countryName;
   }, []);
 
-  // Helper function to map country code to country name
   const getCountryNameFromCode = useCallback((countryCode) => {
     if (!countryCode) return "";
 
-    // Find country by code
     const foundCountry = countryCodes.find(
       (country) => country.value === countryCode
     );
@@ -56,7 +91,30 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
     mobileNumber: activeUser?.mobile_number || activeUser?.phone_number || "",
   });
 
-  // Update forms when userData changes
+  const [fontTheme, setFontTheme] = useState(getFontTheme());
+  useEffect(() => {
+    const reloadTheme = () => setFontTheme(getFontTheme());
+    window.addEventListener("customColorThemeChanged", reloadTheme);
+    window.addEventListener("storage", (e) => {
+      if (e.key === THEME_STORAGE_KEY) reloadTheme();
+    });
+    return () => {
+      window.removeEventListener("customColorThemeChanged", reloadTheme);
+      window.removeEventListener("storage", reloadTheme);
+    };
+  }, []);
+  useEffect(() => {
+    if (!fontTheme) return;
+    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
+    document.body.style.fontWeight = fontTheme.fontWeight || 400;
+    document.body.style.fontSize = fontTheme.fontSize || "16px";
+    return () => {
+      document.body.style.fontFamily = "";
+      document.body.style.fontWeight = "";
+      document.body.style.fontSize = "";
+    };
+  }, [fontTheme]);
+
   useEffect(() => {
     if (activeUser) {
       setForms({
@@ -83,7 +141,6 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
 
     console.log("Validated Form: ", validatedForm);
 
-    // Convert country code back to country name for API
     const countryName = getCountryNameFromCode(validatedForm.country);
 
     updateUser(activeUser.id, {
@@ -92,14 +149,13 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
       gender: validatedForm.gender,
       dob: validatedForm.dob,
       email: validatedForm.email,
-      country: countryName, // Send country name to API
+      country: countryName,
       residential_address: validatedForm.residentalAddress,
       mobile_number: validatedForm.mobileNumber,
     })
       .then((response) => {
         if (response.success) {
           toast.success("User updated successfully!");
-          // Only update logged-in user data if we're editing the logged-in user
           if (!userData) {
             dispatch(getUserDetail());
           }
@@ -138,7 +194,6 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
     }
   }, [isReset, activeUser, isSubmitted, getCountryCodeFromName]);
 
-  // Get selected country info for display
   const selectedCountryInfo = useMemo(() => {
     const foundCountry = countryCodes.find(
       (country) => country.value === forms.country
@@ -149,8 +204,9 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
   return (
     <div
       className={`grid lg:grid-cols-2 grid-cols-1 gap-4 ${wrapperClassName}`}
+      style={getFontStyle(fontTheme, "body1")}
     >
-      <div className="p-4">
+      <div className="p-4" style={getFontStyle(fontTheme, "body1")}>
         <InputWithLabel
           wrapperClassName={"mb-3"}
           label={"First Name:"}
@@ -161,6 +217,8 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
             handleFormChange("firstName", e.target.value, setForms)
           }
           readOnly={isReadOnly}
+          style={getFontStyle(fontTheme, "body1")}
+          labelStyle={getFontStyle(fontTheme, "body1")}
         />
         <InputWithLabel
           wrapperClassName={"mb-3"}
@@ -170,6 +228,8 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
           value={forms.gender}
           onChange={(e) => handleFormChange("gender", e.target.value, setForms)}
           readOnly={isReadOnly}
+          style={getFontStyle(fontTheme, "body1")}
+          labelStyle={getFontStyle(fontTheme, "body1")}
         >
           <option value={"male"}>Male</option>
           <option value={"female"}>Female</option>
@@ -184,6 +244,8 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
           value={forms.dob}
           onChange={(e) => handleFormChange("dob", e.target.value, setForms)}
           readOnly={isReadOnly}
+          style={getFontStyle(fontTheme, "body1")}
+          labelStyle={getFontStyle(fontTheme, "body1")}
         />
 
         <InputWithLabel
@@ -196,6 +258,8 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
             handleFormChange("country", e.target.value, setForms)
           }
           readOnly={isReadOnly}
+          style={getFontStyle(fontTheme, "body1")}
+          labelStyle={getFontStyle(fontTheme, "body1")}
         >
           <option value="">Select Country</option>
           <EachLoop
@@ -212,7 +276,10 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
 
         {/* Debug info - show selected country mapping */}
         {selectedCountryInfo && !isReadOnly && (
-          <div className="text-xs text-gray-500 mt-1 mb-2">
+          <div
+            className="text-xs text-gray-500 mt-1 mb-2"
+            style={getFontStyle(fontTheme, "body2")}
+          >
             Selected: {selectedCountryInfo.text} ({selectedCountryInfo.value})
             {activeUser?.country && (
               <span className="ml-2">| DB Value: "{activeUser.country}"</span>
@@ -220,7 +287,7 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
           </div>
         )}
       </div>
-      <div className="p-4">
+      <div className="p-4" style={getFontStyle(fontTheme, "body1")}>
         <InputWithLabel
           wrapperClassName={"mb-3"}
           label={"Last Name:"}
@@ -231,6 +298,8 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
             handleFormChange("lastName", e.target.value, setForms)
           }
           readOnly={isReadOnly}
+          style={getFontStyle(fontTheme, "body1")}
+          labelStyle={getFontStyle(fontTheme, "body1")}
         />
         <InputWithLabel
           wrapperClassName={"mb-3"}
@@ -240,6 +309,8 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
           value={forms.email}
           onChange={(e) => handleFormChange("email", e.target.value, setForms)}
           readOnly={isReadOnly}
+          style={getFontStyle(fontTheme, "body1")}
+          labelStyle={getFontStyle(fontTheme, "body1")}
         />
         <InputWithLabel
           wrapperClassName={"mb-3"}
@@ -251,6 +322,8 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
             handleFormChange("mobileNumber", e.target.value, setForms)
           }
           readOnly={isReadOnly}
+          style={getFontStyle(fontTheme, "body1")}
+          labelStyle={getFontStyle(fontTheme, "body1")}
         />
         <InputWithLabel
           wrapperClassName={"mb-3"}
@@ -263,6 +336,8 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
             handleFormChange("residentalAddress", e.target.value, setForms)
           }
           readOnly={isReadOnly}
+          style={getFontStyle(fontTheme, "body1")}
+          labelStyle={getFontStyle(fontTheme, "body1")}
         />
       </div>
     </div>

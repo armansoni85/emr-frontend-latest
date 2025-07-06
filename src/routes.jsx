@@ -1,5 +1,6 @@
 import {
   AIChatSupportPage,
+  AIVisitNotesDetailPage,
   AIVisitNotesPage,
   ChatWithAgentPage,
   EmailSupportPage,
@@ -32,6 +33,7 @@ import {
 } from "./pages/patient/profile";
 import {
   HippaCompliancePage,
+  HippaComplianceRegulatoryPage,
   UserAccessControlPage,
 } from "./pages/doctor/security";
 import { LoginPage, RegisterPage } from "./pages/auth";
@@ -335,6 +337,10 @@ const privateRoutes = {
       hippa_compliance: {
         path: "hippa-compliance",
         element: <HippaCompliancePage />,
+      },
+      regulatory_compliance: {
+        path: "regulatory-compliance",
+        element: <HippaComplianceRegulatoryPage />,
       },
       user_access_control: {
         path: "user-access-control",
