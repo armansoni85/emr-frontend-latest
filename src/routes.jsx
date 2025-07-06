@@ -294,6 +294,10 @@ const privateRoutes = {
             index: true,
             element: <AIVisitNotesPage />,
           },
+          visit_notes_edit: {
+            path: "visit-notes/:id",
+            element: <AIVisitNotesDetailPage />,
+          },
           chat: {
             path: "chat",
             element: <AIChatSupportPage />,

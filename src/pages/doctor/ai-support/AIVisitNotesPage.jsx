@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getConsultations } from "@src/services/consultation.service";
 import { useDispatch, useSelector } from "react-redux";
+import { getRoutePath } from "@src/utils/routeUtils";
 
 const THEME_STORAGE_KEY = "customColorTheme";
 const getFontTheme = () => {
@@ -494,9 +495,8 @@ const AIVisitNotesPage = () => {
                           />
                           <div className="text-start">
                             <p style={getFontStyle(fontTheme, "body1")}>
-                              {`${patient?.first_name || ""} ${
-                                patient?.last_name || ""
-                              }`.trim() || "N/A"}
+                              {`${patient?.first_name || ""} ${patient?.last_name || ""
+                                }`.trim() || "N/A"}
                             </p>
                           </div>
                         </div>
@@ -511,9 +511,8 @@ const AIVisitNotesPage = () => {
                         className="py-2 px-4 border-b"
                         style={getFontStyle(fontTheme, "body1")}
                       >
-                        {`${doctor?.first_name || ""} ${
-                          doctor?.last_name || ""
-                        }`.trim() ||
+                        {`${doctor?.first_name || ""} ${doctor?.last_name || ""
+                          }`.trim() ||
                           doctor?.email ||
                           "N/A"}
                       </td>
@@ -546,7 +545,7 @@ const AIVisitNotesPage = () => {
                           <div className="my-auto">
                             <button
                               onClick={() =>
-                                console.log("View & Edit:", consultation.id)
+                                navigate(getRoutePath('doctor.ai_supports.visit_notes_edit', { id: consultation.id }))
                               }
                               style={getButtonStyle(false, "primary")}
                               className="px-3 py-1 border rounded-full hover:bg-primary hover:text-white transition-all duration-150"
@@ -605,8 +604,8 @@ const AIVisitNotesPage = () => {
             <span className="font-semibold text-gray-900">
               {filteredConsultations.length > 0
                 ? (paginationMeta.currentPage - 1) *
-                    paginationMeta.limitPerPage +
-                  1
+                paginationMeta.limitPerPage +
+                1
                 : 0}
             </span>{" "}
             to{" "}
@@ -627,11 +626,10 @@ const AIVisitNotesPage = () => {
             <button
               onClick={handlePrevPage}
               disabled={!hasPrevPage || loading}
-              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                hasPrevPage && !loading
-                  ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
-                  : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${hasPrevPage && !loading
+                ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+                : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
               style={getFontStyle(fontTheme, "body2")}
             >
               <i className="material-icons text-sm">chevron_left</i>
@@ -686,11 +684,10 @@ const AIVisitNotesPage = () => {
                           <button
                             key={pageNumber}
                             onClick={() => handlePageChange(pageNumber)}
-                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                              pageNumber === paginationMeta.currentPage
-                                ? "bg-primary text-white shadow-sm"
-                                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
-                            }`}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${pageNumber === paginationMeta.currentPage
+                              ? "bg-primary text-white shadow-sm"
+                              : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                              }`}
                           >
                             {pageNumber}
                           </button>
@@ -727,11 +724,10 @@ const AIVisitNotesPage = () => {
             <button
               onClick={handleNextPage}
               disabled={!hasNextPage || loading}
-              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                hasNextPage && !loading
-                  ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
-                  : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${hasNextPage && !loading
+                ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+                : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
               style={getFontStyle(fontTheme, "body2")}
             >
               <span className="hidden sm:inline">Next</span>
