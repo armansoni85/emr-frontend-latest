@@ -267,9 +267,15 @@ const AIVisitNotesDetailPage = () => {
                         </div>
                         <div className="mb-3">
                             <h3 className="text-md font-medium bg-grey px-3 py-2 rounded-lg mb-2">Notes</h3>
-                            <p className="text-body px-2">
-                                {consultation?.recording_ai_voice_note ?? "N/A"}
-                            </p>
+                            <div
+                                className="p-4"
+                                dangerouslySetInnerHTML={{
+                                    __html: consultation?.recording_ai_voice_note?.replace(
+                                        /\n/g,
+                                        "<br/>"
+                                    ),
+                                }}
+                            ></div>
                         </div>
                     </div>
                 </div>
