@@ -113,13 +113,11 @@ const AppointmentPage = () => {
         "appointments",
         user.id,
         debounceSearchTerm,
-        // filter.disease,
         paginationMeta.currentPage,
       ],
       queryFn: async () => {
         const params = {
           search: debounceSearchTerm,
-          // disease: filter.disease,
           limit: 1000,
           offset: 0,
         };
@@ -303,7 +301,7 @@ const AppointmentPage = () => {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="mb-3 grid grid-cols-1 md:grid-cols-2 md:gap-4">
+      <div className="mb-3 grid grid-cols-1 md:grid-cols-3 md:gap-4">
         <InputWithLabel
           label={"Search"}
           name={"search"}
@@ -322,12 +320,13 @@ const AppointmentPage = () => {
           style={getFontStyle(fontTheme, "body1")}
           labelStyle={getFontStyle(fontTheme, "body1")}
         />
-        {/* <InputWithLabel
+        <InputWithLabel
           labelOnTop={true}
           label={"Disease"}
           name={"disease"}
           type={"text"}
           placeholder={"Filter by disease..."}
+          wrapperClassName="mb-3"
           value={filter.disease}
           onChange={handleChangeFilter}
           style={getFontStyle(fontTheme, "body1")}
@@ -339,13 +338,14 @@ const AppointmentPage = () => {
           name={"date"}
           type={"date"}
           wrapperClassName="mb-3"
-          inputClassName="!pe-4 !ps-10 !py-2"
+          inputClassName="!pe-4 !ps-4 !py-2"
           value={filter.date}
           onChange={handleChangeFilter}
           style={getFontStyle(fontTheme, "body1")}
           labelStyle={getFontStyle(fontTheme, "body1")}
         />
       </div>
+
       <div className="bg-white shadow-md rounded-2xl pb-4">
         <div
           className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b"
@@ -559,7 +559,7 @@ const AppointmentPage = () => {
           />
         </div>
 
-        {/* Pagination - Same Style as PatientListPage */}
+        {/* Pagination */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-6 border-t border-gray-100">
           {/* Data Summary */}
           <div
@@ -726,6 +726,7 @@ const AppointmentPage = () => {
           </div>
         </div>
       </div>
+
       {/* Empty State */}
       {!isPending && filteredAppointments.length === 0 && (
         <div className="bg-white rounded-lg shadow-sm p-12 text-center">
