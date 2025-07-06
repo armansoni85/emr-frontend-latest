@@ -64,7 +64,7 @@ const AIVisitNotesDetailPage = () => {
                                         </div>
                                         <div className="flex justify-between w-full text-nowrap">
                                             <div className="text-start">
-                                                <h6 className="text-2xl text-darkBlue font-medium">{consultation?.appointment?.patient?.name ?? "N/A"}</h6>
+                                                <h6 className="text-2xl text-darkBlue font-medium">{consultation?.appointment?.patient?.first_name + " " + consultation?.appointment?.patient?.last_name ?? "N/A"}</h6>
                                                 <div className="flex gap-1 text-sm">
                                                     <span>Date of Birth :</span>
                                                     <span className="text-muted">{consultation?.appointment?.patient?.date_of_birth ?? "N/A"}</span>
