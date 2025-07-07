@@ -330,6 +330,7 @@ const AppointmentAddPage = () => {
             id={"dob"}
             type={"date"}
             value={form.dob || ""}
+            onChange={(e) => handleFormChange("dob", e, setForm)}
             wrapperClassName="p-4"
             placeholder="Enter date of birth"
             disabled={false}
