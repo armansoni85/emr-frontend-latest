@@ -1,4 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getAppointments } from "@src/services/appointmentService";
+import { useParams } from "react-router-dom";
+import StatusText from "../../components/StatusText";
+import { useDispatch } from "react-redux";
+import { showModal } from "@src/redux/reducers/modalReducer";
 
 const THEME_STORAGE_KEY = "customColorTheme";
 const getFontTheme = () => {
@@ -41,6 +47,40 @@ const getFontStyle = (fontTheme, type = "main") => {
 
 const PatientAppointmentPage = () => {
   const [fontTheme, setFontTheme] = useState(getFontTheme());
+  const [searchTerm, setSearchTerm] = useState("");
+  const [paginationMeta, setPaginationMeta] = useState({
+    currentPage: 1,
+    totalPages: 1
+  });
+  const { patient } = useParams();
+  const dispatch = useDispatch();
+
+  const { data, isSuccess, isError, error, isPending, isFetching, refetch } = useQuery({
+    queryKey: ["appointments", searchTerm, paginationMeta.currentPage],
+    queryFn: async () => {
+      const params = {
+        search: searchTerm,
+        limit: 1000,
+        offset: 0,
+        patient: patient
+      };
+
+      const data = await getAppointments(params);
+      return data;
+    },
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  const filteredAppointments = useMemo(() => {
+    if (!data?.data?.results) return [];
+
+    let appointments = data.data.results;
+
+    return appointments;
+  }, [data?.data?.results]);
+
   useEffect(() => {
     const reloadTheme = () => setFontTheme(getFontTheme());
     window.addEventListener("customColorThemeChanged", reloadTheme);
@@ -52,6 +92,7 @@ const PatientAppointmentPage = () => {
       window.removeEventListener("storage", reloadTheme);
     };
   }, []);
+
   useEffect(() => {
     if (!fontTheme) return;
     document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
@@ -63,6 +104,24 @@ const PatientAppointmentPage = () => {
       document.body.style.fontSize = "";
     };
   }, [fontTheme]);
+
+
+  const handleOpenModal = (notes) => {
+    dispatch(showModal({
+      id: "view-notes",
+      title: "View Notes",
+      content: (
+        <>
+          {/* Recordings Output */}
+          <div className="bg-white rounded-[20px] border mb-4 col-span-2">
+            <div className="p-4">
+              {notes}
+            </div>
+          </div>
+        </>
+      ),
+    }));
+  };
 
   return (
     <>
@@ -115,425 +174,100 @@ const PatientAppointmentPage = () => {
               className="text-body"
               style={getFontStyle(fontTheme, "body1")}
             >
-              <tr>
-                <td className="py-2 px-4 border-b ">
-                  <div className="flex items-center cursor-pointer">
-                    <img
-                      src="assets/images/profile.png"
-                      alt="profile"
-                      className="w-10 h-10 rounded-full mr-3"
-                    />
-                    <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>
-                        Sarah Connor
-                      </p>
-                      <span
-                        className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
-                      >
-                        #45678901
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td
-                  className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
-                >
-                  July 10, 2024 - 10:00AM
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <span
-                    className="px-2 py-1 border rounded-full border-info text-info"
-                    style={getFontStyle(fontTheme, "body2")}
-                  >
-                    Cold
-                  </span>
-                </td>
-                <td
-                  className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
-                >
-                  Routine Checkup
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <span
-                    className="text-success"
-                    style={getFontStyle(fontTheme, "body2")}
-                  >
-                    Done
-                  </span>
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <button
-                    disabled=""
-                    className="disabled:opacity-30 disabled:pointer-events-none px-3 py-1 border border-primary rounded-full text-primary hover:bg-primary hover:text-white transition-all duration-150"
-                    style={getFontStyle(fontTheme, "body2")}
-                  >
-                    View Notes
-                  </button>
-                  <div className="float-right relative">
-                    <button
-                      className="px-3 py-1"
-                      style={getFontStyle(fontTheme, "body2")}
+              {isPending ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-4">Loading...</td>
+                </tr>
+              ) : isError ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-4 text-red-500">Error: {error.message}</td>
+                </tr>
+              ) : filteredAppointments?.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-4">No appointments found</td>
+                </tr>
+              ) : (
+                filteredAppointments?.map((appointment) => (
+                  <tr key={appointment.id}>
+                    <td className="py-2 px-4 border-b ">
+                      <div className="flex items-center cursor-pointer">
+                        <img
+                          src="assets/images/profile.png"
+                          alt="profile"
+                          className="w-10 h-10 rounded-full mr-3"
+                        />
+                        <div className="text-start">
+                          <p style={getFontStyle(fontTheme, "body1")}>
+                            {appointment.doctor.first_name} {appointment.doctor.last_name}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td
+                      className="py-2 px-4 border-b"
+                      style={getFontStyle(fontTheme, "body1")}
                     >
-                      <i className="material-icons">more_vert</i>
-                    </button>
-                    <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg hidden">
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
-                        style={getFontStyle(fontTheme, "body2")}
-                      >
-                        Edit
-                      </a>
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
-                        style={getFontStyle(fontTheme, "body2")}
-                      >
-                        Delete
-                      </a>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td className="py-2 px-4 border-b ">
-                  <div className="flex items-center cursor-pointer">
-                    <img
-                      src="assets/images/profile.png"
-                      alt="profile"
-                      className="w-10 h-10 rounded-full mr-3"
-                    />
-                    <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>John Doe</p>
+                      {appointment.appointment_datetime}
+                    </td>
+                    <td className="py-2 px-4 border-b">
                       <span
-                        className="text-muted"
+                        className="px-2 py-1 border rounded-full border-info text-info"
                         style={getFontStyle(fontTheme, "body2")}
                       >
-                        #23456789
+                        {appointment.disease ?? 'Unknown'}
                       </span>
-                    </div>
-                  </div>
-                </td>
-                <td
-                  className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
-                >
-                  June 15, 2024 - 11:30AM
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <span
-                    className="px-2 py-1 border rounded-full border-danger text-danger"
-                    style={getFontStyle(fontTheme, "body2")}
-                  >
-                    Fever
-                  </span>
-                </td>
-                <td
-                  className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
-                >
-                  Follow-up
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <span
-                    className="text-danger"
-                    style={getFontStyle(fontTheme, "body2")}
-                  >
-                    Rejected
-                  </span>
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <button
-                    onClick={() =>
-                      window.openModal && window.openModal("modalTemplate")
-                    }
-                    className="px-3 py-1 border border-primary rounded-full text-primary hover:bg-primary hover:text-white transition-all duration-150"
-                    style={getFontStyle(fontTheme, "body2")}
-                  >
-                    View Notes
-                  </button>
-                  <div className="float-right relative">
-                    <button
-                      className="px-3 py-1"
-                      style={getFontStyle(fontTheme, "body2")}
+                    </td>
+                    <td
+                      className="py-2 px-4 border-b"
+                      style={getFontStyle(fontTheme, "body1")}
                     >
-                      <i className="material-icons">more_vert</i>
-                    </button>
-                    <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg hidden">
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
-                        style={getFontStyle(fontTheme, "body2")}
-                      >
-                        Edit
-                      </a>
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
-                        style={getFontStyle(fontTheme, "body2")}
-                      >
-                        Delete
-                      </a>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td className="py-2 px-4 border-b ">
-                  <div className="flex items-center cursor-pointer">
-                    <img
-                      src="assets/images/profile.png"
-                      alt="profile"
-                      className="w-10 h-10 rounded-full mr-3"
-                    />
-                    <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>Jane Smith</p>
+                      {appointment.reason_of_visit ?? 'Unknown'}
+                    </td>
+                    <td className="py-2 px-4 border-b">
                       <span
-                        className="text-muted"
                         style={getFontStyle(fontTheme, "body2")}
                       >
-                        #34567890
+                        <StatusText status={appointment.appointment_status} />
                       </span>
-                    </div>
-                  </div>
-                </td>
-                <td
-                  className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
-                >
-                  May 5, 2024 - 9:00AM
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <span
-                    className="px-2 py-1 border rounded-full border-purple text-purple"
-                    style={getFontStyle(fontTheme, "body2")}
-                  >
-                    Allergy
-                  </span>
-                </td>
-                <td
-                  className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
-                >
-                  Consultation
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <span
-                    className="text-info"
-                    style={getFontStyle(fontTheme, "body2")}
-                  >
-                    In Progress
-                  </span>
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <button
-                    onClick={() =>
-                      window.openModal && window.openModal("modalTemplate")
-                    }
-                    className="px-3 py-1 border border-primary rounded-full text-primary hover:bg-primary hover:text-white transition-all duration-150"
-                    style={getFontStyle(fontTheme, "body2")}
-                  >
-                    View Notes
-                  </button>
-                  <div className="float-right relative">
-                    <button
-                      className="px-3 py-1"
-                      style={getFontStyle(fontTheme, "body2")}
-                    >
-                      <i className="material-icons">more_vert</i>
-                    </button>
-                    <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg hidden">
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
+                    </td>
+                    <td className="py-2 px-4 border-b">
+                      <button
+                        onClick={() =>
+                          handleOpenModal(appointment.consultation_ai_voice_note)
+                        }
+                        className="px-3 py-1 border border-primary rounded-full text-primary hover:bg-primary hover:text-white transition-all duration-150"
                         style={getFontStyle(fontTheme, "body2")}
                       >
-                        Edit
-                      </a>
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
-                        style={getFontStyle(fontTheme, "body2")}
-                      >
-                        Delete
-                      </a>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td className="py-2 px-4 border-b ">
-                  <div className="flex items-center cursor-pointer">
-                    <img
-                      src="assets/images/profile.png"
-                      alt="profile"
-                      className="w-10 h-10 rounded-full mr-3"
-                    />
-                    <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>
-                        Robert Wilson
-                      </p>
-                      <span
-                        className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
-                      >
-                        #56789012
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td
-                  className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
-                >
-                  April 20, 2024 - 2:00PM
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <span
-                    className="px-2 py-1 border rounded-full border-warning text-warning"
-                    style={getFontStyle(fontTheme, "body2")}
-                  >
-                    Headache
-                  </span>
-                </td>
-                <td
-                  className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
-                >
-                  Emergency
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <span
-                    className="text-success"
-                    style={getFontStyle(fontTheme, "body2")}
-                  >
-                    Done
-                  </span>
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <button
-                    onClick={() =>
-                      window.openModal && window.openModal("modalTemplate")
-                    }
-                    className="px-3 py-1 border border-primary rounded-full text-primary hover:bg-primary hover:text-white transition-all duration-150"
-                    style={getFontStyle(fontTheme, "body2")}
-                  >
-                    View Notes
-                  </button>
-                  <div className="float-right relative">
-                    <button
-                      className="px-3 py-1"
-                      style={getFontStyle(fontTheme, "body2")}
-                    >
-                      <i className="material-icons">more_vert</i>
-                    </button>
-                    <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg hidden">
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
-                        style={getFontStyle(fontTheme, "body2")}
-                      >
-                        Edit
-                      </a>
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
-                        style={getFontStyle(fontTheme, "body2")}
-                      >
-                        Delete
-                      </a>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td className="py-2 px-4 border-b ">
-                  <div className="flex items-center cursor-pointer">
-                    <img
-                      src="assets/images/profile.png"
-                      alt="profile"
-                      className="w-10 h-10 rounded-full mr-3"
-                    />
-                    <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>
-                        Emily Davis
-                      </p>
-                      <span
-                        className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
-                      >
-                        #67890123
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td
-                  className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
-                >
-                  March 30, 2024 - 4:30PM
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <span
-                    className="px-2 py-1 border rounded-full border-danger text-danger"
-                    style={getFontStyle(fontTheme, "body2")}
-                  >
-                    Infection
-                  </span>
-                </td>
-                <td
-                  className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
-                >
-                  Follow-up
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <span
-                    className="text-danger"
-                    style={getFontStyle(fontTheme, "body2")}
-                  >
-                    Rejected
-                  </span>
-                </td>
-                <td className="py-2 px-4 border-b">
-                  <button
-                    onClick={() =>
-                      window.openModal && window.openModal("modalTemplate")
-                    }
-                    className="px-3 py-1 border border-primary rounded-full text-primary hover:bg-primary hover:text-white transition-all duration-150"
-                    style={getFontStyle(fontTheme, "body2")}
-                  >
-                    View Notes
-                  </button>
-                  <div className="float-right relative">
-                    <button
-                      className="px-3 py-1"
-                      style={getFontStyle(fontTheme, "body2")}
-                    >
-                      <i className="material-icons">more_vert</i>
-                    </button>
-                    <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg hidden">
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
-                        style={getFontStyle(fontTheme, "body2")}
-                      >
-                        Edit
-                      </a>
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
-                        style={getFontStyle(fontTheme, "body2")}
-                      >
-                        Delete
-                      </a>
-                    </div>
-                  </div>
-                </td>
-              </tr>
+                        View Notes
+                      </button>
+                      <div className="float-right relative">
+                        <button
+                          className="px-3 py-1"
+                          style={getFontStyle(fontTheme, "body2")}
+                        >
+                          <i className="material-icons">more_vert</i>
+                        </button>
+                        <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg hidden">
+                          <a
+                            href="#"
+                            className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
+                            style={getFontStyle(fontTheme, "body2")}
+                          >
+                            Edit
+                          </a>
+                          <a
+                            href="#"
+                            className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
+                            style={getFontStyle(fontTheme, "body2")}
+                          >
+                            Delete
+                          </a>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
           <div className="flex justify-end items-center mt-4 mx-4">
@@ -543,9 +277,9 @@ const PatientAppointmentPage = () => {
                 className="px-4 border border-muted rounded-full text-muted hover:bg-muted hover:text-white transition-all duration-150"
                 style={getFontStyle(fontTheme, "body2")}
               >
-                1
+                {paginationMeta.currentPage}
               </button>
-              <span>of 100</span>
+              <span>of {paginationMeta.totalPages}</span>
             </div>
           </div>
         </div>
