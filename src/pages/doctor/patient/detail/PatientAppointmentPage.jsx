@@ -52,7 +52,7 @@ const PatientAppointmentPage = () => {
     currentPage: 1,
     totalPages: 1
   });
-  const { patient } = useParams();
+  const { patientId } = useParams();
   const dispatch = useDispatch();
 
   const { data, isSuccess, isError, error, isPending, isFetching, refetch } = useQuery({
@@ -62,7 +62,7 @@ const PatientAppointmentPage = () => {
         search: searchTerm,
         limit: 1000,
         offset: 0,
-        patient: patient
+        patient: patientId
       };
 
       const data = await getAppointments(params);
