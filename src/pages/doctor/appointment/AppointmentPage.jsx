@@ -311,7 +311,7 @@ const AppointmentPage = () => {
             All Appointments
           </h2>
           <div className="text-end inline-block flex gap-2">
-            {showButtonAdd && (
+            {filteredAppointments.length == 0 && filter.search != "" && filter.date != "" && (
               <button
                 className="text-white bg-primary rounded-full text-lg flex px-4 "
                 style={getFontStyle(fontTheme, "body2")}
