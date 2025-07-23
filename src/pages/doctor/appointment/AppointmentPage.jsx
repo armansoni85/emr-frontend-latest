@@ -266,7 +266,7 @@ const AppointmentPage = () => {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="mb-3 grid grid-cols-1 md:grid-cols-3 md:gap-4">
+      <div className="mb-3 grid grid-cols-1 md:grid-cols-2 md:gap-4">
         <InputWithLabel
           label={"Search"}
           name={"search"}
