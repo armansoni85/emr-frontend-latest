@@ -10,58 +10,10 @@ import { getRoutePath } from "@src/utils/routeUtils";
 import { getUsers } from "@src/services/userService";
 import { handleFormChange } from "@src/utils/handleForm";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
-
-const THEME_STORAGE_KEY = "customColorTheme";
-const getFontTheme = () => {
-  try {
-    const theme = localStorage.getItem(THEME_STORAGE_KEY);
-    return theme ? JSON.parse(theme) : {};
-  } catch {
-    return {};
-  }
-};
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-    };
-  }
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-  };
-};
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { getFontTheme, getFontStyle } from "@src/utils/theme";
 
 const AppointmentAddPage = () => {
-  const [form, setForm] = useState({
-    patient: "",
-    mobileNumber: "",
-    email: "",
-    dob: "",
-    date: "",
-    time: "",
-    disease: "",
-    reasonOfVisit: "",
-  });
 
   const [patients, setPatients] = useState([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
@@ -71,8 +23,19 @@ const AppointmentAddPage = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useSelector((state) => state.auth);
 
+  const [form, setForm] = useState({
+    patient: "",
+    mobileNumber: "",
+    email: "",
+    dob: "",
+    date: location.state?.date || "",
+    time: "",
+    disease: "",
+    reasonOfVisit: "",
+  });
   const [fontTheme, setFontTheme] = useState(getFontTheme());
   useEffect(() => {
     const reloadTheme = () => setFontTheme(getFontTheme());
@@ -104,34 +67,35 @@ const AppointmentAddPage = () => {
 
   const fetchPatients = async (search = "") => {
     try {
+      setPatients([]);
       setPatientsLoading(true);
       const params = { role: 3 };
       if (search) {
         params.search = search;
       }
       const response = await getUsers(params);
-      if (response && response.data && response.data.results) {
+      if (response?.data.results) {
         const patientsData = response.data.results;
         const patientsOnly = patientsData.filter(
           (user) => user.role === "3" || user.role === 3
         );
         setPatients(patientsOnly);
-      } else if (response && response.results) {
-        const patientsOnly = response.results.filter(
-          (user) => user.role === "3" || user.role === 3
-        );
-        setPatients(patientsOnly);
-      } else if (response && Array.isArray(response)) {
-        const patientsOnly = response.filter(
-          (user) => user.role === "3" || user.role === 3
-        );
-        setPatients(patientsOnly);
-      } else {
-        setPatients([]);
+
+        // Get search param from location state if available
+        if (location?.state?.search) {
+          const filteredPatients = patientsData.filter(patient =>
+            patient.first_name?.toLowerCase().includes(location.state.search.toLowerCase()) ||
+            patient.last_name?.toLowerCase().includes(location.state.search.toLowerCase())
+          );
+          if (filteredPatients.length > 0) {
+            handlePatientSelect(filteredPatients[0]);
+          }
+        }
+        // setPatients(filteredPatients);
       }
     } catch (error) {
+      console.log(error, "ERROR")
       toast.error("Failed to load patients");
-      setPatients([]);
     } finally {
       setPatientsLoading(false);
     }

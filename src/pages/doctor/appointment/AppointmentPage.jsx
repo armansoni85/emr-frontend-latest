@@ -26,45 +26,7 @@ import { createConsultation } from "@src/services/consultation.service";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getRoutePath } from "@src/utils/routeUtils";
-
-const THEME_STORAGE_KEY = "customColorTheme";
-const getFontTheme = () => {
-  try {
-    const theme = localStorage.getItem(THEME_STORAGE_KEY);
-    return theme ? JSON.parse(theme) : {};
-  } catch {
-    return {};
-  }
-};
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-    };
-  }
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-  };
-};
+import { getFontTheme, getFontStyle } from "@src/utils/theme.js";
 
 const AppointmentPage = () => {
   const { paginationMeta } = useSelector((state) => state.fetch);
@@ -74,7 +36,7 @@ const AppointmentPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-
+  const [showButtonAdd, setShowButtonAdd] = useState(false);
   const [fontTheme, setFontTheme] = useState(getFontTheme());
   useEffect(() => {
     const reloadTheme = () => setFontTheme(getFontTheme());
@@ -101,7 +63,6 @@ const AppointmentPage = () => {
 
   const [filter, setFilter] = useState({
     search: "",
-    disease: "",
     date: location.state?.selectedDate || "",
   });
 
@@ -123,6 +84,11 @@ const AppointmentPage = () => {
         };
 
         const data = await getAppointments(params);
+
+        console.log(data, filter.search)
+        if (filter.search != "" && data.data.count == 0) {
+          setShowButtonAdd(true)
+        }
 
         return data;
       },
@@ -213,7 +179,6 @@ const AppointmentPage = () => {
   const handleClearFilter = () => {
     setFilter({
       search: "",
-      disease: "",
       date: "",
     });
     dispatch({ type: "FETCH_SET_PAGINATION", payload: { currentPage: 1 } });
@@ -322,18 +287,6 @@ const AppointmentPage = () => {
         />
         <InputWithLabel
           labelOnTop={true}
-          label={"Disease"}
-          name={"disease"}
-          type={"text"}
-          placeholder={"Filter by disease..."}
-          wrapperClassName="mb-3"
-          value={filter.disease}
-          onChange={handleChangeFilter}
-          style={getFontStyle(fontTheme, "body1")}
-          labelStyle={getFontStyle(fontTheme, "body1")}
-        />
-        <InputWithLabel
-          labelOnTop={true}
           label={"Date"}
           name={"date"}
           type={"date"}
@@ -357,7 +310,23 @@ const AppointmentPage = () => {
           >
             All Appointments
           </h2>
-          <div className="text-end inline-block">
+          <div className="text-end inline-block flex gap-2">
+            {showButtonAdd && (
+              <button
+                className="text-white bg-primary rounded-full text-lg flex px-4 "
+                style={getFontStyle(fontTheme, "body2")}
+                onClick={() => {
+                  navigate("/doctor/appointments/add", {
+                    state: {
+                      date: filter.date,
+                      search: filter.search,
+                    }
+                  });
+                }}
+              >
+                Add Appointment
+              </button>
+            )}
             <button
               className="text-primary rounded-full text-lg flex"
               style={getFontStyle(fontTheme, "body2")}
@@ -403,14 +372,13 @@ const AppointmentPage = () => {
                         <div className="text-start">
                           <p style={getFontStyle(fontTheme, "body1")}>
                             {!item?.patient?.first_name &&
-                            !item?.patient?.last_name ? (
+                              !item?.patient?.last_name ? (
                               <span className="text-gray-400">
                                 Not provided
                               </span>
                             ) : (
-                              `${item?.patient?.first_name || ""} ${
-                                item?.patient?.last_name || ""
-                              }`.trim()
+                              `${item?.patient?.first_name || ""} ${item?.patient?.last_name || ""
+                                }`.trim()
                             )}
                           </p>
                         </div>
@@ -570,8 +538,8 @@ const AppointmentPage = () => {
             <span className="font-semibold text-gray-900">
               {filteredAppointments.length > 0
                 ? (paginationMeta.currentPage - 1) *
-                    paginationMeta.limitPerPage +
-                  1
+                paginationMeta.limitPerPage +
+                1
                 : 0}
             </span>{" "}
             to{" "}
@@ -594,11 +562,10 @@ const AppointmentPage = () => {
             <button
               onClick={handlePrevPage}
               disabled={!hasPrevPage || isFetching}
-              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                hasPrevPage && !isFetching
-                  ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
-                  : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${hasPrevPage && !isFetching
+                ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+                : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
               style={getFontStyle(fontTheme, "body2")}
             >
               <i className="material-icons text-sm">chevron_left</i>
@@ -653,11 +620,10 @@ const AppointmentPage = () => {
                           <button
                             key={pageNumber}
                             onClick={() => handlePageChange(pageNumber)}
-                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                              pageNumber === paginationMeta.currentPage
-                                ? "bg-primary text-white shadow-sm"
-                                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
-                            }`}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${pageNumber === paginationMeta.currentPage
+                              ? "bg-primary text-white shadow-sm"
+                              : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                              }`}
                             style={getFontStyle(fontTheme, "body2")}
                           >
                             {pageNumber}
@@ -692,11 +658,10 @@ const AppointmentPage = () => {
             <button
               onClick={handleNextPage}
               disabled={!hasNextPage || isFetching}
-              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                hasNextPage && !isFetching
-                  ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
-                  : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${hasNextPage && !isFetching
+                ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
+                : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
               style={getFontStyle(fontTheme, "body2")}
             >
               <span className="hidden sm:inline">Next</span>

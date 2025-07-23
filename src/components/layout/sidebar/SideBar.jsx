@@ -8,7 +8,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { useTheme } from "@src/context/ThemeContext";
 
 import { EachLoop } from "../../../utils/EachLoop";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { getFontTheme, getFontStyle } from "../../../utils/theme.js";
 
 const SideBar = () => {
   const { isSidebarOpen, activeMenu, activeSubMenu, menus } = useSelector(
@@ -89,6 +90,31 @@ const SideBar = () => {
     };
   }, [dispatch]);
 
+
+  const [fontTheme, setFontTheme] = useState(getFontTheme());
+  useEffect(() => {
+    const reloadTheme = () => setFontTheme(getFontTheme());
+    window.addEventListener("customColorThemeChanged", reloadTheme);
+    window.addEventListener("storage", (e) => {
+      if (e.key === THEME_STORAGE_KEY) reloadTheme();
+    });
+    return () => {
+      window.removeEventListener("customColorThemeChanged", reloadTheme);
+      window.removeEventListener("storage", reloadTheme);
+    };
+  }, []);
+  useEffect(() => {
+    if (!fontTheme) return;
+    document.body.style.fontFamily = `${fontTheme.fontFamily || "inherit"} !important`;
+    document.body.style.fontWeight = `${fontTheme.fontWeight || 400} !important`;
+    document.body.style.fontSize = `${fontTheme.fontSize || "16px"} !important`;
+    return () => {
+      document.body.style.fontFamily = "";
+      document.body.style.fontWeight = "";
+      document.body.style.fontSize = "";
+    };
+  }, [fontTheme]);
+
   const iconType = (type, icon, isChild = false) => {
     switch (type) {
       case "image":
@@ -115,13 +141,14 @@ const SideBar = () => {
       style={{
         backgroundColor: theme.primaryColor,
         color: "var(--body-text-color)",
+        ...getFontStyle(fontTheme, "body1")
       }}
     >
       <div
         className="flex items-center justify-center mb-6 bg-white text-primary rounded-xl h-24"
         style={{
           color: "var(--primary-color)",
-          fontFamily: "var(--font-family)",
+          ...getFontStyle(fontTheme, "main")
         }}
       >
         <img src="/assets/images/LogoIcon.png" alt="Logo" className="mr-3" />
@@ -130,7 +157,7 @@ const SideBar = () => {
             }`}
           style={{
             color: "var(--primary-color)",
-            fontFamily: "var(--font-family)",
+            ...getFontStyle(fontTheme, "main")
           }}
         >
           MEDAIPRO
@@ -143,13 +170,19 @@ const SideBar = () => {
           close
         </button>
       </div>
-      <ul>
+      <ul
+        style={{
+          ...getFontStyle(fontTheme, "main")
+        }}
+      >
         <EachLoop
           of={menus}
           render={(item) => {
             return (
               <>
-                <li className="text-white">
+                <li className="text-white" style={{
+                  ...getFontStyle(fontTheme, "main")
+                }}>
                   {item.children ? (
                     <Link
                       id={item.id}
@@ -164,6 +197,9 @@ const SideBar = () => {
                       <span
                         className={`ml-2 sidebar-text text-white ${isSidebarOpen ? "" : "hide-text"
                           }`}
+                        style={{
+                          ...getFontStyle(fontTheme, "main")
+                        }}
                       >
                         {item.text} {item.childState}
                       </span>
@@ -187,6 +223,9 @@ const SideBar = () => {
                       <span
                         className={`ml-2 sidebar-text ${isSidebarOpen ? "" : "hide-text"
                           }`}
+                        style={{
+                          ...getFontStyle(fontTheme, "main")
+                        }}
                       >
                         {item.text}
                       </span>
