@@ -3,7 +3,7 @@ import apiClient from "@src/utils/apiClient";
 export const getIcd = async (search = '') => {
     try {
         const params = search ? { search } : {};
-        const response = await apiClient.get('/icd-codes/', { params });
+        const response = await apiClient.get('/superbills/icd-codes/', { params });
         return response.data;
     } catch (error) {
         console.error('Error fetching ICD codes:', error);

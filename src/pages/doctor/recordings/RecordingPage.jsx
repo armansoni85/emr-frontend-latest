@@ -60,6 +60,7 @@ const RecordingPage = () => {
   const [recordingStartTime, setRecordingStartTime] = useState(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [timerInterval, setTimerInterval] = useState(null);
+  const [stream, setStream] = useState(null);
 
   const [fontTheme, setFontTheme] = useState(getFontTheme());
   useEffect(() => {
@@ -84,6 +85,15 @@ const RecordingPage = () => {
       document.body.style.fontSize = "";
     };
   }, [fontTheme]);
+
+  // Cleanup stream on component unmount
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
 
   const chunksRef = useRef([]);
 
@@ -178,44 +188,93 @@ const RecordingPage = () => {
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  const getSupportedWavMimeType = () => {
-    if (window.MediaRecorder && window.MediaRecorder.isTypeSupported) {
-      if (window.MediaRecorder.isTypeSupported("audio/wav")) {
-        return "audio/wav";
-      }
-      if (window.MediaRecorder.isTypeSupported("audio/webm")) {
-        return "audio/webm";
+  const getSupportedMimeType = () => {
+    if (!window.MediaRecorder) return null;
+
+    // Try supported types in order of preference
+    const types = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/mp4;codecs=mp4a.40.2',
+      'audio/mpeg',
+      'audio/wav'
+    ];
+
+    for (const type of types) {
+      if (window.MediaRecorder.isTypeSupported(type)) {
+        return type;
       }
     }
-    return "";
+
+    return null; // Let MediaRecorder use default
   };
 
   const handleStartRecording = async () => {
     if (isRecording) return;
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = getSupportedWavMimeType();
-      const recorder = new window.MediaRecorder(
-        stream,
-        mimeType ? { mimeType } : undefined
-      );
+      // Clear any existing stream
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
+      // Request audio with specific constraints for better iPad compatibility
+      const audioStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 44100,
+          channelCount: 1
+        }
+      });
+
+      setStream(audioStream);
+
+      const mimeType = getSupportedMimeType();
+      console.log('Using MIME type:', mimeType);
+
+      const recorderOptions = mimeType ? { mimeType } : {};
+
+      // Add timeslice for better compatibility with iOS/iPad
+      const recorder = new window.MediaRecorder(audioStream, recorderOptions);
+
       chunksRef.current = [];
+
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           chunksRef.current.push(e.data);
         }
       };
+
       recorder.onstop = async () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const actualMimeType = mimeType || 'audio/webm';
+        const blob = new Blob(chunksRef.current, { type: actualMimeType });
         const url = URL.createObjectURL(blob);
         const now = new Date();
         const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
+
+        // Determine file extension based on MIME type
+        let fileExtension = 'webm';
+        let fileName = 'recording.webm';
+
+        if (actualMimeType.includes('mp4')) {
+          fileExtension = 'mp4';
+          fileName = 'recording.mp4';
+        } else if (actualMimeType.includes('mpeg')) {
+          fileExtension = 'mp3';
+          fileName = 'recording.mp3';
+        } else if (actualMimeType.includes('wav')) {
+          fileExtension = 'wav';
+          fileName = 'recording.wav';
+        }
 
         const formData = new FormData();
         formData.append("consultation", consultationId);
         formData.append(
           "recording_audio",
-          new File([blob], "recording.webm", { type: "audio/webm" })
+          new File([blob], fileName, { type: actualMimeType })
         );
 
         try {
@@ -227,30 +286,62 @@ const RecordingPage = () => {
             toast.error("Failed to upload recording");
           }
         } catch (err) {
+          console.error('Upload error:', err);
           toast.error("Error uploading recording");
         }
 
         setRecording({
           url,
           blob,
-          ext: "webm",
+          ext: fileExtension,
           time: now,
           duration,
         });
+
+        // Clean up stream
+        if (audioStream) {
+          audioStream.getTracks().forEach(track => track.stop());
+          setStream(null);
+        }
       };
-      recorder.start();
+
+      recorder.onerror = (e) => {
+        console.error('MediaRecorder error:', e);
+        toast.error('Recording error occurred');
+        setIsRecording(false);
+        if (audioStream) {
+          audioStream.getTracks().forEach(track => track.stop());
+          setStream(null);
+        }
+      };
+
+      // Start recording with timeslice for better iOS compatibility
+      recorder.start(1000); // Record in 1-second chunks
       setMediaRecorder(recorder);
       setIsRecording(true);
-      setRecordingStartTime(Date.now());
+
       const startTime = Date.now();
       setRecordingStartTime(startTime);
       setRecordingDuration(0);
+
       const interval = setInterval(() => {
         setRecordingDuration(Math.floor((Date.now() - startTime) / 1000));
       }, 1000);
       setTimerInterval(interval);
+
     } catch (err) {
-      alert("Could not start recording: " + err.message);
+      console.error('Recording error:', err);
+      let errorMessage = "Could not start recording: " + err.message;
+
+      if (err.name === 'NotAllowedError') {
+        errorMessage = "Microphone permission denied. Please allow microphone access and try again.";
+      } else if (err.name === 'NotFoundError') {
+        errorMessage = "No microphone found. Please ensure a microphone is connected.";
+      } else if (err.name === 'NotSupportedError') {
+        errorMessage = "Recording not supported on this device/browser.";
+      }
+
+      toast.error(errorMessage);
     }
   };
 
@@ -260,11 +351,13 @@ const RecordingPage = () => {
       setIsRecording(false);
       setRecordingStartTime(null);
       setRecordingDuration(0);
-      refetch();
+
       if (timerInterval) {
         clearInterval(timerInterval);
         setTimerInterval(null);
       }
+
+      refetch();
     }
   };
 
@@ -621,7 +714,7 @@ const RecordingPage = () => {
             </a>
           </div>
           {!consultation?.is_finished &&
-          !consultation?.recording_ai_voice_note ? (
+            !consultation?.recording_ai_voice_note ? (
             <div className="my-32 text-center">
               <h1
                 className="text-muted text-2xl font-bold my-auto"
