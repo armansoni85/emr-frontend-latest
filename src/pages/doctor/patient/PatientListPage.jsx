@@ -363,7 +363,7 @@ const PatientListPage = () => {
                 <Th>Patient Name</Th>
                 <Th>Date of Birth</Th>
                 <Th>Gender</Th>
-                <Th>Disease</Th>
+                <Th>Diagnosis</Th>
                 <Th>Mobile Number</Th>
                 <Th>Email</Th>
                 <Th>Actions</Th>
@@ -372,7 +372,7 @@ const PatientListPage = () => {
           }
           rowCallback={(item, index) => {
             const patientDetail = patientDetails[item.id];
-            const disease = patientDetail?.disease;
+            const diagnosis = patientDetail?.diagnosis;
             const phoneNumber =
               patientDetail?.phone_number ||
               item?.phone_number ||
@@ -402,9 +402,8 @@ const PatientListPage = () => {
                           className="font-medium text-gray-900"
                           style={getFontStyle(fontTheme, "body1")}
                         >
-                          {`${item?.first_name || ""} ${
-                            item?.last_name || ""
-                          }`.trim() || "No Name"}
+                          {`${item?.first_name || ""} ${item?.last_name || ""
+                            }`.trim() || "No Name"}
                         </p>
                       </div>
                     </div>
@@ -452,7 +451,7 @@ const PatientListPage = () => {
                         color="info"
                         style={getFontStyle(fontTheme, "body2")}
                       >
-                        {disease || "No Disease Recorded"}
+                        {diagnosis || "No diagnosis Recorded"}
                       </Badge>
                     ) : (
                       <div className="flex items-center">
@@ -627,11 +626,10 @@ const PatientListPage = () => {
             <button
               onClick={handlePrevPage}
               disabled={!hasPrevPage || isFetching}
-              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                hasPrevPage && !isFetching
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${hasPrevPage && !isFetching
                   ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
                   : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
+                }`}
               style={getFontStyle(fontTheme, "body2")}
             >
               <i className="material-icons text-sm">chevron_left</i>
@@ -686,11 +684,10 @@ const PatientListPage = () => {
                           <button
                             key={pageNumber}
                             onClick={() => handlePageChange(pageNumber)}
-                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                              pageNumber === paginationMeta.currentPage
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${pageNumber === paginationMeta.currentPage
                                 ? "bg-primary text-white shadow-sm"
                                 : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
-                            }`}
+                              }`}
                             style={getFontStyle(fontTheme, "body2")}
                           >
                             {pageNumber}
@@ -728,11 +725,10 @@ const PatientListPage = () => {
             <button
               onClick={handleNextPage}
               disabled={!hasNextPage || isFetching}
-              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                hasNextPage && !isFetching
+              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${hasNextPage && !isFetching
                   ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
                   : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
+                }`}
               style={getFontStyle(fontTheme, "body2")}
             >
               <span className="hidden sm:inline">Next</span>

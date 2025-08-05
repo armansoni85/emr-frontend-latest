@@ -153,9 +153,8 @@ const PatientAddPage = () => {
     if (patientData?.success) {
       const patient = patientData.data;
       setForm({
-        patientName: `${patient.first_name || ""} ${
-          patient.last_name || ""
-        }`.trim(),
+        patientName: `${patient.first_name || ""} ${patient.last_name || ""
+          }`.trim(),
         email: patient.email || "",
         mobileNumber: patient.phone_number || "",
         dob: patient.dob || "",
@@ -167,7 +166,7 @@ const PatientAddPage = () => {
         weightFeet: patient.weight_kilo || "",
         weightInches: patient.weight_grams || "",
         patientAddress: patient.address || "",
-        disease: patient.disease || "",
+        diagnosis: patient.diagnosis || "",
         country: getCountryCodeFromName(patient.country) || "IN",
       });
     }
@@ -280,7 +279,7 @@ const PatientAddPage = () => {
         weight_kilo: form.weightFeet ? Number(form.weightFeet) : 0,
         weight_grams: form.weightInches ? Number(form.weightInches) : 0,
         address: form.patientAddress,
-        disease: form.disease,
+        diagnosis: form.diagnosis,
         country: countryName,
       };
 
@@ -303,7 +302,7 @@ const PatientAddPage = () => {
         weightFeet: form.weightFeet ? Number(form.weightFeet) : 1,
         weightInches: form.weightInches ? Number(form.weightInches) : 0,
         patientAddress: form.patientAddress || "-",
-        disease: form.disease || "-",
+        diagnosis: form.diagnosis || "-",
         country: countryName || "India",
         password: form.password,
         confirmPassword: form.confirmPassword,
@@ -337,7 +336,7 @@ const PatientAddPage = () => {
             height_inches: data.heightInches,
             weight_kilo: data.weightFeet,
             weight_grams: data.weightInches,
-            disease: data.disease,
+            diagnosis: data.diagnosis,
             hospital:
               doctorLoggedIn?.hospital?.id ||
               import.meta.env.VITE_HOSPITAL_UUID,
@@ -404,11 +403,10 @@ const PatientAddPage = () => {
   }
 
   const getGenderButtonStyle = (selected) => ({
-    backgroundColor: selected ? customTheme.primaryColor : "#F3F4F6",
-    color: selected ? "#fff" : customTheme.primaryColor || "#002952",
-    border: `1.5px solid ${
-      selected ? customTheme.primaryColor : "transparent"
-    }`,
+    backgroundColor: selected ? (customTheme.primary ?? "#002952") : "#F3F4F6", // Changed primaryColor to primary
+    color: selected ? "#fff" : (customTheme.primary ?? "#002952") || "#002952", // Changed primaryColor to primary
+    border: `1.5px solid ${selected ? (customTheme.primary ?? "#002952") : "transparent"
+      }`, // Changed primaryColor to primary
     ...getFontStyle(fontTheme, "body1"),
     transition: "all 0.15s",
     cursor: "pointer",
@@ -690,11 +688,11 @@ const PatientAddPage = () => {
             </div>
           </div>
           <InputWithLabel
-            label={"Disease:"}
-            id={"disease"}
-            type={"disease"}
-            value={form.disease || ""}
-            onChange={(e) => handleFormChange("disease", e, setForm)}
+            label={"Diagnosis:"}
+            id={"diagnosis"}
+            type={"diagnosis"}
+            value={form.diagnosis || ""}
+            onChange={(e) => handleFormChange("diagnosis", e, setForm)}
             wrapperClassName="p-4"
             style={getFontStyle(fontTheme, "body1")}
             labelStyle={getFontStyle(fontTheme, "body1")}

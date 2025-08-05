@@ -348,7 +348,7 @@ const AppointmentPage = () => {
                   <Th>Patient Name</Th>
                   <Th>Date of Birth</Th>
                   <Th>Mobile Number</Th>
-                  <Th>Disease</Th>
+                  <Th>Diagnosis</Th>
                   <Th>Date & Time</Th>
                   <Th>Status</Th>
                   <Th>Full Details</Th>
@@ -421,7 +421,7 @@ const AppointmentPage = () => {
                     <Td>
                       <Badge color="info">
                         <span style={getFontStyle(fontTheme, "body2")}>
-                          {item?.disease || "Not provided"}
+                          {item?.diagnosis || "Not provided"}
                         </span>
                       </Badge>
                     </Td>
@@ -715,11 +715,11 @@ const AppointmentPage = () => {
             className="text-gray-500 mb-6"
             style={getFontStyle(fontTheme, "body2")}
           >
-            {filter.date || filter.search || filter.disease
+            {filter.date || filter.search
               ? "Try adjusting your filters to see more results."
               : "You don't have any appointments yet."}
           </p>
-          {(filter.date || filter.search || filter.disease) && (
+          {(filter.date || filter.search) && (
             <Button
               color="primary"
               onClick={handleClearFilter}

@@ -145,7 +145,7 @@ const AppointmentEditPage = () => {
         dob: selectedPatient?.dob || selectedPatient?.date_of_birth || "",
         date: appointmentDate.toISOString().split("T")[0],
         time: appointmentDate.toTimeString().slice(0, 5),
-        disease: appointment.disease || "",
+        diagnosis: appointment.diagnosis || "",
         reasonOfVisit: appointment.reason_of_visit || "",
       });
     }
@@ -176,7 +176,7 @@ const AppointmentEditPage = () => {
       patient: form.patient,
       date: new Date(form.date),
       time: form.time,
-      disease: form.disease,
+      diagnosis: form.diagnosis,
       reasonOfVisit: form.reasonOfVisit,
     };
 
@@ -191,7 +191,7 @@ const AppointmentEditPage = () => {
       appointment_datetime: combinedDateTime,
       reason_of_visit: data.reasonOfVisit,
       patient: data.patient,
-      disease: data.disease,
+      diagnosis: data.diagnosis,
     })
       .then((response) => {
         if (response.success) {
@@ -345,11 +345,11 @@ const AppointmentEditPage = () => {
           />
 
           <InputWithLabel
-            label={"Disease:"}
-            id={"disease"}
+            label={"Diagnosis:"}
+            id={"diagnosis"}
             type={"select"}
-            value={form.disease || ""}
-            onChange={(e) => handleFormChange("disease", e, setForm)}
+            value={form.diagnosis || ""}
+            onChange={(e) => handleFormChange("diagnosis", e, setForm)}
             wrapperClassName="p-4"
             style={getFontStyle(fontTheme, "body1")}
             labelStyle={getFontStyle(fontTheme, "body1")}

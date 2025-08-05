@@ -33,7 +33,7 @@ const AppointmentAddPage = () => {
     dob: "",
     date: location.state?.date || "",
     time: "",
-    disease: "",
+    diagnosis: "",
     reasonOfVisit: "",
   });
   const [fontTheme, setFontTheme] = useState(getFontTheme());
@@ -157,7 +157,7 @@ const AppointmentAddPage = () => {
         patient: form.patient,
         doctor: user.id,
         appointment_datetime: `${form.date}T${form.time}:00Z`,
-        disease: form.disease || null,
+        diagnosis: form.diagnosis || null,
         reason_of_visit: form.reasonOfVisit || "",
         status: "scheduled",
       };
@@ -170,7 +170,7 @@ const AppointmentAddPage = () => {
           dob: "",
           date: "",
           time: "",
-          disease: "",
+          diagnosis: "",
           reasonOfVisit: "",
         });
         toast.success("Appointment scheduled successfully!");
@@ -199,7 +199,7 @@ const AppointmentAddPage = () => {
       dob: "",
       date: "",
       time: "",
-      disease: "",
+      diagnosis: "",
       reasonOfVisit: "",
     });
     navigate(getRoutePath("doctor.appointments.list"));
@@ -328,11 +328,11 @@ const AppointmentAddPage = () => {
           />
 
           <InputWithLabel
-            label={"Disease:"}
-            id={"disease"}
+            label={"Diagnosis:"}
+            id={"diagnosis"}
             type={"select"}
-            value={form.disease || ""}
-            onChange={(e) => handleFormChange("disease", e, setForm)}
+            value={form.diagnosis || ""}
+            onChange={(e) => handleFormChange("diagnosis", e, setForm)}
             wrapperClassName="p-4"
             style={getFontStyle(fontTheme, "body1")}
             labelStyle={getFontStyle(fontTheme, "body1")}
