@@ -134,6 +134,17 @@ const HippaComplianceRegulatoryPage = () => {
           >
             Regulatory Compliance
           </NavLinkButton>
+          <NavLinkButton
+            to={getRoutePath("doctor.hippa_policy")}
+            color="primary"
+            className={"px-5"}
+            style={{
+              ...getFontStyle(fontTheme, "main"),
+              border: `1.5px solid ${customTheme.primaryColor}`,
+            }}
+          >
+            HIPPA Policy
+          </NavLinkButton>
         </div>
       </div>
       <div className="bg-white shadow-md rounded-2xl pb-4">

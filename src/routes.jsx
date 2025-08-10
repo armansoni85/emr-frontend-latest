@@ -34,6 +34,7 @@ import {
 import {
   HippaCompliancePage,
   HippaComplianceRegulatoryPage,
+  HippaPolicyPage,
   UserAccessControlPage,
 } from "./pages/doctor/security";
 import { LoginPage, RegisterPage } from "./pages/auth";
@@ -345,6 +346,10 @@ const privateRoutes = {
       regulatory_compliance: {
         path: "regulatory-compliance",
         element: <HippaComplianceRegulatoryPage />,
+      },
+      hippa_policy: {
+        path: "hippa-policy",
+        element: <HippaPolicyPage />,
       },
       user_access_control: {
         path: "user-access-control",
