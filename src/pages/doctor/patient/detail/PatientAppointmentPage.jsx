@@ -5,48 +5,11 @@ import { useParams } from "react-router-dom";
 import StatusText from "../../components/StatusText";
 import { useDispatch } from "react-redux";
 import { showModal } from "@src/redux/reducers/modalReducer";
-
-const THEME_STORAGE_KEY = "customColorTheme";
-const getFontTheme = () => {
-  try {
-    const theme = localStorage.getItem(THEME_STORAGE_KEY);
-    return theme ? JSON.parse(theme) : {};
-  } catch {
-    return {};
-  }
-};
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-    };
-  }
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-  };
-};
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 const PatientAppointmentPage = () => {
-  const [fontTheme, setFontTheme] = useState(getFontTheme());
+  const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
   const [paginationMeta, setPaginationMeta] = useState({
     currentPage: 1,
@@ -82,10 +45,12 @@ const PatientAppointmentPage = () => {
   }, [data?.data?.results]);
 
   useEffect(() => {
-    const reloadTheme = () => setFontTheme(getFontTheme());
+    const reloadTheme = () => {
+      // No longer needed as ThemeContext handles font styles
+    };
     window.addEventListener("customColorThemeChanged", reloadTheme);
     window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
+      if (e.key === "customColorTheme") reloadTheme();
     });
     return () => {
       window.removeEventListener("customColorThemeChanged", reloadTheme);
@@ -94,16 +59,8 @@ const PatientAppointmentPage = () => {
   }, []);
 
   useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
+    // No longer needed as ThemeContext handles font styles
+  }, [theme]);
 
 
   const handleOpenModal = (notes) => {
@@ -128,18 +85,18 @@ const PatientAppointmentPage = () => {
       <div className="bg-white shadow-md rounded-2xl pb-4">
         <div
           className="flex justify-between p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b"
-          style={getFontStyle(fontTheme, "subHeading")}
+          style={getFontStyle(theme, "subHeading")}
         >
           <h2
             className="text-lg font-medium"
-            style={getFontStyle(fontTheme, "subHeading")}
+            style={getFontStyle(theme, "subHeading")}
           >
             All Appointments
           </h2>
           <div className="text-end inline-block">
             <button
               className="bg-primary text-white rounded-full h-8 w-8 text-2xl"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               +
             </button>
@@ -148,7 +105,7 @@ const PatientAppointmentPage = () => {
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white overflow-x-auto text-nowrap">
             <thead>
-              <tr style={getFontStyle(fontTheme, "body2")}>
+              <tr style={getFontStyle(theme, "body2")}>
                 <th className="py-2 px-4 border-b text-start font-medium">
                   Doctor Name{" "}
                   <i className="material-icons align-middle">arrow_drop_down</i>
@@ -172,7 +129,7 @@ const PatientAppointmentPage = () => {
             </thead>
             <tbody
               className="text-body"
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             >
               {isPending ? (
                 <tr>
@@ -197,7 +154,7 @@ const PatientAppointmentPage = () => {
                           className="w-10 h-10 rounded-full mr-3"
                         />
                         <div className="text-start">
-                          <p style={getFontStyle(fontTheme, "body1")}>
+                          <p style={getFontStyle(theme, "body1")}>
                             {appointment.doctor.first_name} {appointment.doctor.last_name}
                           </p>
                         </div>
@@ -205,27 +162,27 @@ const PatientAppointmentPage = () => {
                     </td>
                     <td
                       className="py-2 px-4 border-b"
-                      style={getFontStyle(fontTheme, "body1")}
+                      style={getFontStyle(theme, "body1")}
                     >
                       {appointment.appointment_datetime}
                     </td>
                     <td className="py-2 px-4 border-b">
                       <span
                         className="px-2 py-1 border rounded-full border-info text-info"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         {appointment.disease ?? 'Unknown'}
                       </span>
                     </td>
                     <td
                       className="py-2 px-4 border-b"
-                      style={getFontStyle(fontTheme, "body1")}
+                      style={getFontStyle(theme, "body1")}
                     >
                       {appointment.reason_of_visit ?? 'Unknown'}
                     </td>
                     <td className="py-2 px-4 border-b">
                       <span
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         <StatusText status={appointment.appointment_status} />
                       </span>
@@ -236,14 +193,14 @@ const PatientAppointmentPage = () => {
                           handleOpenModal(appointment.consultation_ai_voice_note)
                         }
                         className="px-3 py-1 border border-primary rounded-full text-primary hover:bg-primary hover:text-white transition-all duration-150"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         View Notes
                       </button>
                       <div className="float-right relative">
                         <button
                           className="px-3 py-1"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           <i className="material-icons">more_vert</i>
                         </button>
@@ -251,14 +208,14 @@ const PatientAppointmentPage = () => {
                           <a
                             href="#"
                             className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             Edit
                           </a>
                           <a
                             href="#"
                             className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             Delete
                           </a>
@@ -271,11 +228,11 @@ const PatientAppointmentPage = () => {
             </tbody>
           </table>
           <div className="flex justify-end items-center mt-4 mx-4">
-            <div className="space-x-1" style={getFontStyle(fontTheme, "body2")}>
+            <div className="space-x-1" style={getFontStyle(theme, "body2")}>
               <span>Page</span>
               <button
                 className="px-4 border border-muted rounded-full text-muted hover:bg-muted hover:text-white transition-all duration-150"
-                style={getFontStyle(fontTheme, "body2")}
+                style={getFontStyle(theme, "body2")}
               >
                 {paginationMeta.currentPage}
               </button>

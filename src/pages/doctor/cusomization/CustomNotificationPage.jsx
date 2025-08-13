@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { NavLinkButton } from "@src/components";
 import { getRoutePath } from "@src/utils/routeUtils";
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 const LOCAL_STORAGE_KEY = "customNotificationPreferences";
 const THEME_STORAGE_KEY = "customColorTheme";
@@ -13,60 +15,11 @@ const DEFAULT_PREFS = {
   adminActivity: false,
 };
 
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-    };
-  }
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-  };
-};
 
 const CustomNotificationPage = () => {
+  const { theme } = useTheme();
   const [prefs, setPrefs] = useState(DEFAULT_PREFS);
   const [showSavedPopup, setShowSavedPopup] = useState(false);
-
-  const [fontTheme, setFontTheme] = useState(() => {
-    try {
-      const theme = localStorage.getItem(THEME_STORAGE_KEY);
-      return theme ? JSON.parse(theme) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
 
   useEffect(() => {
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -77,22 +30,6 @@ const CustomNotificationPage = () => {
         setPrefs(DEFAULT_PREFS);
       }
     }
-    const reloadTheme = () => {
-      try {
-        const theme = localStorage.getItem(THEME_STORAGE_KEY);
-        setFontTheme(theme ? JSON.parse(theme) : {});
-      } catch {
-        setFontTheme({});
-      }
-    };
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
   }, []);
 
   const handleToggle = (key) => {
@@ -122,7 +59,7 @@ const CustomNotificationPage = () => {
   };
 
   return (
-    <div style={getFontStyle(fontTheme, "main")}>
+    <div style={getFontStyle(theme, "main")}>
       {showSavedPopup && (
         <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50">
           <div className="px-6 py-3 rounded-lg shadow-lg text-white font-semibold bg-green-600">
@@ -137,10 +74,10 @@ const CustomNotificationPage = () => {
             color="primary"
             className="px-5 py-2 rounded-full font-light"
             style={{
-              ...getFontStyle(fontTheme, "main"),
+              ...getFontStyle(theme, "main"),
               backgroundColor: "#fff",
-              color: fontTheme.primaryColor,
-              border: `1.5px solid ${fontTheme.primaryColor}`,
+              color: theme.primaryColor,
+              border: `1.5px solid ${theme.primaryColor}`,
             }}
           >
             Color Theme
@@ -150,10 +87,10 @@ const CustomNotificationPage = () => {
             color="primary"
             className="px-5 py-2 rounded-full font-light"
             style={{
-              ...getFontStyle(fontTheme, "main"),
-              backgroundColor: fontTheme.primaryColor,
+              ...getFontStyle(theme, "main"),
+              backgroundColor: theme.primaryColor,
               color: "#fff",
-              border: `1.5px solid ${fontTheme.primaryColor}`,
+              border: `1.5px solid ${theme.primaryColor}`,
             }}
           >
             Notification Preferences
@@ -163,10 +100,10 @@ const CustomNotificationPage = () => {
             color="primary"
             className="px-5 py-2 rounded-full font-light transition-all duration-150 hover:bg-primary hover:text-white text-primary"
             style={{
-              ...getFontStyle(fontTheme, "main"),
+              ...getFontStyle(theme, "main"),
               backgroundColor: "#fff",
-              color: fontTheme.primaryColor,
-              border: `1.5px solid ${fontTheme.primaryColor}`,
+              color: theme.primaryColor,
+              border: `1.5px solid ${theme.primaryColor}`,
             }}
           >
             Integration Preferences
@@ -178,7 +115,7 @@ const CustomNotificationPage = () => {
               className="px-8 py-1 text-sm bg-white border border-danger rounded-full text-danger hover:bg-danger hover:text-white transition-all duration-150"
               onClick={handleCancel}
               type="button"
-              style={getFontStyle(fontTheme, "main")}
+              style={getFontStyle(theme, "main")}
             >
               Cancel
             </button>
@@ -186,7 +123,7 @@ const CustomNotificationPage = () => {
               className="bg-primary border border-primary text-white px-8 py-2 rounded-full text-sm font-light hover:bg-opacity-[0.9] transition-all duration-150"
               onClick={handleSave}
               type="button"
-              style={getFontStyle(fontTheme, "main")}
+              style={getFontStyle(theme, "main")}
             >
               Save
             </button>
@@ -198,11 +135,11 @@ const CustomNotificationPage = () => {
           <div className="h-full">
             <div
               className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]"
-              style={getFontStyle(fontTheme, "main")}
+              style={getFontStyle(theme, "main")}
             >
               <h2
                 className="text-lg font-medium"
-                style={getFontStyle(fontTheme, "main")}
+                style={getFontStyle(theme, "main")}
               >
                 Set Notification Preferences
               </h2>
@@ -212,7 +149,7 @@ const CustomNotificationPage = () => {
                 <label
                   htmlFor="appointmentBookingToggle"
                   className="block text-nowrap my-auto"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   Patient's Appointment Booking:
                 </label>
@@ -231,7 +168,7 @@ const CustomNotificationPage = () => {
                 <label
                   htmlFor="newPatientToggle"
                   className="block text-nowrap my-auto"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   New Patient added by admin:
                 </label>
@@ -250,7 +187,7 @@ const CustomNotificationPage = () => {
                 <label
                   htmlFor="labReportsToggle"
                   className="block text-nowrap my-auto"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   Lab Reports Received:
                 </label>
@@ -269,7 +206,7 @@ const CustomNotificationPage = () => {
                 <label
                   htmlFor="upcomingAppointmentsToggle"
                   className="block text-nowrap my-auto"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   Upcoming Appointments:
                 </label>
@@ -288,7 +225,7 @@ const CustomNotificationPage = () => {
                 <label
                   htmlFor="adminActivityToggle"
                   className="block text-nowrap my-auto"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   Any Activity by Admin in your profile:
                 </label>

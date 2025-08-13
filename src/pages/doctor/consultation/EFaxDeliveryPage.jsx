@@ -1,97 +1,37 @@
 import { useEffect, useState } from "react";
 import { NavLinkButton } from "@src/components";
 import { getRoutePath } from "@src/utils/routeUtils";
-
-const THEME_STORAGE_KEY = "customColorTheme";
-const getFontTheme = () => {
-  try {
-    const theme = localStorage.getItem(THEME_STORAGE_KEY);
-    return theme ? JSON.parse(theme) : {};
-  } catch {
-    return {};
-  }
-};
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-    };
-  }
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-  };
-};
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 const EFaxDeliveryPage = () => {
-  const [fontTheme, setFontTheme] = useState(getFontTheme());
-
-  useEffect(() => {
-    const reloadTheme = () => setFontTheme(getFontTheme());
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-  useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
+  const { theme } = useTheme();
 
   const getButtonStyle = (filled = true) => ({
-    backgroundColor: filled ? fontTheme.primaryColor : "#fff",
-    color: filled ? "#fff" : fontTheme.primaryColor,
-    border: `1.5px solid ${fontTheme.primaryColor}`,
-    fontFamily: fontTheme.fontFamily || "inherit",
-    fontWeight: fontTheme.fontWeight || 400,
-    fontSize: fontTheme.fontSize || "16px",
+    backgroundColor: filled ? theme.primaryColor : "#fff",
+    color: filled ? "#fff" : theme.primaryColor,
+    border: `1.5px solid ${theme.primaryColor}`,
+    fontFamily: theme.fontFamily || "inherit",
+    fontWeight: theme.fontWeight || 400,
+    fontSize: theme.fontSize || "16px",
     transition: "all 0.15s",
   });
 
   const getIconButtonStyle = () => ({
     backgroundColor: "#fff",
-    color: fontTheme.primaryColor,
-    border: `1.5px solid ${fontTheme.primaryColor}`,
-    fontFamily: fontTheme.fontFamily || "inherit",
-    fontWeight: fontTheme.fontWeight || 400,
-    fontSize: fontTheme.fontSize || "16px",
+    color: theme.primaryColor,
+    border: `1.5px solid ${theme.primaryColor}`,
+    fontFamily: theme.fontFamily || "inherit",
+    fontWeight: theme.fontWeight || 400,
+    fontSize: theme.fontSize || "16px",
     transition: "all 0.15s",
   });
 
   const getIconStyle = () => ({
-    color: fontTheme.primaryColor,
-    fontSize: fontTheme.fontSize || "20px",
-    fontFamily: fontTheme.fontFamily || "inherit",
-    fontWeight: fontTheme.fontWeight || 400,
+    color: theme.primaryColor,
+    fontSize: theme.fontSize || "20px",
+    fontFamily: theme.fontFamily || "inherit",
+    fontWeight: theme.fontWeight || 400,
   });
 
   return (
@@ -102,10 +42,10 @@ const EFaxDeliveryPage = () => {
           color="primary"
           className={"px-5"}
           style={{
-            ...getFontStyle(fontTheme, "main"),
-            backgroundColor: fontTheme.primaryColor,
+            ...getFontStyle(theme, "main"),
+            backgroundColor: theme.primaryColor,
             color: "#fff",
-            border: `1.5px solid ${fontTheme.primaryColor}`,
+            border: `1.5px solid ${theme.primaryColor}`,
           }}
         >
           eFax Delivery
@@ -115,8 +55,8 @@ const EFaxDeliveryPage = () => {
           color="primary"
           className={"px-5"}
           style={{
-            ...getFontStyle(fontTheme, "main"),
-            border: `1.5px solid ${fontTheme.primaryColor}`,
+            ...getFontStyle(theme, "main"),
+            border: `1.5px solid ${theme.primaryColor}`,
           }}
         >
           Email Delivery
@@ -128,7 +68,7 @@ const EFaxDeliveryPage = () => {
             <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
               <h2
                 className="text-lg font-medium"
-                style={getFontStyle(fontTheme, "subHeading")}
+                style={getFontStyle(theme, "subHeading")}
               >
                 History
               </h2>
@@ -138,7 +78,7 @@ const EFaxDeliveryPage = () => {
                 <div
                   key={idx}
                   className="flex justify-content-between border-b px-3 pt-4 pb-2 cursor-pointer hover:bg-black hover:bg-opacity-[0.1]"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   <div className="flex gap-2 w-full">
                     <span
@@ -150,13 +90,13 @@ const EFaxDeliveryPage = () => {
                     <div className="text-medium text-start">
                       <p
                         className="leading-none"
-                        style={getFontStyle(fontTheme, "body1")}
+                        style={getFontStyle(theme, "body1")}
                       >
                         Advanced Pharmacology and Drug Management
                       </p>
                       <span
                         className="text-muted text-sm"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         Just Now
                       </span>
@@ -171,7 +111,7 @@ const EFaxDeliveryPage = () => {
           <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
             <h2
               className="text-lg font-medium"
-              style={getFontStyle(fontTheme, "subHeading")}
+              style={getFontStyle(theme, "subHeading")}
             >
               Sending eFax
             </h2>
@@ -181,7 +121,7 @@ const EFaxDeliveryPage = () => {
               <label
                 htmlFor="recipientFax"
                 className="block my-auto"
-                style={getFontStyle(fontTheme, "body1")}
+                style={getFontStyle(theme, "body1")}
               >
                 Recipient eFax Number:
               </label>
@@ -191,7 +131,7 @@ const EFaxDeliveryPage = () => {
                   type="text"
                   className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey text-muted border rounded-full"
                   placeholder="Enter eFax Number"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 />
               </div>
             </div>
@@ -199,7 +139,7 @@ const EFaxDeliveryPage = () => {
               <label
                 htmlFor="recipientName"
                 className="block my-auto"
-                style={getFontStyle(fontTheme, "body1")}
+                style={getFontStyle(theme, "body1")}
               >
                 Recipient Name:
               </label>
@@ -209,7 +149,7 @@ const EFaxDeliveryPage = () => {
                   type="text"
                   className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey text-muted border rounded-full"
                   placeholder="Enter Recipient Name"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 />
               </div>
             </div>
@@ -217,7 +157,7 @@ const EFaxDeliveryPage = () => {
               <label
                 htmlFor="subject"
                 className="block my-auto"
-                style={getFontStyle(fontTheme, "body1")}
+                style={getFontStyle(theme, "body1")}
               >
                 Subject:
               </label>
@@ -227,7 +167,7 @@ const EFaxDeliveryPage = () => {
                   type="text"
                   className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey text-muted border rounded-full"
                   placeholder="Enter Subject"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 />
               </div>
             </div>
@@ -235,7 +175,7 @@ const EFaxDeliveryPage = () => {
               <label
                 htmlFor="consultationDocument"
                 className="block my-auto"
-                style={getFontStyle(fontTheme, "body1")}
+                style={getFontStyle(theme, "body1")}
               >
                 Consultation Document:
               </label>
@@ -244,7 +184,7 @@ const EFaxDeliveryPage = () => {
                   id="consultationDocument"
                   type="file"
                   className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey text-muted border rounded-full"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 />
                 <button
                   style={getButtonStyle(false)}
@@ -258,7 +198,7 @@ const EFaxDeliveryPage = () => {
               <label
                 htmlFor="reasonsOfVisit"
                 className="block mb-auto mt-2"
-                style={getFontStyle(fontTheme, "body1")}
+                style={getFontStyle(theme, "body1")}
               >
                 Custom Message:
               </label>
@@ -270,7 +210,7 @@ const EFaxDeliveryPage = () => {
                   rows={10}
                   cols={30}
                   defaultValue={""}
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 />
                 <div className="flex absolute bottom-0 p-2 gap-2">
                   <button

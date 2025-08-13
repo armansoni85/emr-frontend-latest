@@ -1,124 +1,25 @@
 import { useEffect, useState } from "react";
-
-const THEME_STORAGE_KEY = "customColorTheme";
-const getFontTheme = () => {
-  try {
-    const theme = localStorage.getItem(THEME_STORAGE_KEY);
-    return theme ? JSON.parse(theme) : {};
-  } catch {
-    return {};
-  }
-};
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-      color: fontTheme.headingColor || "#333333",
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-      color:
-        fontTheme.bodyTextColor === "#FFFFFF"
-          ? "#333333"
-          : fontTheme.bodyTextColor || "#333333",
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-      color:
-        fontTheme.bodyTextColor === "#FFFFFF"
-          ? "#666666"
-          : fontTheme.bodyTextColor || "#666666",
-    };
-  }
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-    color: fontTheme.headingColor || "#333333",
-  };
-};
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 const UserAccessControlPage = () => {
-  const [customTheme, setCustomTheme] = useState(() => {
-    try {
-      const theme = localStorage.getItem("customColorTheme");
-      return theme ? JSON.parse(theme) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  const [fontTheme, setFontTheme] = useState(getFontTheme());
-
-  useEffect(() => {
-    const reloadTheme = () => {
-      try {
-        const theme = localStorage.getItem("customColorTheme");
-        setCustomTheme(theme ? JSON.parse(theme) : {});
-      } catch {
-        setCustomTheme({});
-      }
-    };
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === "customColorTheme") reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-
-  useEffect(() => {
-    const reloadTheme = () => setFontTheme(getFontTheme());
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
+  const { theme } = useTheme();
 
   const getButtonStyle = (filled = true) => ({
-    backgroundColor: filled ? customTheme.primaryColor : "#fff",
-    color: filled ? "#fff" : customTheme.primaryColor,
-    border: `1.5px solid ${customTheme.primaryColor}`,
-    fontFamily: fontTheme.fontFamily || "inherit",
-    fontWeight: fontTheme.fontWeight || 400,
-    fontSize: fontTheme.fontSize || "16px",
+    backgroundColor: filled ? theme.primaryColor : "#fff",
+    color: filled ? "#fff" : theme.primaryColor,
+    border: `1.5px solid ${theme.primaryColor}`,
+    fontFamily: theme.fontFamily || "inherit",
+    fontWeight: theme.fontWeight || 400,
+    fontSize: theme.fontSize || "16px",
     transition: "all 0.15s",
   });
 
-  const getIconStyle = (color = customTheme.primaryColor) => ({
+  const getIconStyle = (color = theme.primaryColor) => ({
     color: color,
-    fontSize: fontTheme.fontSize || "20px",
-    fontFamily: fontTheme.fontFamily || "inherit",
-    fontWeight: fontTheme.fontWeight || 400,
+    fontSize: theme.fontSize || "20px",
+    fontFamily: theme.fontFamily || "inherit",
+    fontWeight: theme.fontWeight || 400,
   });
 
   return (
@@ -154,7 +55,7 @@ const UserAccessControlPage = () => {
             <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
               <h2
                 className="text-lg font-medium"
-                style={getFontStyle(fontTheme, "subHeading")}
+                style={getFontStyle(theme, "subHeading")}
               >
                 Doctor's Access
               </h2>
@@ -171,13 +72,13 @@ const UserAccessControlPage = () => {
                   <tr>
                     <th
                       className="text-start"
-                      style={getFontStyle(fontTheme, "body1")}
+                      style={getFontStyle(theme, "body1")}
                     >
                       Access
                     </th>
                     <th
                       className="text-end"
-                      style={getFontStyle(fontTheme, "body1")}
+                      style={getFontStyle(theme, "body1")}
                     >
                       Status
                     </th>
@@ -204,7 +105,7 @@ const UserAccessControlPage = () => {
                         </div>
                         <span
                           className="my-auto inline"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           To Edit Patient Profile
                         </span>
@@ -213,7 +114,7 @@ const UserAccessControlPage = () => {
                     <td className="text-end">
                       <span
                         className="text-green-500"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         Enabled
                       </span>

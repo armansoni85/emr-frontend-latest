@@ -3,58 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { getConsultations } from "@src/services/consultation.service";
 import { useDispatch, useSelector } from "react-redux";
 import { getRoutePath } from "@src/utils/routeUtils";
-
-const THEME_STORAGE_KEY = "customColorTheme";
-const getFontTheme = () => {
-  try {
-    const theme = localStorage.getItem(THEME_STORAGE_KEY);
-    return theme ? JSON.parse(theme) : {};
-  } catch {
-    return {};
-  }
-};
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-      color: fontTheme.headingColor || "#333333",
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-      color:
-        fontTheme.bodyTextColor === "#FFFFFF"
-          ? "#333333"
-          : fontTheme.bodyTextColor || "#333333",
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-      color:
-        fontTheme.bodyTextColor === "#FFFFFF"
-          ? "#666666"
-          : fontTheme.bodyTextColor || "#666666",
-    };
-  }
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-    color: fontTheme.headingColor || "#333333",
-  };
-};
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 const AIVisitNotesPage = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [consultations, setConsultations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,67 +17,15 @@ const AIVisitNotesPage = () => {
   const [selectedDoctor, setSelectedDoctor] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(null);
 
-  const [customTheme, setCustomTheme] = useState(() => {
-    try {
-      const theme = localStorage.getItem("customColorTheme");
-      return theme ? JSON.parse(theme) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  const [fontTheme, setFontTheme] = useState(getFontTheme());
-
   const dispatch = useDispatch();
   const { paginationMeta } = useSelector((state) => state.fetch);
 
-  useEffect(() => {
-    const reloadTheme = () => {
-      try {
-        const theme = localStorage.getItem("customColorTheme");
-        setCustomTheme(theme ? JSON.parse(theme) : {});
-      } catch {
-        setCustomTheme({});
-      }
-    };
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === "customColorTheme") reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
 
-  useEffect(() => {
-    const reloadTheme = () => setFontTheme(getFontTheme());
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
 
   const getButtonStyle = (filled = true, color = "primary") => {
     const colorMap = {
-      primary: customTheme.primaryColor || "#002952",
-      danger: customTheme.secondaryColor || "#CF0000",
+      primary: theme.primaryColor || "#002952",
+      danger: theme.secondaryColor || "#CF0000",
       success: "#22C55E",
       white: "#fff",
     };
@@ -132,9 +34,9 @@ const AIVisitNotesPage = () => {
       backgroundColor: filled ? mainColor : "#fff",
       color: filled ? "#fff" : mainColor,
       border: `1.5px solid ${mainColor}`,
-      fontFamily: fontTheme.fontFamily || "inherit",
-      fontWeight: fontTheme.fontWeight || 400,
-      fontSize: fontTheme.fontSize || "16px",
+      fontFamily: theme.fontFamily || "inherit",
+      fontWeight: theme.fontWeight || 400,
+      fontSize: theme.fontSize || "16px",
       transition: "all 0.15s",
     };
   };
@@ -318,7 +220,7 @@ const AIVisitNotesPage = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-lg" style={getFontStyle(fontTheme, "body1")}>
+        <div className="text-lg" style={getFontStyle(theme, "body1")}>
           Loading consultations...
         </div>
       </div>
@@ -328,11 +230,11 @@ const AIVisitNotesPage = () => {
   if (error) {
     return (
       <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-        <span style={getFontStyle(fontTheme, "body1")}>{error}</span>
+        <span style={getFontStyle(theme, "body1")}>{error}</span>
         <button
           onClick={fetchConsultations}
           className="ml-4 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-          style={getFontStyle(fontTheme, "body2")}
+          style={getFontStyle(theme, "body2")}
         >
           Retry
         </button>
@@ -344,7 +246,7 @@ const AIVisitNotesPage = () => {
     <>
       <div className="mb-3 grid grid-cols-1 md:grid-cols-3 md:gap-4">
         <div className="mb-3">
-          <label htmlFor="search" style={getFontStyle(fontTheme, "body1")}>
+          <label htmlFor="search" style={getFontStyle(theme, "body1")}>
             Search
           </label>
           <div className="relative mt-2">
@@ -354,7 +256,7 @@ const AIVisitNotesPage = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full rounded-full pe-4 ps-10 py-3 border-grey focus:outline-grey2"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             />
             <span className="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
               search
@@ -372,7 +274,7 @@ const AIVisitNotesPage = () => {
         <div className="mb-3">
           <label
             htmlFor="consultation-date"
-            style={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
           >
             Select Consultation Date
           </label>
@@ -383,7 +285,7 @@ const AIVisitNotesPage = () => {
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               className="w-full rounded-full px-4 py-3 border-grey focus:outline-grey2"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             />
           </div>
         </div>
@@ -391,7 +293,7 @@ const AIVisitNotesPage = () => {
         <div className="mb-3">
           <label
             htmlFor="doctor-select"
-            style={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
           >
             Select by Doctor Name
           </label>
@@ -401,7 +303,7 @@ const AIVisitNotesPage = () => {
               value={selectedDoctor}
               onChange={(e) => setSelectedDoctor(e.target.value)}
               className="w-full rounded-full px-4 py-3 border-grey focus:outline-grey2 appearance-none"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               <option value="">All Doctors</option>
               {doctors.map((doctor) => (
@@ -421,14 +323,14 @@ const AIVisitNotesPage = () => {
         <div className="flex justify-between p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
           <h2
             className="text-lg font-medium"
-            style={getFontStyle(fontTheme, "subHeading")}
+            style={getFontStyle(theme, "subHeading")}
           >
             All Consultations
           </h2>
           <div className="text-end inline-block">
             <span
               className="text-muted"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               Total {filteredConsultations.length} Results Found
             </span>
@@ -438,7 +340,7 @@ const AIVisitNotesPage = () => {
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white overflow-x-auto text-nowrap">
             <thead>
-              <tr style={getFontStyle(fontTheme, "body2")}>
+              <tr style={getFontStyle(theme, "body2")}>
                 <th className="py-2 px-4 border-b text-start font-medium">
                   Patient Name
                 </th>
@@ -464,14 +366,14 @@ const AIVisitNotesPage = () => {
             </thead>
             <tbody
               className="text-body"
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             >
               {paginatedConsultations.length === 0 ? (
                 <tr>
                   <td
                     colSpan="7"
                     className="py-8 px-4 text-center text-gray-500"
-                    style={getFontStyle(fontTheme, "body1")}
+                    style={getFontStyle(theme, "body1")}
                   >
                     No consultations found matching your criteria
                   </td>
@@ -494,7 +396,7 @@ const AIVisitNotesPage = () => {
                             className="w-10 h-10 rounded-full mr-3"
                           />
                           <div className="text-start">
-                            <p style={getFontStyle(fontTheme, "body1")}>
+                            <p style={getFontStyle(theme, "body1")}>
                               {`${patient?.first_name || ""} ${patient?.last_name || ""
                                 }`.trim() || "N/A"}
                             </p>
@@ -503,13 +405,13 @@ const AIVisitNotesPage = () => {
                       </td>
                       <td
                         className="py-2 px-4 border-b"
-                        style={getFontStyle(fontTheme, "body1")}
+                        style={getFontStyle(theme, "body1")}
                       >
                         #{patient?.id?.slice(-8) || "N/A"}
                       </td>
                       <td
                         className="py-2 px-4 border-b"
-                        style={getFontStyle(fontTheme, "body1")}
+                        style={getFontStyle(theme, "body1")}
                       >
                         {`${doctor?.first_name || ""} ${doctor?.last_name || ""
                           }`.trim() ||
@@ -518,7 +420,7 @@ const AIVisitNotesPage = () => {
                       </td>
                       <td
                         className="py-2 px-4 border-b"
-                        style={getFontStyle(fontTheme, "body1")}
+                        style={getFontStyle(theme, "body1")}
                       >
                         {patient?.email || "N/A"}
                       </td>
@@ -527,14 +429,14 @@ const AIVisitNotesPage = () => {
                           className={getStatusColor(
                             getStatusText(consultation)
                           )}
-                          style={getFontStyle(fontTheme, "body1")}
+                          style={getFontStyle(theme, "body1")}
                         >
                           {getStatusText(consultation)}
                         </span>
                       </td>
                       <td
                         className="py-2 px-4 border-b"
-                        style={getFontStyle(fontTheme, "body1")}
+                        style={getFontStyle(theme, "body1")}
                       >
                         {formatDate(
                           consultation.appointment?.appointment_datetime
@@ -568,7 +470,7 @@ const AIVisitNotesPage = () => {
                                     setDropdownOpen(null);
                                   }}
                                   className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200"
-                                  style={getFontStyle(fontTheme, "body2")}
+                                  style={getFontStyle(theme, "body2")}
                                 >
                                   Edit
                                 </button>
@@ -578,7 +480,7 @@ const AIVisitNotesPage = () => {
                                     setDropdownOpen(null);
                                   }}
                                   className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200"
-                                  style={getFontStyle(fontTheme, "body2")}
+                                  style={getFontStyle(theme, "body2")}
                                 >
                                   Delete
                                 </button>
@@ -598,7 +500,7 @@ const AIVisitNotesPage = () => {
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-6 border-t border-gray-100">
           <div
             className="text-sm text-gray-600 order-2 sm:order-1"
-            style={getFontStyle(fontTheme, "body2")}
+            style={getFontStyle(theme, "body2")}
           >
             Showing{" "}
             <span className="font-semibold text-gray-900">
@@ -630,7 +532,7 @@ const AIVisitNotesPage = () => {
                 ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
                 : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               <i className="material-icons text-sm">chevron_left</i>
               <span className="hidden sm:inline">Previous</span>
@@ -650,14 +552,14 @@ const AIVisitNotesPage = () => {
                       <button
                         onClick={() => handlePageChange(1)}
                         className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         1
                       </button>
                       {paginationMeta.currentPage > 4 && (
                         <span
                           className="px-2 text-gray-400"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           ...
                         </span>
@@ -703,7 +605,7 @@ const AIVisitNotesPage = () => {
                         {paginationMeta.currentPage < totalPages - 3 && (
                           <span
                             className="px-2 text-gray-400"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             ...
                           </span>
@@ -711,7 +613,7 @@ const AIVisitNotesPage = () => {
                         <button
                           onClick={() => handlePageChange(totalPages)}
                           className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           {totalPages}
                         </button>
@@ -728,7 +630,7 @@ const AIVisitNotesPage = () => {
                 ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
                 : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               <span className="hidden sm:inline">Next</span>
               <i className="material-icons text-sm">chevron_right</i>

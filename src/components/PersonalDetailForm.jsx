@@ -10,48 +10,13 @@ import { handleFormChange } from "@src/utils/handleForm";
 import { toast } from "react-toastify";
 import { updateUser } from "@src/services/userService";
 import { validateForm } from "./../utils/validateForm";
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
-const THEME_STORAGE_KEY = "customColorTheme";
-const getFontTheme = () => {
-  try {
-    const theme = localStorage.getItem(THEME_STORAGE_KEY);
-    return theme ? JSON.parse(theme) : {};
-  } catch {
-    return {};
-  }
-};
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-    };
-  }
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-  };
-};
 
-const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
-  const { isSubmitted, isReset, isReadOnly } = useSelector(
+const PersonalDetailForm = ({ wrapperClassName = "", userData = null, isReadOnly = true }) => {
+  const { theme } = useTheme();
+  const { isSubmitted, isReset } = useSelector(
     (state) => state.submission
   );
   const { user } = useSelector((state) => state.auth);
@@ -88,32 +53,8 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
     country: getCountryCodeFromName(activeUser?.country) || "",
     residentalAddress:
       activeUser?.residential_address || activeUser?.address || "",
-    mobileNumber: activeUser?.mobile_number || activeUser?.phone_number || "",
+    phone_number: activeUser?.phone_number || "",
   });
-
-  const [fontTheme, setFontTheme] = useState(getFontTheme());
-  useEffect(() => {
-    const reloadTheme = () => setFontTheme(getFontTheme());
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-  useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
 
   useEffect(() => {
     if (activeUser) {
@@ -126,7 +67,7 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
         country: getCountryCodeFromName(activeUser.country) || "",
         residentalAddress:
           activeUser.residential_address || activeUser.address || "",
-        mobileNumber: activeUser.mobile_number || activeUser.phone_number || "",
+        phone_number: activeUser.phone_number || "",
       });
     }
   }, [activeUser, getCountryCodeFromName]);
@@ -151,7 +92,7 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
       email: validatedForm.email,
       country: countryName,
       residential_address: validatedForm.residentalAddress,
-      mobile_number: validatedForm.mobileNumber,
+      phone_number: validatedForm.phone_number,
     })
       .then((response) => {
         if (response.success) {
@@ -188,8 +129,7 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
         country: getCountryCodeFromName(activeUser?.country) || "",
         residentalAddress:
           activeUser?.residential_address || activeUser?.address || "",
-        mobileNumber:
-          activeUser?.mobile_number || activeUser?.phone_number || "",
+        phone_number: activeUser?.phone_number || "",
       });
     }
   }, [isReset, activeUser, isSubmitted, getCountryCodeFromName]);
@@ -204,9 +144,9 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
   return (
     <div
       className={`grid lg:grid-cols-2 grid-cols-1 gap-4 ${wrapperClassName}`}
-      style={getFontStyle(fontTheme, "body1")}
+      style={getFontStyle(theme, "body1")}
     >
-      <div className="p-4" style={getFontStyle(fontTheme, "body1")}>
+      <div className="p-4" style={getFontStyle(theme, "body1")}>
         <InputWithLabel
           wrapperClassName={"mb-3"}
           label={"First Name:"}
@@ -217,8 +157,8 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
             handleFormChange("firstName", e.target.value, setForms)
           }
           readOnly={isReadOnly}
-          style={getFontStyle(fontTheme, "body1")}
-          labelStyle={getFontStyle(fontTheme, "body1")}
+          style={getFontStyle(theme, "body1")}
+          labelStyle={getFontStyle(theme, "body1")}
         />
         <InputWithLabel
           wrapperClassName={"mb-3"}
@@ -228,8 +168,8 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
           value={forms.gender}
           onChange={(e) => handleFormChange("gender", e.target.value, setForms)}
           readOnly={isReadOnly}
-          style={getFontStyle(fontTheme, "body1")}
-          labelStyle={getFontStyle(fontTheme, "body1")}
+          style={getFontStyle(theme, "body1")}
+          labelStyle={getFontStyle(theme, "body1")}
         >
           <option value={"male"}>Male</option>
           <option value={"female"}>Female</option>
@@ -244,8 +184,8 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
           value={forms.dob}
           onChange={(e) => handleFormChange("dob", e.target.value, setForms)}
           readOnly={isReadOnly}
-          style={getFontStyle(fontTheme, "body1")}
-          labelStyle={getFontStyle(fontTheme, "body1")}
+          style={getFontStyle(theme, "body1")}
+          labelStyle={getFontStyle(theme, "body1")}
         />
 
         <InputWithLabel
@@ -258,8 +198,8 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
             handleFormChange("country", e.target.value, setForms)
           }
           readOnly={isReadOnly}
-          style={getFontStyle(fontTheme, "body1")}
-          labelStyle={getFontStyle(fontTheme, "body1")}
+          style={getFontStyle(theme, "body1")}
+          labelStyle={getFontStyle(theme, "body1")}
         >
           <option value="">Select Country</option>
           <EachLoop
@@ -278,7 +218,11 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
         {selectedCountryInfo && !isReadOnly && (
           <div
             className="text-xs text-gray-500 mt-1 mb-2"
-            style={getFontStyle(fontTheme, "body2")}
+            style={{
+              fontFamily: theme.bodyText2FontFamily || theme.fontFamily,
+              fontWeight: theme.bodyText2FontWeight || theme.fontWeight,
+              fontSize: theme.bodyText2FontSize || theme.fontSize
+            }}
           >
             Selected: {selectedCountryInfo.text} ({selectedCountryInfo.value})
             {activeUser?.country && (
@@ -287,7 +231,7 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
           </div>
         )}
       </div>
-      <div className="p-4" style={getFontStyle(fontTheme, "body1")}>
+      <div className="p-4" style={getFontStyle(theme, "body1")}>
         <InputWithLabel
           wrapperClassName={"mb-3"}
           label={"Last Name:"}
@@ -298,8 +242,8 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
             handleFormChange("lastName", e.target.value, setForms)
           }
           readOnly={isReadOnly}
-          style={getFontStyle(fontTheme, "body1")}
-          labelStyle={getFontStyle(fontTheme, "body1")}
+          style={getFontStyle(theme, "body1")}
+          labelStyle={getFontStyle(theme, "body1")}
         />
         <InputWithLabel
           wrapperClassName={"mb-3"}
@@ -309,21 +253,21 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
           value={forms.email}
           onChange={(e) => handleFormChange("email", e.target.value, setForms)}
           readOnly={isReadOnly}
-          style={getFontStyle(fontTheme, "body1")}
-          labelStyle={getFontStyle(fontTheme, "body1")}
+          style={getFontStyle(theme, "body1")}
+          labelStyle={getFontStyle(theme, "body1")}
         />
         <InputWithLabel
           wrapperClassName={"mb-3"}
           label={"Mobile Number:"}
-          id={"mobileNumber"}
+          id={"phone_number"}
           type={"text"}
-          value={forms.mobileNumber}
+          value={forms.phone_number}
           onChange={(e) =>
-            handleFormChange("mobileNumber", e.target.value, setForms)
+            handleFormChange("phone_number", e.target.value, setForms)
           }
           readOnly={isReadOnly}
-          style={getFontStyle(fontTheme, "body1")}
-          labelStyle={getFontStyle(fontTheme, "body1")}
+          style={getFontStyle(theme, "body1")}
+          labelStyle={getFontStyle(theme, "body1")}
         />
         <InputWithLabel
           wrapperClassName={"mb-3"}
@@ -336,8 +280,8 @@ const PersonalDetailForm = ({ wrapperClassName = "", userData = null }) => {
             handleFormChange("residentalAddress", e.target.value, setForms)
           }
           readOnly={isReadOnly}
-          style={getFontStyle(fontTheme, "body1")}
-          labelStyle={getFontStyle(fontTheme, "body1")}
+          style={getFontStyle(theme, "body1")}
+          labelStyle={getFontStyle(theme, "body1")}
         />
       </div>
     </div>

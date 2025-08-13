@@ -1,39 +1,43 @@
 
 const THEME_STORAGE_KEY = "customColorTheme";
-export const getFontTheme = () => {
-    try {
-        const theme = localStorage.getItem(THEME_STORAGE_KEY);
-        return theme ? JSON.parse(theme) : {};
-    } catch {
-        return {};
-    }
-};
-export const getFontStyle = (fontTheme, type = "main") => {
-    if (!fontTheme) return {};
+// Remove localStorage dependency and update getFontStyle to work with ThemeContext
+export const getFontStyle = (theme, type = "main") => {
+    if (!theme) return {};
     if (type === "subHeading") {
         return {
-            fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-            fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-            fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
+            fontFamily: theme.subHeadingFontFamily || theme.fontFamily,
+            fontWeight: theme.subHeadingFontWeight || theme.fontWeight,
+            fontSize: theme.subHeadingFontSize || theme.fontSize,
         };
     }
     if (type === "body1") {
         return {
-            fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-            fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-            fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
+            fontFamily: theme.bodyText1FontFamily || theme.fontFamily,
+            fontWeight: theme.bodyText1FontWeight || theme.fontWeight,
+            fontSize: theme.bodyText1FontSize || theme.fontSize,
         };
     }
     if (type === "body2") {
         return {
-            fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-            fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-            fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
+            fontFamily: theme.bodyText2FontFamily || theme.fontFamily,
+            fontWeight: theme.bodyText2FontWeight || theme.fontWeight,
+            fontSize: theme.bodyText2FontSize || theme.fontSize,
         };
     }
     return {
-        fontFamily: fontTheme.fontFamily,
-        fontWeight: fontTheme.fontWeight,
-        fontSize: fontTheme.fontSize,
+        fontFamily: theme.fontFamily,
+        fontWeight: theme.fontWeight,
+        fontSize: theme.fontSize,
     };
+};
+
+// Keep getFontTheme for backward compatibility but mark as deprecated
+export const getFontTheme = () => {
+    console.warn('getFontTheme is deprecated. Use ThemeContext instead.');
+    try {
+        const theme = localStorage.getItem("customColorTheme");
+        return theme ? JSON.parse(theme) : {};
+    } catch {
+        return {};
+    }
 };

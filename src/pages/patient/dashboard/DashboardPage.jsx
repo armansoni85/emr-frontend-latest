@@ -1,4 +1,7 @@
-const DashboardPage = () => {
+import { useTheme } from "@src/context/ThemeContext";
+
+const DashboardPagePatient = () => {
+    const { theme } = useTheme();
     return (
         <>
             <div className="grid grid-cols-1 lg:grid-cols-4 md:grid-cols-2 gap-4">
@@ -337,8 +340,11 @@ const DashboardPage = () => {
                             </button>
                             <button
                                 id="newPatientsBtn"
-                                className="px-4 py-2 bg-[#F4F7F9] text-primary rounded-lg"
-                                style={{ borderRadius: "1.5rem" }}>
+                                className="px-4 py-2 text-primary rounded-lg"
+                                style={{
+                                    borderRadius: "1.5rem",
+                                    backgroundColor: theme.greyColor || "#F4F7F9"
+                                }}>
                                 Respiration Rate
                             </button>
                         </div>
@@ -392,8 +398,11 @@ const DashboardPage = () => {
                             </button>
                             <button
                                 id="newPatientsBtn2"
-                                className="px-4 py-2 bg-[#F4F7F9] text-primary rounded-lg"
-                                style={{ borderRadius: "1.5rem" }}>
+                                className="px-4 py-2 text-primary rounded-lg"
+                                style={{
+                                    borderRadius: "1.5rem",
+                                    backgroundColor: theme.greyColor || "#F4F7F9"
+                                }}>
                                 Temperature
                             </button>
                         </div>
@@ -1005,4 +1014,4 @@ const DashboardPage = () => {
     );
 };
 
-export default DashboardPage;
+export default DashboardPagePatient;

@@ -14,45 +14,8 @@ import { handleFormChange } from "@src/utils/handleForm";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { RoleId } from "@src/constant/enumRole";
-
-const THEME_STORAGE_KEY = "customColorTheme";
-const getFontTheme = () => {
-  try {
-    const theme = localStorage.getItem(THEME_STORAGE_KEY);
-    return theme ? JSON.parse(theme) : {};
-  } catch {
-    return {};
-  }
-};
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-    };
-  }
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-  };
-};
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 const AppointmentEditPage = () => {
   const { id } = useParams();
@@ -63,29 +26,7 @@ const AppointmentEditPage = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
 
-  const [fontTheme, setFontTheme] = useState(getFontTheme());
-  useEffect(() => {
-    const reloadTheme = () => setFontTheme(getFontTheme());
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-  useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
+  const { theme } = useTheme();
 
   const {
     data: appointmentData,
@@ -251,7 +192,7 @@ const AppointmentEditPage = () => {
           isOutline={true}
           className="px-8"
           onClick={() => navigate(getRoutePath("doctor.appointments.list"))}
-          style={getFontStyle(fontTheme, "body2")}
+          style={getFontStyle(theme, "body2")}
         >
           Cancel
         </Button>
@@ -259,7 +200,7 @@ const AppointmentEditPage = () => {
           color="primary"
           className="px-8"
           onClick={handleOnSubmit}
-          style={getFontStyle(fontTheme, "body2")}
+          style={getFontStyle(theme, "body2")}
         >
           {isSubmitted ? (
             <SpinnerComponent color="white" className="mr-2" />
@@ -272,7 +213,7 @@ const AppointmentEditPage = () => {
         <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
           <h2
             className="text-lg font-medium"
-            style={getFontStyle(fontTheme, "subHeading")}
+            style={getFontStyle(theme, "subHeading")}
           >
             Edit Appointment
           </h2>
@@ -292,8 +233,8 @@ const AppointmentEditPage = () => {
               option.email
             }
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
           <InputWithLabel
             label={"Mobile Number:"}
@@ -301,8 +242,8 @@ const AppointmentEditPage = () => {
             type={"text"}
             value={form.mobileNumber || ""}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
           <InputWithLabel
             label={"Email ID:"}
@@ -310,8 +251,8 @@ const AppointmentEditPage = () => {
             type={"email"}
             value={form.email || ""}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
           <InputWithLabel
             label={"Date of Birth:"}
@@ -320,8 +261,8 @@ const AppointmentEditPage = () => {
             value={form.dob || ""}
             readOnly
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
           <InputWithLabel
             label={"Date:"}
@@ -330,8 +271,8 @@ const AppointmentEditPage = () => {
             value={form.date || ""}
             onChange={(e) => handleFormChange("date", e, setForm)}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
           <InputWithLabel
             label={"Time:"}
@@ -340,8 +281,8 @@ const AppointmentEditPage = () => {
             value={form.time || ""}
             onChange={(e) => handleFormChange("time", e, setForm)}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
 
           <InputWithLabel
@@ -351,8 +292,8 @@ const AppointmentEditPage = () => {
             value={form.diagnosis || ""}
             onChange={(e) => handleFormChange("diagnosis", e, setForm)}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           >
             <option value="Acquired">Acquired</option>
             <option value="Acute">Acute</option>
@@ -372,8 +313,8 @@ const AppointmentEditPage = () => {
             value={form.reasonOfVisit || ""}
             onChange={(e) => handleFormChange("reasonOfVisit", e, setForm)}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
         </div>
       </div>

@@ -1,119 +1,21 @@
 import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
-
-const THEME_STORAGE_KEY = "customColorTheme";
-const getFontTheme = () => {
-  try {
-    const theme = localStorage.getItem(THEME_STORAGE_KEY);
-    return theme ? JSON.parse(theme) : {};
-  } catch {
-    return {};
-  }
-};
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-      color: fontTheme.headingColor || "#333333",
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-      color:
-        fontTheme.bodyTextColor === "#FFFFFF"
-          ? "#333333"
-          : fontTheme.bodyTextColor || "#333333",
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-      color:
-        fontTheme.bodyTextColor === "#FFFFFF"
-          ? "#666666"
-          : fontTheme.bodyTextColor || "#666666",
-    };
-  }
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-    color: fontTheme.headingColor || "#333333",
-  };
-};
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 const LabsRadiologyPage = () => {
   const { showModal } = useSelector((state) => state.modal);
+  const { theme } = useTheme();
 
-  const [customTheme, setCustomTheme] = useState(() => {
-    try {
-      const theme = localStorage.getItem("customColorTheme");
-      return theme ? JSON.parse(theme) : {};
-    } catch {
-      return {};
-    }
-  });
 
-  const [fontTheme, setFontTheme] = useState(getFontTheme());
-
-  useEffect(() => {
-    const reloadTheme = () => {
-      try {
-        const theme = localStorage.getItem("customColorTheme");
-        setCustomTheme(theme ? JSON.parse(theme) : {});
-      } catch {
-        setCustomTheme({});
-      }
-    };
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === "customColorTheme") reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-
-  useEffect(() => {
-    const reloadTheme = () => setFontTheme(getFontTheme());
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
 
   const getButtonStyle = (filled = false) => ({
     backgroundColor: filled ? customTheme.primaryColor : "#fff",
     color: filled ? "#fff" : customTheme.primaryColor,
     border: `1.5px solid ${customTheme.primaryColor}`,
-    fontFamily: fontTheme.fontFamily || "inherit",
-    fontWeight: fontTheme.fontWeight || 400,
-    fontSize: fontTheme.fontSize || "16px",
+    fontFamily: theme.fontFamily || "inherit",
+    fontWeight: theme.fontWeight || 400,
+    fontSize: theme.fontSize || "16px",
     transition: "all 0.15s",
   });
 
@@ -121,17 +23,17 @@ const LabsRadiologyPage = () => {
     backgroundColor: "#fff",
     color: customTheme.primaryColor,
     border: `1.5px solid ${customTheme.primaryColor}`,
-    fontFamily: fontTheme.fontFamily || "inherit",
-    fontWeight: fontTheme.fontWeight || 400,
-    fontSize: fontTheme.fontSize || "16px",
+    fontFamily: theme.fontFamily || "inherit",
+    fontWeight: theme.fontWeight || 400,
+    fontSize: theme.fontSize || "16px",
     transition: "all 0.15s",
   });
 
   const getIconStyle = () => ({
     color: customTheme.primaryColor,
-    fontSize: fontTheme.fontSize || "20px",
-    fontFamily: fontTheme.fontFamily || "inherit",
-    fontWeight: fontTheme.fontWeight || 400,
+    fontSize: theme.fontSize || "20px",
+    fontFamily: theme.fontFamily || "inherit",
+    fontWeight: theme.fontWeight || 400,
   });
 
   const handleOpenModal = () => {
@@ -144,7 +46,7 @@ const LabsRadiologyPage = () => {
             <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
               <h2
                 className="text-lg font-medium"
-                style={getFontStyle(fontTheme, "subHeading")}
+                style={getFontStyle(theme, "subHeading")}
               >
                 Recordings and Output
               </h2>
@@ -164,28 +66,28 @@ const LabsRadiologyPage = () => {
                       <div className="text-start">
                         <h6
                           className="text-2xl text-darkBlue font-medium"
-                          style={getFontStyle(fontTheme, "subHeading")}
+                          style={getFontStyle(theme, "subHeading")}
                         >
                           Henry Johnson
                         </h6>
                         <div className="flex gap-1 text-sm">
-                          <span style={getFontStyle(fontTheme, "body2")}>
+                          <span style={getFontStyle(theme, "body2")}>
                             Date of Birth :
                           </span>
                           <span
                             className="text-muted"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             May 20, 2000
                           </span>
                         </div>
                         <div className="flex gap-1 text-sm">
-                          <span style={getFontStyle(fontTheme, "body2")}>
+                          <span style={getFontStyle(theme, "body2")}>
                             Last Visit :
                           </span>
                           <span
                             className="text-muted"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             August 12, 2025 - 2:00PM
                           </span>
@@ -195,13 +97,13 @@ const LabsRadiologyPage = () => {
                         <a
                           href=""
                           className="text-primary"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           View Profile
                         </a>
                         <p
                           className="mt-7 text-sm"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           Status: <span className="text-success">Done</span>
                         </p>
@@ -216,31 +118,31 @@ const LabsRadiologyPage = () => {
                         <tr>
                           <th
                             className="font-medium"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             Gender
                           </th>
                           <th
                             className="font-medium"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             Age
                           </th>
                           <th
                             className="font-medium"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             Weight
                           </th>
                           <th
                             className="font-medium"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             Height
                           </th>
                           <th
                             className="font-medium"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             Blood Group
                           </th>
@@ -248,31 +150,31 @@ const LabsRadiologyPage = () => {
                         <tr>
                           <td
                             className="text-muted text-center"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             Male
                           </td>
                           <td
                             className="text-muted text-center"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             26 Years
                           </td>
                           <td
                             className="text-muted text-center"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             68Kg
                           </td>
                           <td
                             className="text-muted text-center"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             5ft 9in
                           </td>
                           <td
                             className="text-muted text-center"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             O+
                           </td>
@@ -286,7 +188,7 @@ const LabsRadiologyPage = () => {
                 <div className="relative flex justify-between text-primary border border-primary rounded-full ps-4 pe-16 py-3">
                   <span
                     className="my-auto"
-                    style={getFontStyle(fontTheme, "body1")}
+                    style={getFontStyle(theme, "body1")}
                   >
                     Recording 1
                   </span>
@@ -302,7 +204,7 @@ const LabsRadiologyPage = () => {
                 <div className="relative flex justify-between text-primary border border-primary rounded-full ps-4 pe-16 py-3">
                   <span
                     className="my-auto"
-                    style={getFontStyle(fontTheme, "body1")}
+                    style={getFontStyle(theme, "body1")}
                   >
                     Recording 2
                   </span>
@@ -319,13 +221,13 @@ const LabsRadiologyPage = () => {
               <div className="mb-3">
                 <h3
                   className="text-md font-medium bg-grey px-3 py-2 rounded-lg mb-2"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   Subjective
                 </h3>
                 <p
                   className="text-body px-2"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 >
                   Patient John Doe, a 35-year-old male, reports experiencing
                   persistent headaches for the past two weeks. He describes the
@@ -338,7 +240,7 @@ const LabsRadiologyPage = () => {
               <div className="mb-3">
                 <h3
                   className="text-md font-medium bg-grey px-3 py-2 rounded-lg mb-2"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   Subjective
                 </h3>
@@ -348,13 +250,13 @@ const LabsRadiologyPage = () => {
                       <tr>
                         <th
                           className="font-medium text-start"
-                          style={getFontStyle(fontTheme, "body1")}
+                          style={getFontStyle(theme, "body1")}
                         >
                           Vitals:
                         </th>
                         <th
                           className="font-medium text-start"
-                          style={getFontStyle(fontTheme, "body1")}
+                          style={getFontStyle(theme, "body1")}
                         >
                           Exam:
                         </th>
@@ -362,7 +264,7 @@ const LabsRadiologyPage = () => {
                       <tr>
                         <td
                           className="text-body"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           <ul className="ps-5 list-disc">
                             <li>BP: [e.g., 120/80 mmHg]</li>
@@ -373,7 +275,7 @@ const LabsRadiologyPage = () => {
                         </td>
                         <td
                           className="text-body"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           <ul className="ps-5 list-disc">
                             <li>BP: [e.g., 120/80 mmHg]</li>
@@ -390,13 +292,13 @@ const LabsRadiologyPage = () => {
               <div className="mb-3">
                 <h3
                   className="text-md font-medium bg-grey px-3 py-2 rounded-lg mb-2"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   Assessment
                 </h3>
                 <div
                   className="px-2 text-body"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 >
                   <ul className="ps-5 list-disc">
                     <li>Likely diagnosis: Migraine without aura</li>
@@ -407,7 +309,7 @@ const LabsRadiologyPage = () => {
               <div className="mb-3">
                 <h3
                   className="text-md font-medium bg-grey px-3 py-2 rounded-lg mb-2"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   Plan
                 </h3>
@@ -417,7 +319,7 @@ const LabsRadiologyPage = () => {
                       <tr>
                         <th
                           className="font-medium text-start"
-                          style={getFontStyle(fontTheme, "body1")}
+                          style={getFontStyle(theme, "body1")}
                         >
                           Medications:
                         </th>
@@ -425,7 +327,7 @@ const LabsRadiologyPage = () => {
                       <tr>
                         <td
                           className="text-body"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           <ul className="ps-8 list-disc">
                             <li>
@@ -441,7 +343,7 @@ const LabsRadiologyPage = () => {
                       <tr>
                         <th
                           className="font-medium text-start"
-                          style={getFontStyle(fontTheme, "body1")}
+                          style={getFontStyle(theme, "body1")}
                         >
                           Lifestyle Modifications:
                         </th>
@@ -449,7 +351,7 @@ const LabsRadiologyPage = () => {
                       <tr>
                         <td
                           className="text-body"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           <ul className="ps-8 list-disc">
                             <li>
@@ -477,7 +379,7 @@ const LabsRadiologyPage = () => {
     <>
       <div className="mb-3 grid grid-cols-1 md:grid-cols-3 md:gap-4">
         <div className="mb-3">
-          <label htmlFor="search" style={getFontStyle(fontTheme, "body1")}>
+          <label htmlFor="search" style={getFontStyle(theme, "body1")}>
             Search
           </label>
           <div className="relative mt-2">
@@ -485,7 +387,7 @@ const LabsRadiologyPage = () => {
               type="text"
               placeholder="Search by Name or DOB"
               className="w-full rounded-full pe-4 ps-10 py-3 border-grey focus:outline-grey2"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             />
             <span className="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
               search
@@ -499,13 +401,13 @@ const LabsRadiologyPage = () => {
           </div>
         </div>
         <div className="mb-3">
-          <label htmlFor="search" style={getFontStyle(fontTheme, "body1")}>
+          <label htmlFor="search" style={getFontStyle(theme, "body1")}>
             Disease or Allergy
           </label>
           <div className="relative mt-2 text-muted">
             <select
               className="w-full rounded-full px-4 py-3 border-grey focus:outline-grey2 appearance-none"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               <option value="" disabled="" selected="">
                 Search by Disease
@@ -517,25 +419,25 @@ const LabsRadiologyPage = () => {
           </div>
         </div>
         <div className="mb-3">
-          <label htmlFor="search" style={getFontStyle(fontTheme, "body1")}>
+          <label htmlFor="search" style={getFontStyle(theme, "body1")}>
             Select Date
           </label>
           <div className="relative mt-2 text-muted">
             <input
               type="date"
               className="w-full rounded-full px-4 py-3 border-grey focus:outline-grey2"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             />
           </div>
         </div>
         <div className="mb-3">
-          <label htmlFor="search" style={getFontStyle(fontTheme, "body1")}>
+          <label htmlFor="search" style={getFontStyle(theme, "body1")}>
             Select by Lab Name
           </label>
           <div className="relative mt-2 text-muted">
             <select
               className="w-full rounded-full px-4 py-3 border-grey focus:outline-grey2 appearance-none"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               <option value="" disabled="" selected="">
                 Search by Lab Name
@@ -551,14 +453,14 @@ const LabsRadiologyPage = () => {
         <div className="flex justify-between p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b">
           <h2
             className="text-lg font-medium"
-            style={getFontStyle(fontTheme, "subHeading")}
+            style={getFontStyle(theme, "subHeading")}
           >
             Lab Reports
           </h2>
           <div className="text-end inline-block">
             <span
               className="text-muted"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               Total 1460 Lab Results Found
             </span>
@@ -567,7 +469,7 @@ const LabsRadiologyPage = () => {
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white overflow-x-auto text-nowrap">
             <thead>
-              <tr style={getFontStyle(fontTheme, "body2")}>
+              <tr style={getFontStyle(theme, "body2")}>
                 <th className="py-2 px-4 border-b text-start font-medium">
                   <div className="flex items-center cursor-pointer">
                     <span>Lab Name</span>
@@ -594,7 +496,7 @@ const LabsRadiologyPage = () => {
             </thead>
             <tbody
               className="text-body"
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             >
               <tr>
                 <td className="py-2 px-4 border-b">
@@ -605,10 +507,10 @@ const LabsRadiologyPage = () => {
                       className="w-10 h-10 rounded-full mr-3"
                     />
                     <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>John Doe</p>
+                      <p style={getFontStyle(theme, "body1")}>John Doe</p>
                       <span
                         className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         #12345678
                       </span>
@@ -623,10 +525,10 @@ const LabsRadiologyPage = () => {
                       className="w-10 h-10 rounded-full mr-3"
                     />
                     <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>Jane Smith</p>
+                      <p style={getFontStyle(theme, "body1")}>Jane Smith</p>
                       <span
                         className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         #23456789
                       </span>
@@ -635,7 +537,7 @@ const LabsRadiologyPage = () => {
                 </td>
                 <td
                   className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   X-Ray
                 </td>
@@ -647,12 +549,12 @@ const LabsRadiologyPage = () => {
                       className="w-10 h-10 rounded-full mr-3"
                     />
                     <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>
+                      <p style={getFontStyle(theme, "body1")}>
                         Michael Johnson
                       </p>
                       <span
                         className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         #34567890
                       </span>
@@ -661,7 +563,7 @@ const LabsRadiologyPage = () => {
                 </td>
                 <td
                   className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   August 15, 2024
                 </td>
@@ -684,12 +586,12 @@ const LabsRadiologyPage = () => {
                       className="w-10 h-10 rounded-full mr-3"
                     />
                     <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>
+                      <p style={getFontStyle(theme, "body1")}>
                         Emily Davis
                       </p>
                       <span
                         className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         #45678901
                       </span>
@@ -704,12 +606,12 @@ const LabsRadiologyPage = () => {
                       className="w-10 h-10 rounded-full mr-3"
                     />
                     <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>
+                      <p style={getFontStyle(theme, "body1")}>
                         Chris Brown
                       </p>
                       <span
                         className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         #56789012
                       </span>
@@ -718,7 +620,7 @@ const LabsRadiologyPage = () => {
                 </td>
                 <td
                   className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   MRI Scan
                 </td>
@@ -730,12 +632,12 @@ const LabsRadiologyPage = () => {
                       className="w-10 h-10 rounded-full mr-3"
                     />
                     <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>
+                      <p style={getFontStyle(theme, "body1")}>
                         Jessica Taylor
                       </p>
                       <span
                         className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         #67890123
                       </span>
@@ -744,7 +646,7 @@ const LabsRadiologyPage = () => {
                 </td>
                 <td
                   className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   September 20, 2024
                 </td>
@@ -766,12 +668,12 @@ const LabsRadiologyPage = () => {
                       className="w-10 h-10 rounded-full mr-3"
                     />
                     <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>
+                      <p style={getFontStyle(theme, "body1")}>
                         David Wilson
                       </p>
                       <span
                         className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         #78901234
                       </span>
@@ -786,12 +688,12 @@ const LabsRadiologyPage = () => {
                       className="w-10 h-10 rounded-full mr-3"
                     />
                     <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>
+                      <p style={getFontStyle(theme, "body1")}>
                         Linda Martinez
                       </p>
                       <span
                         className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         #89012345
                       </span>
@@ -800,7 +702,7 @@ const LabsRadiologyPage = () => {
                 </td>
                 <td
                   className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   CT Scan
                 </td>
@@ -812,12 +714,12 @@ const LabsRadiologyPage = () => {
                       className="w-10 h-10 rounded-full mr-3"
                     />
                     <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>
+                      <p style={getFontStyle(theme, "body1")}>
                         Robert Garcia
                       </p>
                       <span
                         className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         #90123456
                       </span>
@@ -826,7 +728,7 @@ const LabsRadiologyPage = () => {
                 </td>
                 <td
                   className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   October 5, 2024
                 </td>
@@ -845,12 +747,12 @@ const LabsRadiologyPage = () => {
                       className="w-10 h-10 rounded-full mr-3"
                     />
                     <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>
+                      <p style={getFontStyle(theme, "body1")}>
                         Patricia Lee
                       </p>
                       <span
                         className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         #01234567
                       </span>
@@ -865,12 +767,12 @@ const LabsRadiologyPage = () => {
                       className="w-10 h-10 rounded-full mr-3"
                     />
                     <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>
+                      <p style={getFontStyle(theme, "body1")}>
                         James White
                       </p>
                       <span
                         className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         #12345678
                       </span>
@@ -879,7 +781,7 @@ const LabsRadiologyPage = () => {
                 </td>
                 <td
                   className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   Urine Test
                 </td>
@@ -891,12 +793,12 @@ const LabsRadiologyPage = () => {
                       className="w-10 h-10 rounded-full mr-3"
                     />
                     <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>
+                      <p style={getFontStyle(theme, "body1")}>
                         Daniel Harris
                       </p>
                       <span
                         className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         #23456789
                       </span>
@@ -905,7 +807,7 @@ const LabsRadiologyPage = () => {
                 </td>
                 <td
                   className="py-2 px-4 border-b"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   November 12, 2024
                 </td>
@@ -918,7 +820,7 @@ const LabsRadiologyPage = () => {
             </tbody>
           </table>
           <div className="flex justify-end items-center mt-4 mx-4">
-            <div className="space-x-1" style={getFontStyle(fontTheme, "body2")}>
+            <div className="space-x-1" style={getFontStyle(theme, "body2")}>
               <span>Page</span>
               <button
                 style={getButtonStyle(false)}

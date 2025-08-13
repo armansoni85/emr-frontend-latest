@@ -1,113 +1,16 @@
 import { useEffect, useState } from "react";
-
-const THEME_STORAGE_KEY = "customColorTheme";
-const getFontTheme = () => {
-  try {
-    const theme = localStorage.getItem(THEME_STORAGE_KEY);
-    return theme ? JSON.parse(theme) : {};
-  } catch {
-    return {};
-  }
-};
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-      color: fontTheme.headingColor || "#333333",
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-      color:
-        fontTheme.bodyTextColor === "#FFFFFF"
-          ? "#333333"
-          : fontTheme.bodyTextColor || "#333333",
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-      color:
-        fontTheme.bodyTextColor === "#FFFFFF"
-          ? "#666666"
-          : fontTheme.bodyTextColor || "#666666",
-    };
-  }
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-    color: fontTheme.headingColor || "#333333",
-  };
-};
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 const EmailSupportPage = () => {
-  const [customTheme, setCustomTheme] = useState(() => {
-    try {
-      const theme = localStorage.getItem("customColorTheme");
-      return theme ? JSON.parse(theme) : {};
-    } catch {
-      return {};
-    }
-  });
+  const { theme } = useTheme();
 
-  const [fontTheme, setFontTheme] = useState(getFontTheme());
 
-  useEffect(() => {
-    const reloadTheme = () => {
-      try {
-        const theme = localStorage.getItem("customColorTheme");
-        setCustomTheme(theme ? JSON.parse(theme) : {});
-      } catch {
-        setCustomTheme({});
-      }
-    };
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === "customColorTheme") reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-
-  useEffect(() => {
-    const reloadTheme = () => setFontTheme(getFontTheme());
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
 
   const getButtonStyle = (filled = true, color = "primary") => {
     const colorMap = {
-      primary: customTheme.primaryColor || "#002952",
-      danger: customTheme.secondaryColor || "#CF0000",
+      primary: theme.primaryColor || "#002952",
+      danger: theme.secondaryColor || "#CF0000",
       success: "#22C55E",
       white: "#fff",
     };
@@ -116,9 +19,9 @@ const EmailSupportPage = () => {
       backgroundColor: filled ? mainColor : "#fff",
       color: filled ? "#fff" : mainColor,
       border: `1.5px solid ${mainColor}`,
-      fontFamily: fontTheme.fontFamily || "inherit",
-      fontWeight: fontTheme.fontWeight || 400,
-      fontSize: fontTheme.fontSize || "16px",
+      fontFamily: theme.fontFamily || "inherit",
+      fontWeight: theme.fontWeight || 400,
+      fontSize: theme.fontSize || "16px",
       transition: "all 0.15s",
     };
   };
@@ -131,7 +34,7 @@ const EmailSupportPage = () => {
             <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
               <h2
                 className="text-lg font-medium"
-                style={getFontStyle(fontTheme, "subHeading")}
+                style={getFontStyle(theme, "subHeading")}
               >
                 Chat History
               </h2>
@@ -145,13 +48,13 @@ const EmailSupportPage = () => {
                   <div className="text-medium text-start">
                     <p
                       className="leading-none"
-                      style={getFontStyle(fontTheme, "body1")}
+                      style={getFontStyle(theme, "body1")}
                     >
                       Advanced Pharmacology and Drug Management
                     </p>
                     <span
                       className="text-muted text-sm"
-                      style={getFontStyle(fontTheme, "body2")}
+                      style={getFontStyle(theme, "body2")}
                     >
                       Just Now
                     </span>
@@ -166,13 +69,13 @@ const EmailSupportPage = () => {
                   <div className="text-medium text-start">
                     <p
                       className="leading-none"
-                      style={getFontStyle(fontTheme, "body1")}
+                      style={getFontStyle(theme, "body1")}
                     >
                       Advanced Pharmacology and Drug Management
                     </p>
                     <span
                       className="text-muted text-sm"
-                      style={getFontStyle(fontTheme, "body2")}
+                      style={getFontStyle(theme, "body2")}
                     >
                       Just Now
                     </span>
@@ -187,13 +90,13 @@ const EmailSupportPage = () => {
                   <div className="text-medium text-start">
                     <p
                       className="leading-none"
-                      style={getFontStyle(fontTheme, "body1")}
+                      style={getFontStyle(theme, "body1")}
                     >
                       Advanced Pharmacology and Drug Management
                     </p>
                     <span
                       className="text-muted text-sm"
-                      style={getFontStyle(fontTheme, "body2")}
+                      style={getFontStyle(theme, "body2")}
                     >
                       Just Now
                     </span>
@@ -208,13 +111,13 @@ const EmailSupportPage = () => {
                   <div className="text-medium text-start">
                     <p
                       className="leading-none"
-                      style={getFontStyle(fontTheme, "body1")}
+                      style={getFontStyle(theme, "body1")}
                     >
                       Advanced Pharmacology and Drug Management
                     </p>
                     <span
                       className="text-muted text-sm"
-                      style={getFontStyle(fontTheme, "body2")}
+                      style={getFontStyle(theme, "body2")}
                     >
                       Just Now
                     </span>
@@ -236,14 +139,14 @@ const EmailSupportPage = () => {
           <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
             <h2
               className="text-lg font-medium"
-              style={getFontStyle(fontTheme, "subHeading")}
+              style={getFontStyle(theme, "subHeading")}
             >
               Live Chat with Agent
             </h2>
             <a
               href=""
               className="text-danger"
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             >
               End Chat
             </a>
@@ -253,7 +156,7 @@ const EmailSupportPage = () => {
               <label
                 htmlFor="patientName"
                 className="block text-nowrap my-auto"
-                style={getFontStyle(fontTheme, "body1")}
+                style={getFontStyle(theme, "body1")}
               >
                 To:
               </label>
@@ -263,7 +166,7 @@ const EmailSupportPage = () => {
                   type="text"
                   className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey text-muted border rounded-full"
                   placeholder="support@meducare.com"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 />
               </div>
             </div>
@@ -271,7 +174,7 @@ const EmailSupportPage = () => {
               <label
                 htmlFor="patientName"
                 className="block text-nowrap my-auto"
-                style={getFontStyle(fontTheme, "body1")}
+                style={getFontStyle(theme, "body1")}
               >
                 Subject:
               </label>
@@ -281,7 +184,7 @@ const EmailSupportPage = () => {
                   type="text"
                   className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey text-muted border rounded-full"
                   placeholder="Lorem Ipsum"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 />
               </div>
             </div>
@@ -289,7 +192,7 @@ const EmailSupportPage = () => {
               <label
                 htmlFor="reasonsOfVisit"
                 className="block text-nowrap mb-auto mt-2"
-                style={getFontStyle(fontTheme, "body1")}
+                style={getFontStyle(theme, "body1")}
               >
                 Reasons of Visit:
               </label>
@@ -301,7 +204,7 @@ const EmailSupportPage = () => {
                   rows={10}
                   cols={30}
                   defaultValue={""}
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 />
                 <div className="flex absolute bottom-0 p-2 gap-2">
                   <button

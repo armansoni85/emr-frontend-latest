@@ -25,17 +25,32 @@ const Button = ({
       "secondaryColor",
       "#CF0000"
     )}] text-white hover:bg-opacity-90`,
-    danger: `bg-[#DC2626] text-white hover:bg-opacity-90`,
-    success: `bg-[#22C55E] text-white hover:bg-opacity-90`,
-    warning: `bg-[#F59E42] text-white hover:bg-opacity-90`,
-    grey: `bg-[#F3F4F6] text-[${getThemeColor(
+    danger: `bg-[${getThemeColor(
+      "dangerColor",
+      "#DC2626"
+    )}] text-white hover:bg-opacity-90`,
+    success: `bg-[${getThemeColor(
+      "successColor",
+      "#22C55E"
+    )}] text-white hover:bg-opacity-90`,
+    warning: `bg-[${getThemeColor(
+      "warningColor",
+      "#F59E42"
+    )}] text-white hover:bg-opacity-90`,
+    grey: `bg-[${getThemeColor(
+      "greyColor",
+      "#F3F4F6"
+    )}] text-[${getThemeColor(
       "primaryColor",
       "#002952"
     )}] hover:bg-[${getThemeColor(
       "primaryColor",
       "#002952"
     )}] hover:text-white`,
-    info: `bg-[#3B82F6] text-white hover:bg-opacity-90`,
+    info: `bg-[${getThemeColor(
+      "infoColor",
+      "#3B82F6"
+    )}] text-white hover:bg-opacity-90`,
     white: `bg-white text-[${getThemeColor(
       "primaryColor",
       "#002952"
@@ -106,7 +121,10 @@ const Button = ({
     )}] text-[${getThemeColor(
       "infoColor",
       "#3B82F6"
-    )}] hover:bg-[${getThemeColor("infoColor", "#3B82F6")}] hover:text-white`,
+    )}] hover:bg-[${getThemeColor(
+      "infoColor",
+      "#3B82F6"
+    )}] hover:text-white`,
     white: `border border-white text-white hover:bg-white hover:text-[${getThemeColor(
       "primaryColor",
       "#002952"
@@ -114,15 +132,12 @@ const Button = ({
   };
 
   const enumButtonSize = {
-    small: `text-sm px-3 py-2 ${rounded} ${
-      isBold ? "font-semibold" : "font-normal"
-    }`,
-    medium: `text-base px-3 py-2 ${rounded} ${
-      isBold ? "font-semibold" : "font-normal"
-    }`,
-    large: `text-lg px-3 py-3 ${rounded} ${
-      isBold ? "font-semibold" : "font-normal"
-    }`,
+    small: `text-sm px-3 py-2 ${rounded} ${isBold ? "font-semibold" : "font-normal"
+      }`,
+    medium: `text-base px-3 py-2 ${rounded} ${isBold ? "font-semibold" : "font-normal"
+      }`,
+    large: `text-lg px-3 py-3 ${rounded} ${isBold ? "font-semibold" : "font-normal"
+      }`,
   };
 
   const defaultClassName = "transition duration-150";
@@ -133,37 +148,35 @@ const Button = ({
   const style =
     color === "primary"
       ? {
-          backgroundColor: !isOutline ? theme.primaryColor : undefined,
-          color: isOutline ? theme.primaryColor : undefined,
-          borderColor: isOutline ? theme.primaryColor : undefined,
-          fontFamily: theme.fontFamily,
-        }
+        backgroundColor: !isOutline ? theme.primaryColor : undefined,
+        color: isOutline ? theme.primaryColor : undefined,
+        borderColor: isOutline ? theme.primaryColor : undefined,
+        fontFamily: theme.fontFamily,
+      }
       : color === "secondary"
-      ? {
+        ? {
           backgroundColor: !isOutline ? theme.secondaryColor : undefined,
           color: isOutline ? theme.secondaryColor : undefined,
           borderColor: isOutline ? theme.secondaryColor : undefined,
           fontFamily: theme.fontFamily,
         }
-      : color === "grey"
-      ? {
-          backgroundColor: !isOutline ? theme.borderColor : undefined,
-          color: isOutline ? theme.borderColor : undefined,
-          borderColor: isOutline ? theme.borderColor : undefined,
-          fontFamily: theme.fontFamily,
-        }
-      : {
-          fontFamily: theme.fontFamily,
-        };
+        : color === "grey"
+          ? {
+            backgroundColor: !isOutline ? theme.borderColor : undefined,
+            color: isOutline ? theme.borderColor : undefined,
+            borderColor: isOutline ? theme.borderColor : undefined,
+            fontFamily: theme.fontFamily,
+          }
+          : {
+            fontFamily: theme.fontFamily,
+          };
 
   return (
     <button
       type={type}
-      className={`${
-        isOutline ? enumButtonOutlineColor[color] : enumButtonColor[color]
-      } ${
-        enumButtonSize[size]
-      } ${defaultClassName} ${disabledClassName} ${className}`}
+      className={`${isOutline ? enumButtonOutlineColor[color] : enumButtonColor[color]
+        } ${enumButtonSize[size]
+        } ${defaultClassName} ${disabledClassName} ${className}`}
       onClick={onClick}
       disabled={disabled}
       style={style}

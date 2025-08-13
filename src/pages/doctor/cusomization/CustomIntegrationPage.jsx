@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { NavLinkButton } from "@src/components";
 import { getRoutePath } from "@src/utils/routeUtils";
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 const LOCAL_STORAGE_KEY = "customIntegrationPreferences";
 const THEME_STORAGE_KEY = "customColorTheme";
@@ -13,51 +15,10 @@ const DEFAULT_PREFS = {
   loremIpsumDummy: false,
 };
 
-// Font style helper
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-    };
-  }
-  // main/heading
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-  };
-};
-
 const CustomIntegrationPage = () => {
+  const { theme } = useTheme();
   const [prefs, setPrefs] = useState(DEFAULT_PREFS);
-  const [showSavedPopup, setShowSavedPopup] = useState(false);
-
-  // Font theme from localStorage
-  const [fontTheme, setFontTheme] = useState(() => {
-    try {
-      const theme = localStorage.getItem(THEME_STORAGE_KEY);
-      return theme ? JSON.parse(theme) : {};
-    } catch {
-      return {};
-    }
-  });
+  const [showSavedPopup] = useState(false);
 
   // Auto-apply font customization to body
   useEffect(() => {
@@ -247,11 +208,10 @@ const CustomIntegrationPage = () => {
                     style={getFontStyle(fontTheme, "body2")}
                   >
                     <div
-                      className={`w-4 h-4 mr-2 rounded-full border border-grey ${
-                        prefs.labPreference === "allLabs"
-                          ? "bg-primary ring-2 ring-primary"
-                          : ""
-                      }`}
+                      className={`w-4 h-4 mr-2 rounded-full border border-grey ${prefs.labPreference === "allLabs"
+                        ? "bg-primary ring-2 ring-primary"
+                        : ""
+                        }`}
                     ></div>
                     <span>All Labs</span>
                   </label>
@@ -271,11 +231,10 @@ const CustomIntegrationPage = () => {
                     style={getFontStyle(fontTheme, "body2")}
                   >
                     <div
-                      className={`w-4 h-4 mr-2 rounded-full border border-grey ${
-                        prefs.labPreference === "preferredLabs"
-                          ? "bg-primary ring-2 ring-primary"
-                          : ""
-                      }`}
+                      className={`w-4 h-4 mr-2 rounded-full border border-grey ${prefs.labPreference === "preferredLabs"
+                        ? "bg-primary ring-2 ring-primary"
+                        : ""
+                        }`}
                     ></div>
                     <span>Preferred Labs</span>
                   </label>

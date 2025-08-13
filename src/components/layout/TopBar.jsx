@@ -1,22 +1,34 @@
 import { useDispatch, useSelector } from "react-redux";
-
 import { Link } from "react-router-dom";
 import { RoleId } from "@src/constant/enumRole";
 import { getRoutePath } from "@src/utils/routeUtils";
 import { logout } from "../../redux/reducers/auth/authReducer";
 import { toggleSidebar } from "../../redux/reducers/sidebarReducer";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useTheme } from "@src/context/ThemeContext";
 
 const TopBar = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
     const { user } = useSelector((state) => state.auth);
-    // console.log("TopBar", user);
-
     const { activeMenu } = useSelector((state) => state.sideNavBar);
     const dispatch = useDispatch();
+    const { theme } = useTheme();
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const toggleDropdown = () => {
-        console.log("Dropdown toggled", isDropdownOpen);
         setIsDropdownOpen(!isDropdownOpen);
     };
 
@@ -28,9 +40,8 @@ const TopBar = () => {
                     onClick={() => dispatch(toggleSidebar())}>
                     menu
                 </span>
-                <h1 className="text-2xl font-semibold text-[#585858]">
+                <h1 className="text-2xl font-semibold" style={{ color: theme.bodyTextColor }}>
                     {activeMenu?.text}
-                    {/* {activeSubMenu && `/ ${activeSubMenu?.text}`} */}
                 </h1>
             </div>
             {/* Profile Section */}
@@ -48,8 +59,8 @@ const TopBar = () => {
                             onClick={toggleDropdown}
                             alt="profile"
                             onError={(e) => {
-                                e.target.onerror = null; // Prevents infinite loop
-                                e.target.src = "/assets/images/profile.png"; // Fallback image
+                                e.target.onerror = null;
+                                e.target.src = "/assets/images/profile.png";
                             }}
                             className="rounded-full w-6 h-6"
                         />
@@ -59,14 +70,17 @@ const TopBar = () => {
                             {user?.first_name} {user?.last_name}
                         </span>
                         <div
+                            ref={dropdownRef}
                             id="dropdownMenuNavbar"
                             className={`absolute bg-white shadow-lg rounded-2xl mt-2 top-6 right-0 py-1 ${isDropdownOpen ? "block" : "hidden"}`}>
                             <Link
+                                onClick={() => setIsDropdownOpen(false)}
                                 to={getRoutePath(`${user?.role === RoleId.PATIENT ? "patient" : "doctor"}.profile.personal_details`)}
                                 className="block px-4 py-1 text-gray-800 text-link hover:bg-gray-200 rounded-2xl">
                                 Personal Details
                             </Link>
                             <Link
+                                onClick={() => setIsDropdownOpen(false)}
                                 to={getRoutePath(`${user?.role === RoleId.PATIENT ? "patient" : "doctor"}.profile.change_password`)}
                                 className="block px-4 py-1 text-gray-800 text-link hover:bg-gray-200 rounded-2xl">
                                 Change Password

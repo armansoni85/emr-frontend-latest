@@ -75,6 +75,7 @@ import RecordingPage from "./pages/doctor/recordings/RecordingPage";
 import SecurityPage from "./pages/patient/security/SecurityPage";
 import { SuperBillsPage } from "./pages/doctor/super-bills";
 import AppointmentEditPage from "./pages/doctor/appointment/AppointmentEditPage";
+import DashboardPagePatient from "./pages/patient/dashboard/DashboardPage";
 
 const privateRoutes = {
   patient: {
@@ -83,7 +84,7 @@ const privateRoutes = {
     childRoutes: {
       dashboard: {
         index: true,
-        element: <DashboardPage />,
+        element: <DashboardPagePatient />,
       },
       appointments: {
         path: "appointments",

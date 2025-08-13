@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLinkButton } from "@src/components";
 import { getRoutePath } from "@src/utils/routeUtils";
 import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 const DEFAULT_THEME = {
   primaryColor: "#002952",
@@ -99,17 +100,7 @@ const CustomColorThemePage = () => {
     }
   }, []);
 
-  useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
+
 
   const formatColorToUppercase = (color) => {
     if (color.startsWith("#")) {
@@ -172,34 +163,7 @@ const CustomColorThemePage = () => {
     opacity: Math.max(0, Math.min(1, opacity / 100)),
   });
 
-  const getFontStyle = (type = "main") => {
-    if (type === "subHeading") {
-      return {
-        fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-        fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-        fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-      };
-    }
-    if (type === "body1") {
-      return {
-        fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-        fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-        fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-      };
-    }
-    if (type === "body2") {
-      return {
-        fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-        fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-        fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-      };
-    }
-    return {
-      fontFamily: fontTheme.fontFamily,
-      fontWeight: fontTheme.fontWeight,
-      fontSize: fontTheme.fontSize,
-    };
-  };
+
 
   const ColorPalettePopup = ({ colorField, onClose }) => (
     <div className="absolute z-50 bg-white border rounded-lg shadow-lg p-4 mt-2">
@@ -226,7 +190,7 @@ const CustomColorThemePage = () => {
   );
 
   return (
-    <div style={getFontStyle("main")}>
+    <div style={getFontStyle(localTheme, "main")}>
       {showSavedPopup && (
         <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50">
           <div className="px-6 py-3 rounded-lg shadow-lg text-white font-semibold bg-green-600">
@@ -242,7 +206,7 @@ const CustomColorThemePage = () => {
             color="primary"
             className="px-5 py-2 rounded-full font-light"
             style={{
-              ...getFontStyle("main"),
+              ...getFontStyle(localTheme, "main"),
               backgroundColor: fontTheme.primaryColor,
               color: "#fff",
               border: `1.5px solid ${fontTheme.primaryColor}`,
@@ -255,7 +219,7 @@ const CustomColorThemePage = () => {
             color="primary"
             className="px-5 py-2 rounded-full font-light transition-all duration-150 hover:bg-primary hover:text-white text-primary"
             style={{
-              ...getFontStyle("main"),
+              ...getFontStyle(localTheme, "main"),
               backgroundColor: "#fff",
               color: fontTheme.primaryColor,
               border: `1.5px solid ${fontTheme.primaryColor}`,
@@ -268,7 +232,7 @@ const CustomColorThemePage = () => {
             color="primary"
             className="px-5 py-2 rounded-full font-light transition-all duration-150 hover:bg-primary hover:text-white text-primary"
             style={{
-              ...getFontStyle("main"),
+              ...getFontStyle(localTheme, "main"),
               backgroundColor: "#fff",
               color: fontTheme.primaryColor,
               border: `1.5px solid ${fontTheme.primaryColor}`,
@@ -283,7 +247,7 @@ const CustomColorThemePage = () => {
               className="px-8 py-1 text-sm bg-white border border-danger rounded-full text-danger hover:bg-danger hover:text-white transition-all duration-150"
               onClick={handleCancel}
               type="button"
-              style={getFontStyle("main")}
+              style={getFontStyle(localTheme, "main")}
             >
               Cancel
             </button>
@@ -291,7 +255,7 @@ const CustomColorThemePage = () => {
               className="bg-primary border border-primary text-white px-8 py-2 rounded-full text-sm font-light hover:bg-opacity-[0.9] transition-all duration-150"
               onClick={handleSave}
               type="button"
-              style={getFontStyle("main")}
+              style={getFontStyle(localTheme, "main")}
             >
               Save
             </button>
@@ -303,16 +267,16 @@ const CustomColorThemePage = () => {
           <div className="h-full">
             <div
               className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]"
-              style={getFontStyle("main")}
+              style={getFontStyle(localTheme, "main")}
             >
-              <h2 className="text-lg font-medium" style={getFontStyle("main")}>
+              <h2 className="text-lg font-medium" style={getFontStyle(localTheme, "main")}>
                 Set Color Theme
               </h2>
               <button
                 className="text-primary"
                 type="button"
                 onClick={handleResetDefault}
-                style={getFontStyle("main")}
+                style={getFontStyle(localTheme, "main")}
               >
                 Reset to Default
               </button>
@@ -320,7 +284,7 @@ const CustomColorThemePage = () => {
             <div className="relative">
               <div
                 className="p-4 grid lg:grid-cols-3 grid-cols-1"
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <label
                   htmlFor="primaryColor"
@@ -336,7 +300,7 @@ const CustomColorThemePage = () => {
                     value={localTheme.primaryColor}
                     onChange={handleChange}
                     className="focus:outline-none w-full px-5 py-3 bg-grey rounded-full"
-                    style={getFontStyle("body1")}
+                    style={getFontStyle(localTheme, "body1")}
                   />
                   <input
                     id="primaryColorOpacity"
@@ -348,7 +312,7 @@ const CustomColorThemePage = () => {
                     placeholder="Opacity"
                     value={localTheme.primaryColorOpacity}
                     onChange={handleChange}
-                    style={getFontStyle("body1")}
+                    style={getFontStyle(localTheme, "body1")}
                   />
                   <div className="relative">
                     <button
@@ -359,7 +323,7 @@ const CustomColorThemePage = () => {
                           localTheme.primaryColor,
                           localTheme.primaryColorOpacity
                         ),
-                        ...getFontStyle("body1"),
+                        ...getFontStyle(localTheme, "body1"),
                       }}
                       onClick={() =>
                         setShowColorPalette(
@@ -388,7 +352,7 @@ const CustomColorThemePage = () => {
                             DEFAULT_THEME.primaryColorOpacity,
                         }))
                       }
-                      style={getFontStyle("body1")}
+                      style={getFontStyle(localTheme, "body1")}
                     >
                       <i
                         className="material-icons text-body"
@@ -407,7 +371,7 @@ const CustomColorThemePage = () => {
               </div>
               <div
                 className="p-4 grid lg:grid-cols-3 grid-cols-1"
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <label
                   htmlFor="secondaryColor"
@@ -423,7 +387,7 @@ const CustomColorThemePage = () => {
                     value={localTheme.secondaryColor}
                     onChange={handleChange}
                     className="focus:outline-none w-full px-5 py-3 bg-grey rounded-full"
-                    style={getFontStyle("body1")}
+                    style={getFontStyle(localTheme, "body1")}
                   />
                   <input
                     id="secondaryColorOpacity"
@@ -435,7 +399,7 @@ const CustomColorThemePage = () => {
                     placeholder="Opacity"
                     value={localTheme.secondaryColorOpacity}
                     onChange={handleChange}
-                    style={getFontStyle("body1")}
+                    style={getFontStyle(localTheme, "body1")}
                   />
                   <div className="relative">
                     <button
@@ -446,7 +410,7 @@ const CustomColorThemePage = () => {
                           localTheme.secondaryColor,
                           localTheme.secondaryColorOpacity
                         ),
-                        ...getFontStyle("body1"),
+                        ...getFontStyle(localTheme, "body1"),
                       }}
                       onClick={() =>
                         setShowColorPalette(
@@ -475,7 +439,7 @@ const CustomColorThemePage = () => {
                             DEFAULT_THEME.secondaryColorOpacity,
                         }))
                       }
-                      style={getFontStyle("body1")}
+                      style={getFontStyle(localTheme, "body1")}
                     >
                       <i
                         className="material-icons text-body"
@@ -494,7 +458,7 @@ const CustomColorThemePage = () => {
               </div>
               <div
                 className="p-4 grid lg:grid-cols-3 grid-cols-1"
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <label
                   htmlFor="tertiaryColor"
@@ -510,7 +474,7 @@ const CustomColorThemePage = () => {
                     value={localTheme.tertiaryColor}
                     onChange={handleChange}
                     className="focus:outline-none w-full px-5 py-3 bg-grey rounded-full"
-                    style={getFontStyle("body1")}
+                    style={getFontStyle(localTheme, "body1")}
                   />
                   <input
                     id="tertiaryColorOpacity"
@@ -522,7 +486,7 @@ const CustomColorThemePage = () => {
                     placeholder="Opacity"
                     value={localTheme.tertiaryColorOpacity}
                     onChange={handleChange}
-                    style={getFontStyle("body1")}
+                    style={getFontStyle(localTheme, "body1")}
                   />
                   <div className="relative">
                     <button
@@ -533,7 +497,7 @@ const CustomColorThemePage = () => {
                           localTheme.tertiaryColor,
                           localTheme.tertiaryColorOpacity
                         ),
-                        ...getFontStyle("body1"),
+                        ...getFontStyle(localTheme, "body1"),
                       }}
                       onClick={() =>
                         setShowColorPalette(
@@ -562,7 +526,7 @@ const CustomColorThemePage = () => {
                             DEFAULT_THEME.tertiaryColorOpacity,
                         }))
                       }
-                      style={getFontStyle("body1")}
+                      style={getFontStyle(localTheme, "body1")}
                     >
                       <i
                         className="material-icons text-body"
@@ -581,7 +545,7 @@ const CustomColorThemePage = () => {
               </div>
               <div
                 className="p-4 grid lg:grid-cols-3 grid-cols-1"
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <label
                   htmlFor="headingColor"
@@ -597,7 +561,7 @@ const CustomColorThemePage = () => {
                     value={localTheme.headingColor}
                     onChange={handleChange}
                     className="focus:outline-none w-full px-5 py-3 bg-grey rounded-full"
-                    style={getFontStyle("body1")}
+                    style={getFontStyle(localTheme, "body1")}
                   />
                   <input
                     id="headingColorOpacity"
@@ -609,7 +573,7 @@ const CustomColorThemePage = () => {
                     placeholder="Opacity"
                     value={localTheme.headingColorOpacity}
                     onChange={handleChange}
-                    style={getFontStyle("body1")}
+                    style={getFontStyle(localTheme, "body1")}
                   />
                   <div className="relative">
                     <button
@@ -620,7 +584,7 @@ const CustomColorThemePage = () => {
                           localTheme.headingColor,
                           localTheme.headingColorOpacity
                         ),
-                        ...getFontStyle("body1"),
+                        ...getFontStyle(localTheme, "body1"),
                       }}
                       onClick={() =>
                         setShowColorPalette(
@@ -649,7 +613,7 @@ const CustomColorThemePage = () => {
                             DEFAULT_THEME.headingColorOpacity,
                         }))
                       }
-                      style={getFontStyle("body1")}
+                      style={getFontStyle(localTheme, "body1")}
                     >
                       <i
                         className="material-icons text-body"
@@ -668,7 +632,7 @@ const CustomColorThemePage = () => {
               </div>
               <div
                 className="p-4 grid lg:grid-cols-3 grid-cols-1"
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <label
                   htmlFor="bodyTextColor"
@@ -684,7 +648,7 @@ const CustomColorThemePage = () => {
                     value={localTheme.bodyTextColor}
                     onChange={handleChange}
                     className="focus:outline-none w-full px-5 py-3 bg-grey rounded-full"
-                    style={getFontStyle("body1")}
+                    style={getFontStyle(localTheme, "body1")}
                   />
                   <input
                     id="bodyTextColorOpacity"
@@ -696,7 +660,7 @@ const CustomColorThemePage = () => {
                     placeholder="Opacity"
                     value={localTheme.bodyTextColorOpacity}
                     onChange={handleChange}
-                    style={getFontStyle("body1")}
+                    style={getFontStyle(localTheme, "body1")}
                   />
                   <div className="relative">
                     <button
@@ -707,7 +671,7 @@ const CustomColorThemePage = () => {
                           localTheme.bodyTextColor,
                           localTheme.bodyTextColorOpacity
                         ),
-                        ...getFontStyle("body1"),
+                        ...getFontStyle(localTheme, "body1"),
                       }}
                       onClick={() =>
                         setShowColorPalette(
@@ -736,7 +700,7 @@ const CustomColorThemePage = () => {
                             DEFAULT_THEME.bodyTextColorOpacity,
                         }))
                       }
-                      style={getFontStyle("body1")}
+                      style={getFontStyle(localTheme, "body1")}
                     >
                       <i
                         className="material-icons text-body"
@@ -755,7 +719,7 @@ const CustomColorThemePage = () => {
               </div>
               <div
                 className="p-4 grid lg:grid-cols-3 grid-cols-1"
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <label
                   htmlFor="borderColor"
@@ -771,7 +735,7 @@ const CustomColorThemePage = () => {
                     value={localTheme.borderColor}
                     onChange={handleChange}
                     className="focus:outline-none w-full px-5 py-3 bg-grey rounded-full"
-                    style={getFontStyle("body1")}
+                    style={getFontStyle(localTheme, "body1")}
                   />
                   <input
                     id="borderColorOpacity"
@@ -783,7 +747,7 @@ const CustomColorThemePage = () => {
                     placeholder="Opacity"
                     value={localTheme.borderColorOpacity}
                     onChange={handleChange}
-                    style={getFontStyle("body1")}
+                    style={getFontStyle(localTheme, "body1")}
                   />
                   <div className="relative">
                     <button
@@ -794,7 +758,7 @@ const CustomColorThemePage = () => {
                           localTheme.borderColor,
                           localTheme.borderColorOpacity
                         ),
-                        ...getFontStyle("body1"),
+                        ...getFontStyle(localTheme, "body1"),
                       }}
                       onClick={() =>
                         setShowColorPalette(
@@ -822,7 +786,7 @@ const CustomColorThemePage = () => {
                           borderColorOpacity: DEFAULT_THEME.borderColorOpacity,
                         }))
                       }
-                      style={getFontStyle("body1")}
+                      style={getFontStyle(localTheme, "body1")}
                     >
                       <i
                         className="material-icons text-body"
@@ -841,7 +805,7 @@ const CustomColorThemePage = () => {
               </div>
               <div
                 className="p-4 grid lg:grid-cols-3 grid-cols-1"
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <label
                   htmlFor="linkColor"
@@ -857,7 +821,7 @@ const CustomColorThemePage = () => {
                     value={localTheme.linkColor}
                     onChange={handleChange}
                     className="focus:outline-none w-full px-5 py-3 bg-grey rounded-full"
-                    style={getFontStyle("body1")}
+                    style={getFontStyle(localTheme, "body1")}
                   />
                   <input
                     id="linkColorOpacity"
@@ -869,7 +833,7 @@ const CustomColorThemePage = () => {
                     placeholder="Opacity"
                     value={localTheme.linkColorOpacity}
                     onChange={handleChange}
-                    style={getFontStyle("body1")}
+                    style={getFontStyle(localTheme, "body1")}
                   />
                   <div className="relative">
                     <button
@@ -880,7 +844,7 @@ const CustomColorThemePage = () => {
                           localTheme.linkColor,
                           localTheme.linkColorOpacity
                         ),
-                        ...getFontStyle("body1"),
+                        ...getFontStyle(localTheme, "body1"),
                       }}
                       onClick={() =>
                         setShowColorPalette(
@@ -906,7 +870,7 @@ const CustomColorThemePage = () => {
                           linkColorOpacity: DEFAULT_THEME.linkColorOpacity,
                         }))
                       }
-                      style={getFontStyle("body1")}
+                      style={getFontStyle(localTheme, "body1")}
                     >
                       <i
                         className="material-icons text-body"
@@ -929,9 +893,9 @@ const CustomColorThemePage = () => {
         <div className="bg-white rounded-[20px] shadow-lg mb-4">
           <div
             className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]"
-            style={getFontStyle("main")}
+            style={getFontStyle(localTheme, "main")}
           >
-            <h2 className="text-lg font-medium" style={getFontStyle("main")}>
+            <h2 className="text-lg font-medium" style={getFontStyle(localTheme, "main")}>
               Set Typography
             </h2>
             <button
@@ -954,15 +918,15 @@ const CustomColorThemePage = () => {
                   bodyText2FontSize: DEFAULT_THEME.bodyText2FontSize,
                 }))
               }
-              style={getFontStyle("main")}
+              style={getFontStyle(localTheme, "main")}
             >
               Reset to Default
             </button>
           </div>
-          <div className="p-4" style={getFontStyle("body1")}>
+          <div className="p-4" style={getFontStyle(localTheme, "body1")}>
             <label
               className="block text-nowrap my-auto mb-3"
-              style={getFontStyle("body1")}
+              style={getFontStyle(localTheme, "body1")}
             >
               Main Font:
             </label>
@@ -974,7 +938,7 @@ const CustomColorThemePage = () => {
                 onChange={(e) =>
                   handleTypographyChange("", "fontFamily", e.target.value)
                 }
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <option value="Poppins">Poppins</option>
                 <option value="Arial">Arial</option>
@@ -991,7 +955,7 @@ const CustomColorThemePage = () => {
                     Number(e.target.value)
                   )
                 }
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <option value={400}>Normal</option>
                 <option value={500}>Medium</option>
@@ -1005,7 +969,7 @@ const CustomColorThemePage = () => {
                 onChange={(e) =>
                   handleTypographyChange("", "fontSize", e.target.value)
                 }
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <option value="12px">12px</option>
                 <option value="14px">14px</option>
@@ -1018,7 +982,7 @@ const CustomColorThemePage = () => {
             </div>
             <label
               className="block text-nowrap my-auto mb-3"
-              style={getFontStyle("body1")}
+              style={getFontStyle(localTheme, "body1")}
             >
               Sub Heading:
             </label>
@@ -1034,7 +998,7 @@ const CustomColorThemePage = () => {
                     e.target.value
                   )
                 }
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <option value="Poppins">Poppins</option>
                 <option value="Arial">Arial</option>
@@ -1051,7 +1015,7 @@ const CustomColorThemePage = () => {
                     Number(e.target.value)
                   )
                 }
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <option value={400}>Normal</option>
                 <option value={500}>Medium</option>
@@ -1069,7 +1033,7 @@ const CustomColorThemePage = () => {
                     e.target.value
                   )
                 }
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <option value="12px">12px</option>
                 <option value="14px">14px</option>
@@ -1082,7 +1046,7 @@ const CustomColorThemePage = () => {
             </div>
             <label
               className="block text-nowrap my-auto mb-3"
-              style={getFontStyle("body1")}
+              style={getFontStyle(localTheme, "body1")}
             >
               Body Text 1:
             </label>
@@ -1098,7 +1062,7 @@ const CustomColorThemePage = () => {
                     e.target.value
                   )
                 }
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <option value="Poppins">Poppins</option>
                 <option value="Arial">Arial</option>
@@ -1115,7 +1079,7 @@ const CustomColorThemePage = () => {
                     Number(e.target.value)
                   )
                 }
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <option value={400}>Normal</option>
                 <option value={500}>Medium</option>
@@ -1133,7 +1097,7 @@ const CustomColorThemePage = () => {
                     e.target.value
                   )
                 }
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <option value="12px">12px</option>
                 <option value="14px">14px</option>
@@ -1146,7 +1110,7 @@ const CustomColorThemePage = () => {
             </div>
             <label
               className="block text-nowrap my-auto mb-3"
-              style={getFontStyle("body1")}
+              style={getFontStyle(localTheme, "body1")}
             >
               Body Text 2:
             </label>
@@ -1162,7 +1126,7 @@ const CustomColorThemePage = () => {
                     e.target.value
                   )
                 }
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <option value="Poppins">Poppins</option>
                 <option value="Arial">Arial</option>
@@ -1179,7 +1143,7 @@ const CustomColorThemePage = () => {
                     Number(e.target.value)
                   )
                 }
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <option value={400}>Normal</option>
                 <option value={500}>Medium</option>
@@ -1197,7 +1161,7 @@ const CustomColorThemePage = () => {
                     e.target.value
                   )
                 }
-                style={getFontStyle("body1")}
+                style={getFontStyle(localTheme, "body1")}
               >
                 <option value="12px">12px</option>
                 <option value="14px">14px</option>

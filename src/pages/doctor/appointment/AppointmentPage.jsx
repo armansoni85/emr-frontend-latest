@@ -26,7 +26,8 @@ import { createConsultation } from "@src/services/consultation.service";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getRoutePath } from "@src/utils/routeUtils";
-import { getFontTheme, getFontStyle } from "@src/utils/theme.js";
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 const AppointmentPage = () => {
   const { paginationMeta } = useSelector((state) => state.fetch);
@@ -37,29 +38,7 @@ const AppointmentPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showButtonAdd, setShowButtonAdd] = useState(false);
-  const [fontTheme, setFontTheme] = useState(getFontTheme());
-  useEffect(() => {
-    const reloadTheme = () => setFontTheme(getFontTheme());
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-  useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
+  const { theme } = useTheme();
 
   const [filter, setFilter] = useState({
     search: "",
@@ -282,8 +261,8 @@ const AppointmentPage = () => {
           }
           value={filter.search}
           onChange={handleChangeFilter}
-          style={getFontStyle(fontTheme, "body1")}
-          labelStyle={getFontStyle(fontTheme, "body1")}
+          style={getFontStyle(theme, "body1")}
+          labelStyle={getFontStyle(theme, "body1")}
         />
         <InputWithLabel
           labelOnTop={true}
@@ -294,19 +273,19 @@ const AppointmentPage = () => {
           inputClassName="!pe-4 !ps-4 !py-2"
           value={filter.date}
           onChange={handleChangeFilter}
-          style={getFontStyle(fontTheme, "body1")}
-          labelStyle={getFontStyle(fontTheme, "body1")}
+          style={getFontStyle(theme, "body1")}
+          labelStyle={getFontStyle(theme, "body1")}
         />
       </div>
 
       <div className="bg-white shadow-md rounded-2xl pb-4">
         <div
           className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b"
-          style={getFontStyle(fontTheme, "subHeading")}
+          style={getFontStyle(theme, "subHeading")}
         >
           <h2
             className="text-lg font-medium"
-            style={getFontStyle(fontTheme, "subHeading")}
+            style={getFontStyle(theme, "subHeading")}
           >
             All Appointments
           </h2>
@@ -314,7 +293,7 @@ const AppointmentPage = () => {
             {filteredAppointments.length == 0 && filter.search != "" && filter.date != "" && (
               <button
                 className="text-white bg-primary rounded-full text-lg flex px-4 "
-                style={getFontStyle(fontTheme, "body2")}
+                style={getFontStyle(theme, "body2")}
                 onClick={() => {
                   navigate("/doctor/appointments/add", {
                     state: {
@@ -329,7 +308,7 @@ const AppointmentPage = () => {
             )}
             <button
               className="text-primary rounded-full text-lg flex"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               Summary <i className="material-icons pt-1">expand_more</i>
             </button>
@@ -344,7 +323,7 @@ const AppointmentPage = () => {
             isLoading={isPending}
             theadChildren={
               <>
-                <tr style={getFontStyle(fontTheme, "body2")}>
+                <tr style={getFontStyle(theme, "body2")}>
                   <Th>Patient Name</Th>
                   <Th>Date of Birth</Th>
                   <Th>Mobile Number</Th>
@@ -358,7 +337,7 @@ const AppointmentPage = () => {
             rowCallback={(item, index) => {
               return (
                 <>
-                  <tr style={getFontStyle(fontTheme, "body1")}>
+                  <tr style={getFontStyle(theme, "body1")}>
                     <Td>
                       <div className="flex items-center cursor-pointer">
                         <CircleAvatar
@@ -370,7 +349,7 @@ const AppointmentPage = () => {
                           className="mr-3"
                         />
                         <div className="text-start">
-                          <p style={getFontStyle(fontTheme, "body1")}>
+                          <p style={getFontStyle(theme, "body1")}>
                             {!item?.patient?.first_name &&
                               !item?.patient?.last_name ? (
                               <span className="text-gray-400">
@@ -386,7 +365,7 @@ const AppointmentPage = () => {
                     </Td>
                     <Td>
                       {item?.patient?.dob ? (
-                        <span style={getFontStyle(fontTheme, "body2")}>
+                        <span style={getFontStyle(theme, "body2")}>
                           <Moment
                             date={item?.patient?.dob}
                             format="MMMM D, YYYY"
@@ -395,7 +374,7 @@ const AppointmentPage = () => {
                       ) : (
                         <span
                           className="text-gray-400"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           Not provided
                         </span>
@@ -405,14 +384,14 @@ const AppointmentPage = () => {
                       {item?.patient?.phone_number ? (
                         <span
                           className="font-mono text-sm"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           {item?.patient?.phone_number}
                         </span>
                       ) : (
                         <span
                           className="text-gray-400"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           Not provided
                         </span>
@@ -420,14 +399,14 @@ const AppointmentPage = () => {
                     </Td>
                     <Td>
                       <Badge color="info">
-                        <span style={getFontStyle(fontTheme, "body2")}>
+                        <span style={getFontStyle(theme, "body2")}>
                           {item?.diagnosis || "Not provided"}
                         </span>
                       </Badge>
                     </Td>
                     <Td>
                       {item.appointment_datetime ? (
-                        <span style={getFontStyle(fontTheme, "body2")}>
+                        <span style={getFontStyle(theme, "body2")}>
                           <Moment
                             date={item?.appointment_datetime}
                             format="MMMM D, YYYY - h:mmA"
@@ -436,7 +415,7 @@ const AppointmentPage = () => {
                       ) : (
                         <span
                           className="text-gray-400"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           Not provided
                         </span>
@@ -444,13 +423,13 @@ const AppointmentPage = () => {
                     </Td>
                     <Td>
                       {item.appointment_status ? (
-                        <span style={getFontStyle(fontTheme, "body2")}>
+                        <span style={getFontStyle(theme, "body2")}>
                           <StatusText status={item.appointment_status} />
                         </span>
                       ) : (
                         <span
                           className="text-gray-400"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           Not provided
                         </span>
@@ -470,7 +449,7 @@ const AppointmentPage = () => {
                           disabled={
                             !item?.appointment_datetime || !item?.patient
                           }
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           Start
                         </Button>
@@ -532,7 +511,7 @@ const AppointmentPage = () => {
           {/* Data Summary */}
           <div
             className="text-sm text-gray-600 order-2 sm:order-1"
-            style={getFontStyle(fontTheme, "body2")}
+            style={getFontStyle(theme, "body2")}
           >
             Showing{" "}
             <span className="font-semibold text-gray-900">
@@ -566,7 +545,7 @@ const AppointmentPage = () => {
                 ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
                 : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               <i className="material-icons text-sm">chevron_left</i>
               <span className="hidden sm:inline">Previous</span>
@@ -590,7 +569,7 @@ const AppointmentPage = () => {
                       <button
                         onClick={() => handlePageChange(1)}
                         className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         1
                       </button>
@@ -624,7 +603,7 @@ const AppointmentPage = () => {
                               ? "bg-primary text-white shadow-sm"
                               : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
                               }`}
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             {pageNumber}
                           </button>
@@ -644,7 +623,7 @@ const AppointmentPage = () => {
                         <button
                           onClick={() => handlePageChange(totalPages)}
                           className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200"
-                          style={getFontStyle(fontTheme, "body2")}
+                          style={getFontStyle(theme, "body2")}
                         >
                           {totalPages}
                         </button>
@@ -662,7 +641,7 @@ const AppointmentPage = () => {
                 ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-sm"
                 : "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               <span className="hidden sm:inline">Next</span>
               <i className="material-icons text-sm">chevron_right</i>
@@ -672,7 +651,7 @@ const AppointmentPage = () => {
           {/* Page Size Selector */}
           <div
             className="flex items-center gap-2 text-sm text-gray-600 order-3"
-            style={getFontStyle(fontTheme, "body2")}
+            style={getFontStyle(theme, "body2")}
           >
             <span>Show:</span>
             <select
@@ -680,7 +659,7 @@ const AppointmentPage = () => {
               onChange={handlePageSizeChange}
               disabled={isFetching}
               className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               <option value={5}>5</option>
               <option value={10}>10</option>
@@ -707,13 +686,13 @@ const AppointmentPage = () => {
           </div>
           <h3
             className="text-lg font-medium text-gray-900 mb-2"
-            style={getFontStyle(fontTheme, "subHeading")}
+            style={getFontStyle(theme, "subHeading")}
           >
             No appointments found
           </h3>
           <p
             className="text-gray-500 mb-6"
-            style={getFontStyle(fontTheme, "body2")}
+            style={getFontStyle(theme, "body2")}
           >
             {filter.date || filter.search
               ? "Try adjusting your filters to see more results."
@@ -724,7 +703,7 @@ const AppointmentPage = () => {
               color="primary"
               onClick={handleClearFilter}
               isOutline
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               Clear All Filters
             </Button>

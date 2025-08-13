@@ -14,9 +14,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getRoutePath } from "@src/utils/routeUtils";
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 const PatientAddPage = () => {
   const { patientId } = useParams();
+  const { theme } = useTheme();
   const [form, setForm] = useState({
     gender: "male",
     country: "IN",
@@ -82,72 +85,6 @@ const PatientAddPage = () => {
 
     return foundCountry ? foundCountry.value : countryName;
   }, []);
-
-  const THEME_STORAGE_KEY = "customColorTheme";
-  const getFontTheme = () => {
-    try {
-      const theme = localStorage.getItem(THEME_STORAGE_KEY);
-      return theme ? JSON.parse(theme) : {};
-    } catch {
-      return {};
-    }
-  };
-  const getFontStyle = (fontTheme, type = "main") => {
-    if (!fontTheme) return {};
-    if (type === "subHeading") {
-      return {
-        fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-        fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-        fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-      };
-    }
-    if (type === "body1") {
-      return {
-        fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-        fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-        fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-      };
-    }
-    if (type === "body2") {
-      return {
-        fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-        fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-        fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-      };
-    }
-    // main/heading
-    return {
-      fontFamily: fontTheme.fontFamily,
-      fontWeight: fontTheme.fontWeight,
-      fontSize: fontTheme.fontSize,
-    };
-  };
-
-  const [fontTheme, setFontTheme] = useState(getFontTheme());
-
-  useEffect(() => {
-    const reloadTheme = () => setFontTheme(getFontTheme());
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
 
   useEffect(() => {
     if (patientData?.success) {
@@ -366,34 +303,6 @@ const PatientAddPage = () => {
     navigate(getRoutePath("doctor.patients.list"));
   };
 
-  const [customTheme, setCustomTheme] = useState(() => {
-    try {
-      const theme = localStorage.getItem("customColorTheme");
-      return theme ? JSON.parse(theme) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  useEffect(() => {
-    const reloadTheme = () => {
-      try {
-        const theme = localStorage.getItem("customColorTheme");
-        setCustomTheme(theme ? JSON.parse(theme) : {});
-      } catch {
-        setCustomTheme({});
-      }
-    };
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === "customColorTheme") reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-
   if (isEditMode && isLoadingPatient) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -403,11 +312,11 @@ const PatientAddPage = () => {
   }
 
   const getGenderButtonStyle = (selected) => ({
-    backgroundColor: selected ? (customTheme.primary ?? "#002952") : "#F3F4F6", // Changed primaryColor to primary
-    color: selected ? "#fff" : (customTheme.primary ?? "#002952") || "#002952", // Changed primaryColor to primary
-    border: `1.5px solid ${selected ? (customTheme.primary ?? "#002952") : "transparent"
+    backgroundColor: selected ? (theme.primary ?? "#002952") : "#F3F4F6", // Changed primaryColor to primary
+    color: selected ? "#fff" : (theme.primary ?? "#002952") || "#002952", // Changed primaryColor to primary
+    border: `1.5px solid ${selected ? (theme.primary ?? "#002952") : "transparent"
       }`, // Changed primaryColor to primary
-    ...getFontStyle(fontTheme, "body1"),
+    ...getFontStyle(theme, "body1"),
     transition: "all 0.15s",
     cursor: "pointer",
   });
@@ -421,7 +330,7 @@ const PatientAddPage = () => {
           isOutline={true}
           className="px-8"
           onClick={handleCancel}
-          style={getFontStyle(fontTheme, "body1")}
+          style={getFontStyle(theme, "body1")}
         >
           Cancel
         </Button>
@@ -430,7 +339,7 @@ const PatientAddPage = () => {
           className="px-8"
           onClick={handleOnSubmit}
           disabled={isSubmitted || updatePatientMutation.isPending}
-          style={getFontStyle(fontTheme, "body1")}
+          style={getFontStyle(theme, "body1")}
         >
           {isSubmitted || updatePatientMutation.isPending ? (
             <SpinnerComponent color="white" className="mr-2" />
@@ -444,11 +353,11 @@ const PatientAddPage = () => {
       <div className="bg-white shadow-md rounded-2xl pb-4">
         <div
           className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b"
-          style={getFontStyle(fontTheme, "subHeading")}
+          style={getFontStyle(theme, "subHeading")}
         >
           <h2
             className="text-lg font-medium"
-            style={getFontStyle(fontTheme, "subHeading")}
+            style={getFontStyle(theme, "subHeading")}
           >
             {isEditMode ? "Edit Patient" : "Add New Patient"}
           </h2>
@@ -461,8 +370,8 @@ const PatientAddPage = () => {
             value={form.patientName || ""}
             onChange={(e) => handleFormChange("patientName", e, setForm)}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
           <InputWithLabel
             label={"Mobile Number:"}
@@ -471,8 +380,8 @@ const PatientAddPage = () => {
             value={form.mobileNumber || ""}
             onChange={(e) => handleFormChange("mobileNumber", e, setForm)}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
           <InputWithLabel
             label={"Email ID:"}
@@ -481,8 +390,8 @@ const PatientAddPage = () => {
             value={form.email || ""}
             onChange={(e) => handleFormChange("email", e, setForm)}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
           <InputWithLabel
             label={"Date of Birth:"}
@@ -491,8 +400,8 @@ const PatientAddPage = () => {
             value={form.dob || ""}
             onChange={(e) => handleFormChange("dob", e, setForm)}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
 
           {/* Country Searchable Select */}
@@ -508,17 +417,17 @@ const PatientAddPage = () => {
             keyLabel={(option) => option.text}
             wrapperClassName="p-4 z-30"
             placeholder="Search and select country"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
 
           <div
             className="p-4 grid lg:grid-cols-3 grid-cols-1"
-            style={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
           >
             <label
               className="block text-nowrap my-auto"
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             >
               Gender:
             </label>
@@ -574,8 +483,8 @@ const PatientAddPage = () => {
             value={form.bloodGroup || ""}
             onChange={(e) => handleFormChange("bloodGroup", e, setForm)}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           >
             <option value="">Select Blood Group</option>
             <option value="A+">A+</option>
@@ -589,12 +498,12 @@ const PatientAddPage = () => {
           </InputWithLabel>
           <div
             className="p-4 grid lg:grid-cols-3 grid-cols-1"
-            style={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
           >
             <label
               htmlFor="heightFeet"
               className="block text-nowrap my-auto"
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             >
               Height:
             </label>
@@ -608,11 +517,11 @@ const PatientAddPage = () => {
                   value={form.heightFeet || ""}
                   onChange={(e) => handleFormChange("heightFeet", e, setForm)}
                   className="focus:outline-none w-full px-5 py-3 border rounded-full"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 />
                 <span
                   className="flex items-center pr-3 text-muted"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 >
                   Feet
                 </span>
@@ -626,11 +535,11 @@ const PatientAddPage = () => {
                   value={form.heightInches || ""}
                   onChange={(e) => handleFormChange("heightInches", e, setForm)}
                   className="focus:outline-none w-full px-5 py-3 border rounded-full"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 />
                 <span
                   className="flex items-center pr-3 text-muted"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 >
                   Inches
                 </span>
@@ -639,12 +548,12 @@ const PatientAddPage = () => {
           </div>
           <div
             className="p-4 grid lg:grid-cols-3 grid-cols-1"
-            style={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
           >
             <label
               htmlFor="weightFeet"
               className="block text-nowrap my-auto"
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             >
               Weight:
             </label>
@@ -658,11 +567,11 @@ const PatientAddPage = () => {
                   value={form.weightFeet || ""}
                   onChange={(e) => handleFormChange("weightFeet", e, setForm)}
                   className="focus:outline-none w-full px-5 py-3 border rounded-full"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 />
                 <span
                   className="flex items-center pr-3 text-muted"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 >
                   Kilo
                 </span>
@@ -676,11 +585,11 @@ const PatientAddPage = () => {
                   value={form.weightInches || ""}
                   onChange={(e) => handleFormChange("weightInches", e, setForm)}
                   className="focus:outline-none w-full px-5 py-3 border rounded-full"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 />
                 <span
                   className="flex items-center pr-3 text-muted"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 >
                   Grams
                 </span>
@@ -694,17 +603,17 @@ const PatientAddPage = () => {
             value={form.diagnosis || ""}
             onChange={(e) => handleFormChange("diagnosis", e, setForm)}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
 
           <div
             className="p-4 grid lg:grid-cols-3 grid-cols-1"
-            style={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
           >
             <label
               className="block text-nowrap my-auto"
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             >
               Doctor Name:
             </label>
@@ -714,7 +623,7 @@ const PatientAddPage = () => {
                 value={doctorName}
                 readOnly
                 className="focus:outline-none w-full px-5 py-3 border rounded-full bg-gray-100 text-gray-600"
-                style={getFontStyle(fontTheme, "body2")}
+                style={getFontStyle(theme, "body2")}
               />
             </div>
           </div>
@@ -726,8 +635,8 @@ const PatientAddPage = () => {
             value={form.patientAddress || ""}
             onChange={(e) => handleFormChange("patientAddress", e, setForm)}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
           {!isEditMode && (
             <div>
@@ -738,8 +647,8 @@ const PatientAddPage = () => {
                 value={form.password || ""}
                 onChange={(e) => handleFormChange("password", e, setForm)}
                 wrapperClassName="p-4"
-                style={getFontStyle(fontTheme, "body1")}
-                labelStyle={getFontStyle(fontTheme, "body1")}
+                style={getFontStyle(theme, "body1")}
+                labelStyle={getFontStyle(theme, "body1")}
               />
               <InputWithLabel
                 label={"Confirm Password:"}
@@ -750,8 +659,8 @@ const PatientAddPage = () => {
                   handleFormChange("confirmPassword", e, setForm)
                 }
                 wrapperClassName="p-4"
-                style={getFontStyle(fontTheme, "body1")}
-                labelStyle={getFontStyle(fontTheme, "body1")}
+                style={getFontStyle(theme, "body1")}
+                labelStyle={getFontStyle(theme, "body1")}
               />
             </div>
           )}

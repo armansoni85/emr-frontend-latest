@@ -11,7 +11,8 @@ import { getUsers } from "@src/services/userService";
 import { handleFormChange } from "@src/utils/handleForm";
 import { toast } from "react-toastify";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { getFontTheme, getFontStyle } from "@src/utils/theme";
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 const AppointmentAddPage = () => {
 
@@ -25,6 +26,7 @@ const AppointmentAddPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useSelector((state) => state.auth);
+  const { theme } = useTheme();
 
   const [form, setForm] = useState({
     patient: "",
@@ -36,29 +38,6 @@ const AppointmentAddPage = () => {
     diagnosis: "",
     reasonOfVisit: "",
   });
-  const [fontTheme, setFontTheme] = useState(getFontTheme());
-  useEffect(() => {
-    const reloadTheme = () => setFontTheme(getFontTheme());
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-  useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
 
   // Fetch patients on component mount
   useEffect(() => {
@@ -214,7 +193,7 @@ const AppointmentAddPage = () => {
           isOutline={true}
           className="px-8"
           onClick={() => isSubmitting && dispatch({ type: "SUBMISSION/RESET" })}
-          style={getFontStyle(fontTheme, "body2")}
+          style={getFontStyle(theme, "body2")}
         >
           Cancel
         </Button>
@@ -222,7 +201,7 @@ const AppointmentAddPage = () => {
           color="primary"
           className="px-8"
           onClick={handleOnSubmit}
-          style={getFontStyle(fontTheme, "body2")}
+          style={getFontStyle(theme, "body2")}
         >
           {isSubmitting ? (
             <SpinnerComponent color="white" className="mr-2" />
@@ -236,7 +215,7 @@ const AppointmentAddPage = () => {
         <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
           <h2
             className="text-lg font-medium"
-            style={getFontStyle(fontTheme, "subHeading")}
+            style={getFontStyle(theme, "subHeading")}
           >
             Schedule New Appointment
           </h2>
@@ -258,8 +237,8 @@ const AppointmentAddPage = () => {
             }
             wrapperClassName="p-4 z-20"
             disabled={isLoadingPatientDetail}
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
 
           <InputWithLabel
@@ -271,8 +250,8 @@ const AppointmentAddPage = () => {
             wrapperClassName="p-4"
             disabled={false}
             className=""
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
 
           <InputWithLabel
@@ -285,8 +264,8 @@ const AppointmentAddPage = () => {
             wrapperClassName="p-4"
             disabled={false}
             className=""
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
 
           <InputWithLabel
@@ -299,8 +278,8 @@ const AppointmentAddPage = () => {
             placeholder="Enter date of birth"
             disabled={false}
             className=""
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
 
           <InputWithLabel
@@ -312,8 +291,8 @@ const AppointmentAddPage = () => {
             wrapperClassName="p-4"
             required
             min={new Date().toISOString().split("T")[0]}
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
 
           <InputWithLabel
@@ -323,8 +302,8 @@ const AppointmentAddPage = () => {
             value={form.time || ""}
             onChange={(e) => handleFormChange("time", e, setForm)}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
 
           <InputWithLabel
@@ -334,8 +313,8 @@ const AppointmentAddPage = () => {
             value={form.diagnosis || ""}
             onChange={(e) => handleFormChange("diagnosis", e, setForm)}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           >
             <option value="Acquired">Acquired</option>
             <option value="Acute">Acute</option>
@@ -356,8 +335,8 @@ const AppointmentAddPage = () => {
             value={form.reasonOfVisit || ""}
             onChange={(e) => handleFormChange("reasonOfVisit", e, setForm)}
             wrapperClassName="p-4"
-            style={getFontStyle(fontTheme, "body1")}
-            labelStyle={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
+            labelStyle={getFontStyle(theme, "body1")}
           />
         </div>
       </div>
@@ -366,7 +345,7 @@ const AppointmentAddPage = () => {
       {patientsLoading && (
         <div
           className="mt-4 p-4 bg-gray-100 rounded-lg text-center"
-          style={getFontStyle(fontTheme, "body2")}
+          style={getFontStyle(theme, "body2")}
         >
           <SpinnerComponent className="mr-2" />
           Loading patients...

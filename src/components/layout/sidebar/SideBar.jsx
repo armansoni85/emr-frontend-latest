@@ -6,10 +6,11 @@ import {
 } from "../../../redux/reducers/sidebarReducer";
 import { useDispatch, useSelector } from "react-redux";
 import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 import { EachLoop } from "../../../utils/EachLoop";
-import { useEffect, useState } from "react";
-import { getFontTheme, getFontStyle } from "../../../utils/theme.js";
+import { useEffect } from "react";
+
 
 const SideBar = () => {
   const { isSidebarOpen, activeMenu, activeSubMenu, menus } = useSelector(
@@ -18,7 +19,7 @@ const SideBar = () => {
 
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
 
   const location = useLocation();
   const { pathname } = location;
@@ -90,31 +91,6 @@ const SideBar = () => {
     };
   }, [dispatch]);
 
-
-  const [fontTheme, setFontTheme] = useState(getFontTheme());
-  useEffect(() => {
-    const reloadTheme = () => setFontTheme(getFontTheme());
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-  useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = `${fontTheme.fontFamily || "inherit"} !important`;
-    document.body.style.fontWeight = `${fontTheme.fontWeight || 400} !important`;
-    document.body.style.fontSize = `${fontTheme.fontSize || "16px"} !important`;
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
-
   const iconType = (type, icon, isChild = false) => {
     switch (type) {
       case "image":
@@ -141,14 +117,14 @@ const SideBar = () => {
       style={{
         backgroundColor: theme.primaryColor,
         color: "var(--body-text-color)",
-        ...getFontStyle(fontTheme, "body1")
+        ...getFontStyle(theme, "body1")
       }}
     >
       <div
         className="flex items-center justify-center mb-6 bg-white text-primary rounded-xl h-24"
         style={{
           color: "var(--primary-color)",
-          ...getFontStyle(fontTheme, "main")
+          ...getFontStyle(theme, "main")
         }}
       >
         <img src="/assets/images/LogoIcon.png" alt="Logo" className="mr-3" />
@@ -157,7 +133,7 @@ const SideBar = () => {
             }`}
           style={{
             color: "var(--primary-color)",
-            ...getFontStyle(fontTheme, "main")
+            ...getFontStyle(theme, "main")
           }}
         >
           MEDAIPRO
@@ -172,7 +148,7 @@ const SideBar = () => {
       </div>
       <ul
         style={{
-          ...getFontStyle(fontTheme, "main")
+          ...getFontStyle(theme, "main")
         }}
       >
         <EachLoop
@@ -181,7 +157,7 @@ const SideBar = () => {
             return (
               <>
                 <li className="text-white" style={{
-                  ...getFontStyle(fontTheme, "main")
+                  ...getFontStyle(theme, "main")
                 }}>
                   {item.children ? (
                     <Link
@@ -198,7 +174,7 @@ const SideBar = () => {
                         className={`ml-2 sidebar-text text-white ${isSidebarOpen ? "" : "hide-text"
                           }`}
                         style={{
-                          ...getFontStyle(fontTheme, "main")
+                          ...getFontStyle(theme, "main")
                         }}
                       >
                         {item.text} {item.childState}
@@ -224,7 +200,7 @@ const SideBar = () => {
                         className={`ml-2 sidebar-text ${isSidebarOpen ? "" : "hide-text"
                           }`}
                         style={{
-                          ...getFontStyle(fontTheme, "main")
+                          ...getFontStyle(theme, "main")
                         }}
                       >
                         {item.text}

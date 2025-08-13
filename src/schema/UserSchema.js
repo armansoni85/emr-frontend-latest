@@ -1,21 +1,21 @@
 import { z } from "zod";
 
 export const UpdateUserSchema = z.object({
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
-    gender: z.enum(["male", "female", "other"]).default("male"),
-    dob: z.string().min(1, "Date of birth is required"), // You can use z.date() if you want to validate as a Date object
-    email: z.string().email("Invalid email address"),
-    country: z.string().min(1, "Country is required"),
-    residentalAddress: z.string().optional(),
-    mobileNumber: z.string().optional(),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  gender: z.enum(["male", "female", "other"]).default("male"),
+  dob: z.string().min(1, "Date of birth is required"), // You can use z.date() if you want to validate as a Date object
+  email: z.string().email("Invalid email address"),
+  country: z.string().min(1, "Country is required"),
+  residentalAddress: z.string().optional(),
+  phone_number: z.string().optional(),
 });
 
 export const AddPatient = z
   .object({
     patientName: z.string().min(1, "Patient Name is required"),
     email: z.string().email("Invalid email address"),
-    mobileNumber: z.string().min(10, "Mobile number must be at least 10 digits"),
+    phone_number: z.string().min(10, "Mobile number must be at least 10 digits"),
     dob: z.date({ required_error: "Date of birth is required" }),
     gender: z.enum(["male", "female", "other"], { required_error: "Gender is required" }),
     doctor: z.string().min(1, "Doctor is required"),

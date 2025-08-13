@@ -12,48 +12,11 @@ import Input from "@src/components/form/Input";
 import { useFormik } from "formik";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-
-const THEME_STORAGE_KEY = "customColorTheme";
-const getFontTheme = () => {
-  try {
-    const theme = localStorage.getItem(THEME_STORAGE_KEY);
-    return theme ? JSON.parse(theme) : {};
-  } catch {
-    return {};
-  }
-};
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-    };
-  }
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-  };
-};
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 const PatientNotesPage = () => {
-  const [fontTheme, setFontTheme] = React.useState(getFontTheme());
+  const { theme } = useTheme();
   const [page, setPage] = React.useState(1);
 
   const { patientId } = useParams();
@@ -151,7 +114,7 @@ const PatientNotesPage = () => {
           } else {
             toast.error(
               error.response?.data?.message ||
-                `Failed to ${isEdit ? "update" : "create"} note`
+              `Failed to ${isEdit ? "update" : "create"} note`
             );
           }
         }
@@ -169,7 +132,7 @@ const PatientNotesPage = () => {
             <label
               htmlFor="subjective"
               className="block text-sm font-medium text-gray-700"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               Subjective
             </label>
@@ -182,14 +145,14 @@ const PatientNotesPage = () => {
               value={formik.values.subjective}
               placeholder="Enter Subjective"
               required
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             />
           </div>
           <div>
             <label
               htmlFor="cc"
               className="block text-sm font-medium text-gray-700"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               Chief Complaint (CC)
             </label>
@@ -200,14 +163,14 @@ const PatientNotesPage = () => {
               value={formik.values.cc}
               placeholder="Enter Chief Complaint (CC)"
               required
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             />
           </div>
           <div>
             <label
               htmlFor="allergies"
               className="block text-sm font-medium text-gray-700"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               Allergies
             </label>
@@ -219,14 +182,14 @@ const PatientNotesPage = () => {
               }
               value={formik.values.allergies}
               placeholder="Enter Allergies"
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             />
           </div>
           <div>
             <label
               htmlFor="vitals"
               className="block text-sm font-medium text-gray-700"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               Vitals
             </label>
@@ -237,14 +200,14 @@ const PatientNotesPage = () => {
               value={formik.values.vitals}
               placeholder="Enter Vitals"
               required
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             />
           </div>
           <div>
             <label
               htmlFor="plan"
               className="block text-sm font-medium text-gray-700"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               Plan
             </label>
@@ -255,7 +218,7 @@ const PatientNotesPage = () => {
               value={formik.values.plan}
               placeholder="Enter Plan"
               required
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             />
           </div>
           <div className="flex justify-end">
@@ -268,14 +231,14 @@ const PatientNotesPage = () => {
                   )
                 }
                 className="bg-danger text-white px-4 py-2 rounded-full"
-                style={getFontStyle(fontTheme, "body2")}
+                style={getFontStyle(theme, "body2")}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 className="bg-primary text-white px-4 py-2 rounded-full hover:bg-opacity-90 transition-all duration-150"
-                style={getFontStyle(fontTheme, "body2")}
+                style={getFontStyle(theme, "body2")}
               >
                 {isEdit ? "Update" : "Save"}
               </button>
@@ -286,34 +249,10 @@ const PatientNotesPage = () => {
     );
   };
 
-  React.useEffect(() => {
-    const reloadTheme = () => setFontTheme(getFontTheme());
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-
-  React.useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
-
   if (!patientId) {
     return (
       <div className="bg-white shadow-md rounded-2xl p-8 text-center">
-        <p className="text-red-500" style={getFontStyle(fontTheme, "body1")}>
+        <p className="text-red-500" style={getFontStyle(theme, "body1")}>
           Patient ID not found. Please check the URL.
         </p>
       </div>
@@ -324,11 +263,11 @@ const PatientNotesPage = () => {
     <div className="bg-white shadow-md rounded-2xl pb-4">
       <div
         className="flex justify-between p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4] shadow shadow-b"
-        style={getFontStyle(fontTheme, "subHeading")}
+        style={getFontStyle(theme, "subHeading")}
       >
         <h2
           className="text-lg font-medium"
-          style={getFontStyle(fontTheme, "subHeading")}
+          style={getFontStyle(theme, "subHeading")}
         >
           All Notes
         </h2>
@@ -336,7 +275,7 @@ const PatientNotesPage = () => {
           <button
             className="bg-primary text-white rounded-full text-nowrap px-3 py-2"
             type="button"
-            style={getFontStyle(fontTheme, "body2")}
+            style={getFontStyle(theme, "body2")}
             onClick={() => handleOpenModal()}
           >
             + Add Notes
@@ -347,7 +286,7 @@ const PatientNotesPage = () => {
       {isLoading && (
         <div className="p-8 text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <p className="mt-2" style={getFontStyle(fontTheme, "body1")}>
+          <p className="mt-2" style={getFontStyle(theme, "body1")}>
             Loading notes...
           </p>
         </div>
@@ -355,13 +294,13 @@ const PatientNotesPage = () => {
 
       {isError && (
         <div className="p-4 text-center">
-          <p className="text-red-500" style={getFontStyle(fontTheme, "body1")}>
+          <p className="text-red-500" style={getFontStyle(theme, "body1")}>
             {error?.message || "Failed to fetch notes"}
           </p>
           <button
             className="mt-2 bg-primary text-white px-4 py-2 rounded"
             onClick={() => refetch()}
-            style={getFontStyle(fontTheme, "body2")}
+            style={getFontStyle(theme, "body2")}
           >
             Retry
           </button>
@@ -372,7 +311,7 @@ const PatientNotesPage = () => {
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white overflow-x-auto text-nowrap">
             <thead>
-              <tr style={getFontStyle(fontTheme, "body2")}>
+              <tr style={getFontStyle(theme, "body2")}>
                 <th className="py-2 px-4 border-b text-start font-medium">
                   Subjective{" "}
                   <i className="material-icons align-middle">arrow_drop_down</i>
@@ -399,7 +338,7 @@ const PatientNotesPage = () => {
             </thead>
             <tbody
               className="text-body"
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             >
               {!data?.notes?.length ? (
                 <tr>
@@ -416,12 +355,11 @@ const PatientNotesPage = () => {
                     <td className="py-2 px-4 border-b">{note.cc || "N/A"}</td>
                     <td className="py-2 px-4 border-b">
                       <span
-                        className={`px-2 py-1 border rounded-full ${
-                          note.allergies === "None"
+                        className={`px-2 py-1 border rounded-full ${note.allergies === "None"
                             ? "border-info text-info"
                             : "border-danger text-danger"
-                        }`}
-                        style={getFontStyle(fontTheme, "body2")}
+                          }`}
+                        style={getFontStyle(theme, "body2")}
                       >
                         {note.allergies || "None"}
                       </span>
@@ -431,14 +369,13 @@ const PatientNotesPage = () => {
                     </td>
                     <td className="py-2 px-4 border-b">
                       <span
-                        className={`${
-                          note.plan === "Done"
+                        className={`${note.plan === "Done"
                             ? "text-success"
                             : note.plan === "Rejected"
-                            ? "text-danger"
-                            : "text-info"
-                        }`}
-                        style={getFontStyle(fontTheme, "body2")}
+                              ? "text-danger"
+                              : "text-info"
+                          }`}
+                        style={getFontStyle(theme, "body2")}
                       >
                         {note.plan || "In Progress"}
                       </span>
@@ -452,7 +389,7 @@ const PatientNotesPage = () => {
                       <button
                         className="text-blue-500 hover:underline mr-2"
                         type="button"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                         onClick={() => handleOpenModal(note)}
                       >
                         Edit
@@ -460,7 +397,7 @@ const PatientNotesPage = () => {
                       <button
                         className="text-red-500 hover:underline"
                         type="button"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                         onClick={() => handleDeleteNote(note.id)}
                       >
                         Delete
@@ -476,12 +413,12 @@ const PatientNotesPage = () => {
             <div className="flex justify-end items-center mt-4 mx-4">
               <div
                 className="space-x-1"
-                style={getFontStyle(fontTheme, "body2")}
+                style={getFontStyle(theme, "body2")}
               >
                 <span>Page</span>
                 <button
                   className="px-4 border border-muted rounded-full text-muted hover:bg-muted hover:text-white transition-all duration-150"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                   onClick={() => handlePageChange(page - 1)}
                   disabled={page <= 1}
                 >
@@ -491,7 +428,7 @@ const PatientNotesPage = () => {
                 {page < data.pagination.totalPages && (
                   <button
                     className="px-4 border border-muted rounded-full text-muted hover:bg-muted hover:text-white transition-all duration-150"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle(theme, "body2")}
                     onClick={() => handlePageChange(page + 1)}
                   >
                     Next

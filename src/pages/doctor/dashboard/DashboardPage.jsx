@@ -9,48 +9,7 @@ import {
   getPatientStatistics,
 } from "@src/services/patientService";
 import { getAppointments } from "@src/services/appointmentService";
-
-// --- Typography helpers ---
-const THEME_STORAGE_KEY = "customColorTheme";
-const getFontTheme = () => {
-  try {
-    const theme = localStorage.getItem(THEME_STORAGE_KEY);
-    return theme ? JSON.parse(theme) : {};
-  } catch {
-    return {};
-  }
-};
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-    };
-  }
-  // main/heading
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-  };
-};
-// --- End typography helpers ---
+import { getFontStyle } from "@src/utils/theme";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -58,37 +17,7 @@ const DashboardPage = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
 
-  // --- Font theme state from localStorage ---
-  const [fontTheme, setFontTheme] = useState(getFontTheme());
 
-  // Listen for theme changes
-  useEffect(() => {
-    const reloadTheme = () => {
-      setFontTheme(getFontTheme());
-    };
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-
-  // Auto-apply font customization to body
-  useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
-  // --- End font theme state ---
 
   const [selectedPeriod, setSelectedPeriod] = useState("monthly");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -534,12 +463,12 @@ const DashboardPage = () => {
         {/* Total Patients */}
         <div
           className="p-4 rounded-lg bg-gradient-to-r from-orange-400 to-red-500 text-white shadow-md flex flex-col justify-between"
-          style={getFontStyle(fontTheme, "main")}
+          style={getFontStyle(theme)}
         >
           <div>
             <p
               className="text-lg font-semibold font-dashboard"
-              style={getFontStyle(fontTheme, "subHeading")}
+              style={getFontStyle(theme, "subHeading")}
             >
               Total Patients
             </p>
@@ -550,13 +479,13 @@ const DashboardPage = () => {
           <div className="flex flex-col items-center mt-auto">
             <p
               className="font-dashboard-number text-4xl font-bold"
-              style={getFontStyle(fontTheme, "main")}
+              style={getFontStyle(theme)}
             >
               {patientStatistics.total_patients}
             </p>
             <p
               className="font-dashboard-trend text-sm mt-2"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               {patientStatistics.difference_from_last_month}{" "}
               {patientStatistics.is_increase ? "↑" : "↓"} vs Last Month
@@ -566,12 +495,12 @@ const DashboardPage = () => {
         {/* New Patients */}
         <div
           className="p-4 rounded-lg bg-gradient-to-r from-blue-400 to-blue-600 text-white shadow-md flex flex-col justify-between"
-          style={getFontStyle(fontTheme, "main")}
+          style={getFontStyle(theme)}
         >
           <div>
             <p
               className="text-lg font-semibold font-dashboard"
-              style={getFontStyle(fontTheme, "subHeading")}
+              style={getFontStyle(theme, "subHeading")}
             >
               New Patients
             </p>
@@ -582,15 +511,15 @@ const DashboardPage = () => {
           <div className="flex flex-col items-center mt-auto">
             <p
               className="font-dashboard-number text-4xl font-bold"
-              style={getFontStyle(fontTheme, "main")}
+              style={getFontStyle(theme)}
             >
               {todayPatientData.patients_today}
             </p>
             <p
               className="font-dashboard-trend text-sm mt-2"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
-              {todayPatientData.difference_from_yesterday}{" "}
+              {todayPatientData.difference_from_last_month}{" "}
               {todayPatientData.is_increase ? "↑" : "↓"} vs Yesterday
             </p>
           </div>
@@ -598,12 +527,12 @@ const DashboardPage = () => {
         {/* Total Appointments */}
         <div
           className="p-4 rounded-lg bg-gradient-to-r from-pink-400 to-pink-600 text-white shadow-md flex flex-col justify-between"
-          style={getFontStyle(fontTheme, "main")}
+          style={getFontStyle(theme)}
         >
           <div>
             <p
               className="text-lg font-semibold font-dashboard"
-              style={getFontStyle(fontTheme, "subHeading")}
+              style={getFontStyle(theme, "subHeading")}
             >
               Total Appointments
             </p>
@@ -614,13 +543,13 @@ const DashboardPage = () => {
           <div className="flex flex-col items-center mt-auto">
             <p
               className="font-dashboard-number text-4xl font-bold"
-              style={getFontStyle(fontTheme, "main")}
+              style={getFontStyle(theme)}
             >
               {appointments.length}
             </p>
             <p
               className="font-dashboard-trend text-sm mt-2"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               0 ↑ vs Yesterday
             </p>
@@ -629,12 +558,12 @@ const DashboardPage = () => {
         {/* Online Appointments */}
         <div
           className="p-4 rounded-lg bg-gradient-to-r from-[#DF00FF] to-[#8100FF] text-white shadow-md flex flex-col justify-between"
-          style={getFontStyle(fontTheme, "main")}
+          style={getFontStyle(theme)}
         >
           <div>
             <p
               className="text-lg font-semibold font-dashboard"
-              style={getFontStyle(fontTheme, "subHeading")}
+              style={getFontStyle(theme, "subHeading")}
             >
               Online Appointments
             </p>
@@ -645,13 +574,13 @@ const DashboardPage = () => {
           <div className="flex flex-col items-center mt-auto">
             <p
               className="font-dashboard-number text-4xl font-bold"
-              style={getFontStyle(fontTheme, "main")}
+              style={getFontStyle(theme)}
             >
               45
             </p>
             <p
               className="font-dashboard-trend text-sm mt-2"
-              style={getFontStyle(fontTheme, "body2")}
+              style={getFontStyle(theme, "body2")}
             >
               5 ↑ vs Yesterday
             </p>
@@ -666,7 +595,7 @@ const DashboardPage = () => {
           className="bg-white rounded-[20px] shadow-lg overflow-x-auto col-span-1 xl:col-span-6"
           style={{
             borderColor: theme.borderColor,
-            ...getFontStyle(fontTheme, "main"),
+            ...getFontStyle(theme),
           }}
         >
           <div
@@ -674,12 +603,12 @@ const DashboardPage = () => {
             style={{
               borderColor: theme.borderColor,
               color: theme.headingColor,
-              ...getFontStyle(fontTheme, "subHeading"),
+              ...getFontStyle(theme, "subHeading"),
             }}
           >
             <h3
               className="2xl:text-xl lg:text-sm font-semibold"
-              style={getFontStyle(fontTheme, "subHeading")}
+              style={getFontStyle(theme, "subHeading")}
             >
               Appointments Calendar
             </h3>
@@ -688,7 +617,7 @@ const DashboardPage = () => {
                 className="font-medium"
                 style={{
                   color: theme.linkColor,
-                  ...getFontStyle(fontTheme, "body1"),
+                  ...getFontStyle(theme, "body1"),
                 }}
               >
                 Total: {appointments.length}
@@ -696,14 +625,14 @@ const DashboardPage = () => {
               {appointmentsLoading && (
                 <span
                   className="text-gray-500"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle("body2")}
                 >
                   Loading...
                 </span>
               )}
             </div>
           </div>
-          <div className="p-6" style={getFontStyle(fontTheme, "body1")}>
+          <div className="p-6" style={getFontStyle(theme, "body1")}>
             {/* Loading and Error States */}
             {appointmentsLoading && (
               <div className="text-center py-2 text-blue-600">
@@ -768,7 +697,7 @@ const DashboardPage = () => {
                 <div
                   key={index}
                   className="text-center py-2 text-base font-medium text-gray-500"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle("body2")}
                 >
                   {day}
                 </div>
@@ -788,27 +717,24 @@ const DashboardPage = () => {
                     }
                     className={`
                       h-20 w-full flex flex-col items-center justify-center text-base rounded-lg transition-colors relative hover:bg-blue-50 cursor-pointer
-                      ${
-                        dateObj.isCurrentMonth
-                          ? "text-gray-900 hover:bg-gray-100"
-                          : "text-gray-300"
+                      ${dateObj.isCurrentMonth
+                        ? "text-gray-900 hover:bg-gray-100"
+                        : "text-gray-300"
                       }
-                      ${
-                        dateObj.isCurrentMonth && dateObj.day === selectedDate
-                          ? "bg-blue-500 text-white hover:bg-blue-600"
-                          : ""
+                      ${dateObj.isCurrentMonth && dateObj.day === selectedDate
+                        ? "bg-blue-500 text-white hover:bg-blue-600"
+                        : ""
                       }
-                      ${
-                        dateObj.isCurrentMonth && isToday(dateObj.day)
-                          ? "ring-2 ring-blue-300"
-                          : ""
+                      ${dateObj.isCurrentMonth && isToday(dateObj.day)
+                        ? "ring-2 ring-blue-300"
+                        : ""
                       }
                     `}
-                    style={getFontStyle(fontTheme, "body1")}
+                    style={getFontStyle(theme, "body1")}
                   >
                     <span
                       className="text-base"
-                      style={getFontStyle(fontTheme, "body1")}
+                      style={getFontStyle(theme, "body1")}
                     >
                       {dateObj.day}
                     </span>
@@ -819,7 +745,7 @@ const DashboardPage = () => {
                         {appointmentCount > 1 && (
                           <span
                             className="text-xs ml-1 bg-green-500 text-white rounded-full px-2 py-0.5 leading-none"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle("body2")}
                           >
                             {appointmentCount}
                           </span>
@@ -834,17 +760,17 @@ const DashboardPage = () => {
             {selectedDateAppointments.length > 0 && (
               <div
                 className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200"
-                style={getFontStyle(fontTheme, "body1")}
+                style={getFontStyle(theme, "body1")}
               >
                 <h4
                   className="font-semibold text-blue-800 mb-3"
-                  style={getFontStyle(fontTheme, "subHeading")}
+                  style={getFontStyle(theme, "subHeading")}
                 >
                   Appointments for {months[currentDate.getMonth()]}{" "}
                   {selectedDate}, {currentDate.getFullYear()}
                   <span
                     className="ml-2 text-sm font-normal text-blue-600"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle("body2")}
                   >
                     ({selectedDateAppointments.length} appointment
                     {selectedDateAppointments.length !== 1 ? "s" : ""})
@@ -855,7 +781,7 @@ const DashboardPage = () => {
                     <div
                       key={appointment.id}
                       className="bg-white p-3 rounded-lg shadow-sm border"
-                      style={getFontStyle(fontTheme, "body2")}
+                      style={getFontStyle("body2")}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -897,13 +823,12 @@ const DashboardPage = () => {
                         <div className="text-xs">
                           <span
                             className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                            ${
-                              appointment.appointment_status === "scheduled"
+                            ${appointment.appointment_status === "scheduled"
                                 ? "bg-green-100 text-green-800"
                                 : appointment.appointment_status === "completed"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
                           >
                             {appointment.appointment_status || "Scheduled"}
                           </span>
@@ -918,13 +843,13 @@ const DashboardPage = () => {
             {selectedDate && selectedDateAppointments.length === 0 && (
               <div
                 className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 text-center"
-                style={getFontStyle(fontTheme, "body2")}
+                style={getFontStyle("body2")}
               >
                 <div className="text-gray-500">
                   {/* ...svg... */}
                   <p
                     className="text-base"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle("body2")}
                   >
                     No appointments scheduled for{" "}
                     {months[currentDate.getMonth()]} {selectedDate},{" "}
@@ -936,11 +861,11 @@ const DashboardPage = () => {
             {/* Monthly Statistics */}
             <div
               className="mt-6 p-3 bg-gray-50 rounded-lg"
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             >
               <h4
                 className="font-semibold text-gray-800 mb-2 text-base"
-                style={getFontStyle(fontTheme, "subHeading")}
+                style={getFontStyle(theme, "subHeading")}
               >
                 Monthly Appointment Summary
               </h4>
@@ -948,13 +873,13 @@ const DashboardPage = () => {
                 <div>
                   <span
                     className="text-gray-600"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle("body2")}
                   >
                     Total Appointments:
                   </span>
                   <span
                     className="ml-2 font-medium"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle("body2")}
                   >
                     {appointments.length}
                   </span>
@@ -962,13 +887,13 @@ const DashboardPage = () => {
                 <div>
                   <span
                     className="text-gray-600"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle("body2")}
                   >
                     This Month:
                   </span>
                   <span
                     className="ml-2 font-medium"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle("body2")}
                   >
                     {appointments.length}
                   </span>
@@ -983,7 +908,7 @@ const DashboardPage = () => {
           className="bg-white rounded-[20px] shadow-lg row-span-2 overflow-x-auto col-span-1 xl:col-span-2 flex flex-col"
           style={{
             borderColor: theme.borderColor,
-            ...getFontStyle(fontTheme, "main"),
+            ...getFontStyle(theme),
           }}
         >
           <div
@@ -991,12 +916,12 @@ const DashboardPage = () => {
             style={{
               borderColor: theme.borderColor,
               color: theme.headingColor,
-              ...getFontStyle(fontTheme, "subHeading"),
+              ...getFontStyle(theme, "subHeading"),
             }}
           >
             <h2
               className="2xl:text-lg text-sm font-medium"
-              style={getFontStyle(fontTheme, "subHeading")}
+              style={getFontStyle(theme, "subHeading")}
             >
               Appointments
             </h2>
@@ -1004,7 +929,7 @@ const DashboardPage = () => {
               className="cursor-pointer 2xl:text-lg text-sm"
               style={{
                 color: theme.linkColor,
-                ...getFontStyle(fontTheme, "body1"),
+                ...getFontStyle(theme, "body1"),
               }}
             >
               Upcoming ({getUpcomingAppointments().length})
@@ -1012,7 +937,7 @@ const DashboardPage = () => {
           </div>
           <div
             className="p-4 2xl:text-lg lg:text-sm flex-1"
-            style={getFontStyle(fontTheme, "body1")}
+            style={getFontStyle(theme, "body1")}
           >
             {appointmentsLoading ? (
               <div className="flex justify-center items-center py-8">
@@ -1103,15 +1028,14 @@ const DashboardPage = () => {
                   <div className="flex flex-col items-end space-y-1">
                     <span
                       className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-              ${
-                appointment.appointment_status === "scheduled"
-                  ? "bg-blue-100 text-blue-800"
-                  : appointment.appointment_status === "confirmed"
-                  ? "bg-green-100 text-green-800"
-                  : appointment.appointment_status === "done"
-                  ? "bg-gray-100 text-gray-800"
-                  : "bg-orange-100 text-orange-800"
-              }`}
+              ${appointment.appointment_status === "scheduled"
+                          ? "bg-blue-100 text-blue-800"
+                          : appointment.appointment_status === "confirmed"
+                            ? "bg-green-100 text-green-800"
+                            : appointment.appointment_status === "done"
+                              ? "bg-gray-100 text-gray-800"
+                              : "bg-orange-100 text-orange-800"
+                        }`}
                     >
                       {appointment.appointment_status || "Pending"}
                     </span>
@@ -1143,7 +1067,7 @@ const DashboardPage = () => {
           className="bg-white rounded-[20px] shadow-lg overflow-x-auto col-span-1 xl:col-span-2 flex flex-col"
           style={{
             borderColor: theme.borderColor,
-            ...getFontStyle(fontTheme, "main"),
+            ...getFontStyle(theme),
           }}
         >
           <div
@@ -1151,12 +1075,12 @@ const DashboardPage = () => {
             style={{
               borderColor: theme.borderColor,
               color: theme.headingColor,
-              ...getFontStyle(fontTheme, "subHeading"),
+              ...getFontStyle(theme, "subHeading"),
             }}
           >
             <h3
               className="2xl:text-lg text-sm font-semibold"
-              style={getFontStyle(fontTheme, "subHeading")}
+              style={getFontStyle(theme, "subHeading")}
             >
               Reminders
             </h3>
@@ -1164,7 +1088,7 @@ const DashboardPage = () => {
               className="material-icons add_circle cursor-pointer"
               style={{
                 color: theme.linkColor,
-                ...getFontStyle(fontTheme, "body1"),
+                ...getFontStyle(theme, "body1"),
               }}
               onClick={() => {
                 document
@@ -1175,26 +1099,26 @@ const DashboardPage = () => {
               add_circle
             </span>
           </div>
-          <div className="p-4" style={getFontStyle(fontTheme, "body1")}>
+          <div className="p-4" style={getFontStyle(theme, "body1")}>
             <ul>
               <li className="border-b py-3">
                 <div className="flex justify-between 2xl:text-sm text-xs">
                   <p
                     className="font-semibold"
-                    style={getFontStyle(fontTheme, "body1")}
+                    style={getFontStyle(theme, "body1")}
                   >
                     Upcoming Appointment
                   </p>
                   <p
                     className="text-gray-500"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle("body2")}
                   >
                     3:00 PM
                   </p>
                 </div>
                 <p
                   className="text-gray-500 2xl:text-sm text-xs"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle("body2")}
                 >
                   Dr. Williams, your next appointment with Mrs. Taylor is in 15
                   minutes.
@@ -1204,20 +1128,20 @@ const DashboardPage = () => {
                 <div className="flex justify-between 2xl:text-sm text-xs">
                   <p
                     className="font-semibold"
-                    style={getFontStyle(fontTheme, "body1")}
+                    style={getFontStyle(theme, "body1")}
                   >
                     Medication Review Due
                   </p>
                   <p
                     className="text-gray-500"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle("body2")}
                   >
                     3:00 PM
                   </p>
                 </div>
                 <p
                   className="text-gray-500 2xl:text-sm text-xs"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle("body2")}
                 >
                   You have 30 minutes left to review Mr. Adams' medication list.
                 </p>
@@ -1226,20 +1150,20 @@ const DashboardPage = () => {
                 <div className="flex justify-between 2xl:text-sm text-xs">
                   <p
                     className="font-semibold"
-                    style={getFontStyle(fontTheme, "body1")}
+                    style={getFontStyle(theme, "body1")}
                   >
                     Surgery Preparation
                   </p>
                   <p
                     className="text-gray-500"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle("body2")}
                   >
                     3:00 PM
                   </p>
                 </div>
                 <p
                   className="text-gray-500 2xl:text-sm text-xs"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle("body2")}
                 >
                   Prepare for Mr. Patel's surgery in 30 minutes.
                 </p>
@@ -1248,20 +1172,20 @@ const DashboardPage = () => {
                 <div className="flex justify-between 2xl:text-sm text-xs">
                   <p
                     className="font-semibold"
-                    style={getFontStyle(fontTheme, "body1")}
+                    style={getFontStyle(theme, "body1")}
                   >
                     Patient Follow-Up Call
                   </p>
                   <p
                     className="text-gray-500"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle("body2")}
                   >
                     3:00 PM
                   </p>
                 </div>
                 <p
                   className="text-gray-500 2xl:text-sm text-xs"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle("body2")}
                 >
                   Follow up with Mr. Brown about his treatment progress in 15
                   minutes.
@@ -1276,7 +1200,7 @@ const DashboardPage = () => {
           className="bg-white rounded-[20px] shadow-lg overflow-x-auto col-span-1 xl:col-span-4 flex flex-col"
           style={{
             borderColor: theme.borderColor,
-            ...getFontStyle(fontTheme, "main"),
+            ...getFontStyle(theme),
           }}
         >
           <div
@@ -1284,31 +1208,31 @@ const DashboardPage = () => {
             style={{
               borderColor: theme.borderColor,
               color: theme.headingColor,
-              ...getFontStyle(fontTheme, "subHeading"),
+              ...getFontStyle(theme, "subHeading"),
             }}
           >
             <h3
               className="2xl:text-lg text-sm font-semibold"
-              style={getFontStyle(fontTheme, "subHeading")}
+              style={getFontStyle(theme, "subHeading")}
             >
               Recent Lab Results
             </h3>
             <p
               style={{
                 color: theme.linkColor,
-                ...getFontStyle(fontTheme, "body1"),
+                ...getFontStyle(theme, "body1"),
               }}
             >
               Upcoming
             </p>
           </div>
-          <div className="p-4" style={getFontStyle(fontTheme, "body1")}>
+          <div className="p-4" style={getFontStyle(theme, "body1")}>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-nowrap 2xl:text-sm text-xs">
                 <thead>
                   <tr
                     className="text-gray-500"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle("body2")}
                   >
                     <th className="pb-3">Report/Test Name</th>
                     <th className="pb-3">Lab Name</th>

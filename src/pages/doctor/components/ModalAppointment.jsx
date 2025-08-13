@@ -3,61 +3,12 @@ import StatusText from "./StatusText";
 import { showModal } from "@src/redux/reducers/modalReducer";
 import { useDispatch } from "react-redux";
 import { useEffect, useState } from "react";
-
-const THEME_STORAGE_KEY = "customColorTheme";
-const getFontTheme = () => {
-  try {
-    const theme = localStorage.getItem(THEME_STORAGE_KEY);
-    return theme ? JSON.parse(theme) : {};
-  } catch {
-    return {};
-  }
-};
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-    };
-  }
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-  };
-};
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 export const useShowModalAppointment = () => {
   const dispatch = useDispatch();
-  const [fontTheme, setFontTheme] = useState(getFontTheme());
-
-  useEffect(() => {
-    const reloadTheme = () => setFontTheme(getFontTheme());
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
+  const { theme } = useTheme();
 
   const headerModal = (user = {}, appointment = {}) => {
     if (user?.role === RoleId.PATIENT) {
@@ -65,7 +16,7 @@ export const useShowModalAppointment = () => {
         <div className="mb-3">
           <table className="min-w-full bg-white overflow-x-auto text-nowrap">
             <thead>
-              <tr style={getFontStyle(fontTheme, "body2")}>
+              <tr style={getFontStyle(theme, "body2")}>
                 <th className="py-2 px-4 text-start font-medium">
                   Doctor Name
                 </th>
@@ -83,7 +34,7 @@ export const useShowModalAppointment = () => {
             </thead>
             <tbody
               className="text-body"
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             >
               <tr>
                 <td className="py-2 px-4">
@@ -97,12 +48,12 @@ export const useShowModalAppointment = () => {
                       className="w-10 h-10 rounded-full mr-3"
                     />
                     <div className="text-start">
-                      <p style={getFontStyle(fontTheme, "body1")}>
+                      <p style={getFontStyle(theme, "body1")}>
                         {user.first_name} {user.last_name}
                       </p>
                       <span
                         className="text-muted"
-                        style={getFontStyle(fontTheme, "body2")}
+                        style={getFontStyle(theme, "body2")}
                       >
                         #12345678
                       </span>
@@ -111,27 +62,27 @@ export const useShowModalAppointment = () => {
                 </td>
                 <td
                   className="py-2 px-4"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   August 1, 2024 - 9:00AM
                 </td>
                 <td
                   className="py-2 px-4"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
-                  <span style={getFontStyle(fontTheme, "body2")}>
+                  <span style={getFontStyle(theme, "body2")}>
                     <Badge color="info">{appointment?.disease}</Badge>
                   </span>
                 </td>
                 <td
                   className="py-2 px-4"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   {appointment.reason_of_visit}
                 </td>
                 <td
                   className="py-2 px-4"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   {StatusText(appointment.appointment_status)}
                 </td>
@@ -156,20 +107,20 @@ export const useShowModalAppointment = () => {
                 <div className="text-start">
                   <h6
                     className="text-2xl text-darkBlue font-medium"
-                    style={getFontStyle(fontTheme, "subHeading")}
+                    style={getFontStyle(theme, "subHeading")}
                   >
                     {user.first_name} {user.last_name}
                   </h6>
                   <div
                     className="flex gap-1 text-sm"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle(theme, "body2")}
                   >
                     <span>Date of Birth :</span>
                     <span className="text-muted">May 20, 2000</span>
                   </div>
                   <div
                     className="flex gap-1 text-sm"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle(theme, "body2")}
                   >
                     <span>Last Visit :</span>
                     <span className="text-muted">August 12, 2025 - 2:00PM</span>
@@ -179,13 +130,13 @@ export const useShowModalAppointment = () => {
                   <a
                     href=""
                     className="text-primary"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle(theme, "body2")}
                   >
                     View Profile
                   </a>
                   <p
                     className="mt-7 text-sm"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle(theme, "body2")}
                   >
                     Status: {StatusText(appointment.appointment_status)}
                   </p>
@@ -197,7 +148,7 @@ export const useShowModalAppointment = () => {
             <div className="bg-grey px-2 rounded-lg py-3">
               <table className="w-full">
                 <tbody>
-                  <tr style={getFontStyle(fontTheme, "body2")}>
+                  <tr style={getFontStyle(theme, "body2")}>
                     <th className="font-medium">Gender</th>
                     <th className="font-medium">Age</th>
                     <th className="font-medium">Weight</th>
@@ -207,31 +158,31 @@ export const useShowModalAppointment = () => {
                   <tr>
                     <td
                       className="text-muted text-center"
-                      style={getFontStyle(fontTheme, "body2")}
+                      style={getFontStyle(theme, "body2")}
                     >
                       Male
                     </td>
                     <td
                       className="text-muted text-center"
-                      style={getFontStyle(fontTheme, "body2")}
+                      style={getFontStyle(theme, "body2")}
                     >
                       26 Years
                     </td>
                     <td
                       className="text-muted text-center"
-                      style={getFontStyle(fontTheme, "body2")}
+                      style={getFontStyle(theme, "body2")}
                     >
                       68Kg
                     </td>
                     <td
                       className="text-muted text-center"
-                      style={getFontStyle(fontTheme, "body2")}
+                      style={getFontStyle(theme, "body2")}
                     >
                       5ft 9in
                     </td>
                     <td
                       className="text-muted text-center"
-                      style={getFontStyle(fontTheme, "body2")}
+                      style={getFontStyle(theme, "body2")}
                     >
                       O+
                     </td>
@@ -256,7 +207,7 @@ export const useShowModalAppointment = () => {
             <div className="flex justify-between items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
               <h2
                 className="text-lg font-medium"
-                style={getFontStyle(fontTheme, "subHeading")}
+                style={getFontStyle(theme, "subHeading")}
               >
                 Recordings and Output
               </h2>
@@ -266,7 +217,7 @@ export const useShowModalAppointment = () => {
               <div className="flex gap-3 mb-4">
                 <div
                   className="relative flex justify-between text-primary border border-primary rounded-full ps-4 pe-16 py-3"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 >
                   <span className="my-auto">Recording 1</span>
                   <span className="absolute right-2 top-2 bg-danger text-white rounded-full p-1 h-8 w-8 flex items-center justify-center">
@@ -275,7 +226,7 @@ export const useShowModalAppointment = () => {
                 </div>
                 <div
                   className="relative flex justify-between text-primary border border-primary rounded-full ps-4 pe-16 py-3"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 >
                   <span className="my-auto">Recording 2</span>
                   <span className="absolute right-2 top-2 bg-danger text-white rounded-full p-1 h-8 w-8 flex items-center justify-center">
@@ -286,13 +237,13 @@ export const useShowModalAppointment = () => {
               <div className="mb-3">
                 <h3
                   className="text-md font-medium bg-grey px-3 py-2 rounded-lg mb-2"
-                  style={getFontStyle(fontTheme, "subHeading")}
+                  style={getFontStyle(theme, "subHeading")}
                 >
                   Subjective
                 </h3>
                 <p
                   className="text-body px-2"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   Patient John Doe, a 35-year-old male, reports experiencing
                   persistent headaches for the past two weeks. He describes the
@@ -305,21 +256,21 @@ export const useShowModalAppointment = () => {
               <div className="mb-3">
                 <h3
                   className="text-md font-medium bg-grey px-3 py-2 rounded-lg mb-2"
-                  style={getFontStyle(fontTheme, "subHeading")}
+                  style={getFontStyle(theme, "subHeading")}
                 >
                   Subjective
                 </h3>
                 <div className="px-2">
                   <table className="w-full">
                     <tbody>
-                      <tr style={getFontStyle(fontTheme, "body2")}>
+                      <tr style={getFontStyle(theme, "body2")}>
                         <th className="font-medium text-start">Vitals:</th>
                         <th className="font-medium text-start">Exam:</th>
                       </tr>
                       <tr>
                         <td
                           className="text-body"
-                          style={getFontStyle(fontTheme, "body1")}
+                          style={getFontStyle(theme, "body1")}
                         >
                           <ul className="ps-5 list-disc">
                             <li>BP: [e.g., 120/80 mmHg]</li>
@@ -330,7 +281,7 @@ export const useShowModalAppointment = () => {
                         </td>
                         <td
                           className="text-body"
-                          style={getFontStyle(fontTheme, "body1")}
+                          style={getFontStyle(theme, "body1")}
                         >
                           <ul className="ps-5 list-disc">
                             <li>BP: [e.g., 120/80 mmHg]</li>
@@ -347,13 +298,13 @@ export const useShowModalAppointment = () => {
               <div className="mb-3">
                 <h3
                   className="text-md font-medium bg-grey px-3 py-2 rounded-lg mb-2"
-                  style={getFontStyle(fontTheme, "subHeading")}
+                  style={getFontStyle(theme, "subHeading")}
                 >
                   Assessment
                 </h3>
                 <div
                   className="px-2 text-body"
-                  style={getFontStyle(fontTheme, "body1")}
+                  style={getFontStyle(theme, "body1")}
                 >
                   <ul className="ps-5 list-disc">
                     <li>Likely diagnosis: Migraine without aura</li>
@@ -364,20 +315,20 @@ export const useShowModalAppointment = () => {
               <div className="mb-3">
                 <h3
                   className="text-md font-medium bg-grey px-3 py-2 rounded-lg mb-2"
-                  style={getFontStyle(fontTheme, "subHeading")}
+                  style={getFontStyle(theme, "subHeading")}
                 >
                   Plan
                 </h3>
                 <div className="px-2">
                   <table className="w-full">
                     <tbody>
-                      <tr style={getFontStyle(fontTheme, "body2")}>
+                      <tr style={getFontStyle(theme, "body2")}>
                         <th className="font-medium text-start">Medications:</th>
                       </tr>
                       <tr>
                         <td
                           className="text-body"
-                          style={getFontStyle(fontTheme, "body1")}
+                          style={getFontStyle(theme, "body1")}
                         >
                           <ul className="ps-8 list-disc">
                             <li>
@@ -390,7 +341,7 @@ export const useShowModalAppointment = () => {
                           </ul>
                         </td>
                       </tr>
-                      <tr style={getFontStyle(fontTheme, "body2")}>
+                      <tr style={getFontStyle(theme, "body2")}>
                         <th className="font-medium text-start">
                           Lifestyle Modifications:
                         </th>
@@ -398,7 +349,7 @@ export const useShowModalAppointment = () => {
                       <tr>
                         <td
                           className="text-body"
-                          style={getFontStyle(fontTheme, "body1")}
+                          style={getFontStyle(theme, "body1")}
                         >
                           <ul className="ps-8 list-disc">
                             <li>

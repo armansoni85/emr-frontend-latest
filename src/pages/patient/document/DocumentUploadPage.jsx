@@ -1,4 +1,7 @@
+import { useTheme } from "@src/context/ThemeContext";
+
 const DocumentUploadPage = () => {
+    const { theme } = useTheme();
     return (
         <>
             <div className="flex justify-between mb-4">
@@ -24,7 +27,7 @@ const DocumentUploadPage = () => {
             </div>
             <div className="bg-white rounded-2xl p-3 my-3">
                 <div id="dropzone">
-                    <div className="border border-[#D3E1EB] border-dashed rounded-xl flex justify-center">
+                    <div className="border border-dashed rounded-xl flex justify-center" style={{ borderColor: theme.borderColor }}>
                         <div className="flex flex-col items-center gap-2 py-24">
                             <img
                                 className="w-12"

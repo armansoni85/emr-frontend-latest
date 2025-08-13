@@ -10,120 +10,16 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { getRoutePath } from "@src/utils/routeUtils";
 import { getUserById } from "@src/services/userService";
-
-const THEME_STORAGE_KEY = "customColorTheme";
-const getFontTheme = () => {
-  try {
-    const theme = localStorage.getItem(THEME_STORAGE_KEY);
-    return theme ? JSON.parse(theme) : {};
-  } catch {
-    return {};
-  }
-};
-const getFontStyle = (fontTheme, type = "main") => {
-  if (!fontTheme) return {};
-  if (type === "subHeading") {
-    return {
-      fontFamily: fontTheme.subHeadingFontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.subHeadingFontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.subHeadingFontSize || fontTheme.fontSize,
-      color: fontTheme.headingColor || "#333333",
-    };
-  }
-  if (type === "body1") {
-    return {
-      fontFamily: fontTheme.bodyText1FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText1FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText1FontSize || fontTheme.fontSize,
-      color:
-        fontTheme.bodyTextColor === "#FFFFFF"
-          ? "#333333"
-          : fontTheme.bodyTextColor || "#333333",
-    };
-  }
-  if (type === "body2") {
-    return {
-      fontFamily: fontTheme.bodyText2FontFamily || fontTheme.fontFamily,
-      fontWeight: fontTheme.bodyText2FontWeight || fontTheme.fontWeight,
-      fontSize: fontTheme.bodyText2FontSize || fontTheme.fontSize,
-      color:
-        fontTheme.bodyTextColor === "#FFFFFF"
-          ? "#666666"
-          : fontTheme.bodyTextColor || "#666666",
-    };
-  }
-  return {
-    fontFamily: fontTheme.fontFamily,
-    fontWeight: fontTheme.fontWeight,
-    fontSize: fontTheme.fontSize,
-    color: fontTheme.headingColor || "#333333",
-  };
-};
-
-const useCustomTheme = () => {
-  const [customTheme, setCustomTheme] = useState(() => {
-    try {
-      const theme = localStorage.getItem("customColorTheme");
-      return theme ? JSON.parse(theme) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  useEffect(() => {
-    const reloadTheme = () => {
-      try {
-        const theme = localStorage.getItem("customColorTheme");
-        setCustomTheme(theme ? JSON.parse(theme) : {});
-      } catch {
-        setCustomTheme({});
-      }
-    };
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === "customColorTheme") reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-
-  return customTheme;
-};
+import { useTheme } from "@src/context/ThemeContext";
+import { getFontStyle } from "@src/utils/theme";
 
 const PrescriptionAddPage = () => {
-  const customTheme = useCustomTheme();
-  const [fontTheme, setFontTheme] = useState(getFontTheme());
-
-  useEffect(() => {
-    const reloadTheme = () => setFontTheme(getFontTheme());
-    window.addEventListener("customColorThemeChanged", reloadTheme);
-    window.addEventListener("storage", (e) => {
-      if (e.key === THEME_STORAGE_KEY) reloadTheme();
-    });
-    return () => {
-      window.removeEventListener("customColorThemeChanged", reloadTheme);
-      window.removeEventListener("storage", reloadTheme);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!fontTheme) return;
-    document.body.style.fontFamily = fontTheme.fontFamily || "inherit";
-    document.body.style.fontWeight = fontTheme.fontWeight || 400;
-    document.body.style.fontSize = fontTheme.fontSize || "16px";
-    return () => {
-      document.body.style.fontFamily = "";
-      document.body.style.fontWeight = "";
-      document.body.style.fontSize = "";
-    };
-  }, [fontTheme]);
+  const { theme } = useTheme();
 
   const getButtonStyle = (filled = true, color = "primary") => {
     const colorMap = {
-      primary: customTheme.primaryColor || "#002952",
-      danger: customTheme.secondaryColor || "#CF0000",
+      primary: theme.primaryColor || "#002952",
+      danger: theme.secondaryColor || "#CF0000",
       success: "#22C55E",
       white: "#fff",
     };
@@ -132,17 +28,17 @@ const PrescriptionAddPage = () => {
       backgroundColor: filled ? mainColor : "#fff",
       color: filled ? "#fff" : mainColor,
       border: `1.5px solid ${mainColor}`,
-      fontFamily: fontTheme.fontFamily || "inherit",
-      fontWeight: fontTheme.fontWeight || 400,
-      fontSize: fontTheme.fontSize || "16px",
+      fontFamily: theme.fontFamily || "inherit",
+      fontWeight: theme.fontWeight || 400,
+      fontSize: theme.fontSize || "16px",
       transition: "all 0.15s",
     };
   };
 
   const getIconButtonStyle = (color = "primary") => {
     const colorMap = {
-      primary: customTheme.primaryColor || "#002952",
-      danger: customTheme.secondaryColor || "#CF0000",
+      primary: theme.primaryColor || "#002952",
+      danger: theme.secondaryColor || "#CF0000",
       success: "#22C55E",
       white: "#fff",
     };
@@ -151,9 +47,9 @@ const PrescriptionAddPage = () => {
       backgroundColor: "#fff",
       color: mainColor,
       border: `1.5px solid ${mainColor}`,
-      fontFamily: fontTheme.fontFamily || "inherit",
-      fontWeight: fontTheme.fontWeight || 400,
-      fontSize: fontTheme.fontSize || "16px",
+      fontFamily: theme.fontFamily || "inherit",
+      fontWeight: theme.fontWeight || 400,
+      fontSize: theme.fontSize || "16px",
       transition: "all 0.15s",
     };
   };
@@ -369,7 +265,7 @@ const PrescriptionAddPage = () => {
         <div className="flex gap-2 items-center p-4 border-b-2 rounded-t-2xl bg-grey bg-opacity-[0.4]">
           <h2
             className="text-lg font-medium"
-            style={getFontStyle(fontTheme, "subHeading")}
+            style={getFontStyle(theme, "subHeading")}
           >
             Create New Prescription
           </h2>
@@ -400,7 +296,7 @@ const PrescriptionAddPage = () => {
           <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
             <label
               className="block text-nowrap my-auto"
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             >
               Date of Birth:
             </label>
@@ -410,7 +306,7 @@ const PrescriptionAddPage = () => {
                   <SpinnerComponent size="sm" className="mr-2" />
                   <span
                     className="text-muted"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle(theme, "body2")}
                   >
                     Loading patient data...
                   </span>
@@ -423,7 +319,7 @@ const PrescriptionAddPage = () => {
                   onChange={(e) => handleFormChange("dob", e, setForm)}
                   className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey border rounded-full"
                   readOnly={true}
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 />
               )}
             </div>
@@ -431,7 +327,7 @@ const PrescriptionAddPage = () => {
           <div className="p-4 grid lg:grid-cols-3 grid-cols-1">
             <label
               className="block text-nowrap my-auto"
-              style={getFontStyle(fontTheme, "body1")}
+              style={getFontStyle(theme, "body1")}
             >
               Disease:
             </label>
@@ -441,7 +337,7 @@ const PrescriptionAddPage = () => {
                   <SpinnerComponent size="sm" className="mr-2" />
                   <span
                     className="text-muted"
-                    style={getFontStyle(fontTheme, "body2")}
+                    style={getFontStyle(theme, "body2")}
                   >
                     Loading disease info...
                   </span>
@@ -452,7 +348,7 @@ const PrescriptionAddPage = () => {
                   value={form.disease || ""}
                   onChange={(e) => handleFormChange("disease", e, setForm)}
                   className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey border rounded-full"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 >
                   <option value="" disabled>
                     Select Disease
@@ -494,7 +390,7 @@ const PrescriptionAddPage = () => {
             <div className="rounded-t-2xl py-3 px-5 border-b flex gap-2">
               <h6
                 className="text-xl"
-                style={getFontStyle(fontTheme, "subHeading")}
+                style={getFontStyle(theme, "subHeading")}
               >
                 Add Medication
               </h6>
@@ -563,7 +459,7 @@ const PrescriptionAddPage = () => {
             <div className="rounded-t-2xl py-3 px-5 border-b">
               <h6
                 className="text-xl"
-                style={getFontStyle(fontTheme, "subHeading")}
+                style={getFontStyle(theme, "subHeading")}
               >
                 Current Medication List
               </h6>
@@ -574,13 +470,13 @@ const PrescriptionAddPage = () => {
                   {medicationList.map((medication, index) => (
                     <li key={medication.id} className="ps-3 mb-4">
                       <div className="relative bg-white text-body rounded-full px-5 py-3">
-                        <span style={getFontStyle(fontTheme, "body1")}>
+                        <span style={getFontStyle(theme, "body1")}>
                           {medication.medicine_name}
                         </span>
                         <div className="absolute right-1 top-[4px] flex gap-2">
                           <span
                             className="bg-grey rounded-full px-5 py-2 cursor-pointer"
-                            style={getFontStyle(fontTheme, "body2")}
+                            style={getFontStyle(theme, "body2")}
                           >
                             {medication.frequency}
                           </span>
@@ -601,7 +497,7 @@ const PrescriptionAddPage = () => {
               ) : (
                 <p
                   className="text-gray-500 text-center py-4"
-                  style={getFontStyle(fontTheme, "body2")}
+                  style={getFontStyle(theme, "body2")}
                 >
                   No medications added yet
                 </p>
