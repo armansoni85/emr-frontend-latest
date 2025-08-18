@@ -2,10 +2,11 @@ import { Badge, CircleAvatar, MoreVertical, MoreVerticalItem, NavLinkButton, Pag
 import { useDispatch, useSelector } from "react-redux";
 
 import Moment from "react-moment";
-import { getAppointments } from "@src/services/appointmentService";
+import { deleteAppointment, getAppointments } from "@src/services/appointmentService";
 import { getRoutePath } from "@src/utils/routeUtils";
 import { useQuery } from "@tanstack/react-query";
 import { useShowDialog } from "@src/utils/dialog";
+import { toast } from "react-toastify";
 
 const UpComingPage = () => {
     const { paginationMeta } = useSelector((state) => state.fetch);
@@ -15,10 +16,17 @@ const UpComingPage = () => {
     const dispatch = useDispatch();
 
     const { data, isSuccess, isError, isPending, isFetching, refetch } = useQuery({
-        queryKey: ["appointments", paginationMeta.currentPage],
+        queryKey: [
+            "appointments",
+            "upcoming",
+            user?.id || null,
+            paginationMeta.currentPage,
+            paginationMeta.limitPerPage,
+            // { appointment_status: "PENDING" },
+        ],
         queryFn: async () => {
             const response = await getAppointments({
-                appointment_status: "DONE",
+                // appointment_status: "PENDING",
                 limit: paginationMeta.limitPerPage,
                 offset: paginationMeta.currentPage,
             });
@@ -35,6 +43,7 @@ const UpComingPage = () => {
             return response;
         },
         enabled: !!user,
+        refetchOnMount: "always",
         staleTime: 1000 * 60 * 5, // 5 minutes
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
@@ -45,8 +54,6 @@ const UpComingPage = () => {
     };
 
     const handleDeleteAppointment = (appointmentId) => {
-        console.log("Deleting appointment with ID:", appointmentId);
-
         showDialog({
             title: "Delete Appointment",
             message: "Are you sure you want to delete this appointment?",
@@ -59,7 +66,20 @@ const UpComingPage = () => {
             isConfirmOutline: true,
             confirmButtonClass: "!border-none",
         }).then((result) => {
-            console.log("asdasdasd", result);
+            if (result.isConfirmed) {
+                deleteAppointment(appointmentId)
+                    .then((res) => {
+                        if (res.success || res.status === 204) {
+                            toast.success("Appointment deleted successfully");
+                            refetch();
+                        } else {
+                            toast.error("Failed to delete appointment");
+                        }
+                    })
+                    .catch(() => {
+                        toast.error("Error deleting appointment");
+                    });
+            }
         });
         return;
     };
@@ -106,7 +126,7 @@ const UpComingPage = () => {
                             <tr>
                                 <Th>Doctor Name</Th>
                                 <Th>Date &amp; Time</Th>
-                                <Th>Disease</Th>
+                                <Th>Diagnosis</Th>
                                 <Th>Reason Of Visit</Th>
                                 <Th>Requests</Th>
                             </tr>
@@ -142,7 +162,7 @@ const UpComingPage = () => {
                                         )}
                                     </Td>
                                     <Td>
-                                        <Badge color="info">{item?.disease}</Badge>
+                                        <Badge color="info">{item?.diagnosis || item?.disease || "N/A"}</Badge>
                                     </Td>
                                     <Td>{item?.reason_of_visit || "N/A"}</Td>
                                     <Td>
@@ -154,7 +174,7 @@ const UpComingPage = () => {
                                             </button>
                                             <MoreVertical>
                                                 <MoreVerticalItem>Edit</MoreVerticalItem>
-                                                {/* <MoreVerticalItem onClick={() => handleDeleteAppointment(item.id)}>Delete</MoreVerticalItem> */}
+                                                <MoreVerticalItem onClick={() => handleDeleteAppointment(item.id)}>Delete</MoreVerticalItem>
                                             </MoreVertical>
                                         </div>
                                     </Td>

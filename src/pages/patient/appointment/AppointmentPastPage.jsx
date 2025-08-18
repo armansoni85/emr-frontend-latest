@@ -13,10 +13,17 @@ const PastPage = () => {
     const dispatch = useDispatch();
 
     const { data, isSuccess, isError, isPending, isFetching, refetch } = useQuery({
-        queryKey: ["appointments", paginationMeta.currentPage],
+        queryKey: [
+            "appointments",
+            "past",
+            user?.id || null,
+            paginationMeta.currentPage,
+            paginationMeta.limitPerPage,
+            // { appointment_status: "DONE" },
+        ],
         queryFn: async () => {
             const response = await getAppointments({
-                appointment_status: "DONE",
+                // appointment_status: "DONE",
                 limit: paginationMeta.limitPerPage,
                 offset: paginationMeta.currentPage,
             });
@@ -33,6 +40,7 @@ const PastPage = () => {
             return response;
         },
         enabled: !!user,
+        refetchOnMount: "always",
         staleTime: 1000 * 60 * 5, // 5 minutes
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
@@ -84,7 +92,7 @@ const PastPage = () => {
                             <tr>
                                 <Th>Doctor Name</Th>
                                 <Th>Date &amp; Time</Th>
-                                <Th>Disease</Th>
+                                <Th>Diagnosis</Th>
                                 <Th>Reason Of Visit</Th>
                                 <Th>Status</Th>
                                 <Th>Full Details</Th>
@@ -121,7 +129,7 @@ const PastPage = () => {
                                         )}
                                     </Td>
                                     <Td>
-                                        <Badge color="info">{item?.disease}</Badge>
+                                        <Badge color="info">{item?.diagnosis || item?.disease || "N/A"}</Badge>
                                     </Td>
                                     <Td>{item?.reason_of_visit || "N/A"}</Td>
                                     <Td>

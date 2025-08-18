@@ -4,7 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { AddAppointmentSchema } from "@src/schema/AddAppointmentSchema";
 import { RoleId } from "@src/constant/enumRole";
 import { createAppointment } from "@src/services/appointmentService";
 import { getRoutePath } from "@src/utils/routeUtils";
@@ -19,6 +18,7 @@ const AppointmentSchedulePage = ({ onSubmit, currentStep, showModalFirst }) => {
     }); // State to manage form data
     const [doctorList, setDoctorList] = useState([]); // Single state for doctor list
     const { user } = useSelector((state) => state.auth);
+    console.log(user, "USER");
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
@@ -47,6 +47,13 @@ const AppointmentSchedulePage = ({ onSubmit, currentStep, showModalFirst }) => {
         }
     }, [data, isSuccess]);
 
+    // Prefill doctor from user.created_by when available
+    useEffect(() => {
+        if (user?.created_by) {
+            setForm((prev) => ({ ...prev, doctor: user.created_by.id }));
+        }
+    }, [user]);
+
     const memoizedDoctorList = useMemo(() => doctorList, [doctorList]);
 
     const handleGetDoctorList = (search) => {
@@ -54,33 +61,39 @@ const AppointmentSchedulePage = ({ onSubmit, currentStep, showModalFirst }) => {
     };
 
     const validateForm = () => {
-        console.log("Form data:", form);
+        const date = form.visitDate;
+        const time = form.visitTime;
+        const doctorId = (user?.created_by && user.created_by.id) || form.doctor || null;
+        const diagnosis = form.diagnosis || form.disease || ""; // backward compatibility
 
-        const validatedForm = AddAppointmentSchema.safeParse({
-            date: new Date(form.visitDate),
-            time: form.visitTime,
-            disease: form.disease,
-            doctor: form.doctor,
-            reasonOfVisit: form.reasonOfVisit,
-        });
-
-        if (!validatedForm.success) {
-            const firstError = validatedForm.error.errors[0]?.message || "Validation failed";
-            toast.error(firstError); // Assuming you have a toast library like react-toastify
+        if (!date) {
+            toast.error("Appointment date is required");
+            return false;
+        }
+        if (!time) {
+            toast.error("Appointment time is required");
+            return false;
+        }
+        if (!doctorId) {
+            toast.error("Doctor is required");
             return false;
         }
 
-        return validatedForm.success ? validatedForm.data : false;
+        return {
+            date,
+            time,
+            doctor: doctorId,
+            diagnosis,
+            reasonOfVisit: form.reasonOfVisit,
+        };
     };
 
     const submitForm = (data) => {
-        // console.log(data);
-
-        const combinedDateTime = `${data.date.toISOString().split("T")[0]} ${data.time}`;
+        const combinedDateTime = `${data.date}T${data.time}:00Z`;
         createAppointment({
             doctor: data.doctor,
             appointment_datetime: combinedDateTime,
-            disease: data.disease,
+            diagnosis: data.diagnosis,
             reason_of_visit: data.reasonOfVisit,
         })
             .then((response) => {
@@ -186,11 +199,11 @@ const AppointmentSchedulePage = ({ onSubmit, currentStep, showModalFirst }) => {
                             onChange={(e) => handleFormChange("visitDate", e, setForm)}
                         />
                         <InputWithLabel
-                            label={"Disease:"}
-                            id={"disease"}
+                            label={"Diagnosis:"}
+                            id={"diagnosis"}
                             type={"select"}
-                            value={form.disease || ""}
-                            onChange={(e) => handleFormChange("disease", e, setForm)}>
+                            value={form.diagnosis || ""}
+                            onChange={(e) => handleFormChange("diagnosis", e, setForm)}>
                             <option value="Acquired">Acquired</option>
                             <option value="Acute">Acute</option>
                             <option value="Chronic condition">Chronic condition</option>
@@ -200,17 +213,29 @@ const AppointmentSchedulePage = ({ onSubmit, currentStep, showModalFirst }) => {
                             <option value="Iatrogenic">Iatrogenic</option>
                             <option value="Idiopathic">Idiopathic</option>
                         </InputWithLabel>
-                        <InputWithLabel
-                            label={"Doctor Name:"}
-                            id={"doctor"}
-                            type={"searchable-select"}
-                            onSearch={(search) => handleGetDoctorList(search)}
-                            options={memoizedDoctorList}
-                            defaultValue={form.doctor || ""}
-                            onChange={(option) => handleFormChange("doctor", option.id, setForm)}
-                            keyValue={"id"}
-                            keyLabel={(option) => option.first_name + " " + option.last_name}
-                        />
+                        {user?.created_by && (
+                            <InputWithLabel
+                                label={"Doctor:"}
+                                id={"doctorDisplay"}
+                                type={"text"}
+                                value={`${user.created_by.first_name || ""} ${user.created_by.last_name || ""} (${user.created_by.email || ""})`}
+                                onChange={() => {}}
+                                disabled
+                            />
+                        )}
+                        {!user?.created_by && (
+                            <InputWithLabel
+                                label={"Doctor Name:"}
+                                id={"doctor"}
+                                type={"searchable-select"}
+                                onSearch={(search) => handleGetDoctorList(search)}
+                                options={memoizedDoctorList}
+                                defaultValue={form.doctor || ""}
+                                onChange={(option) => handleFormChange("doctor", option.id, setForm)}
+                                keyValue={"id"}
+                                keyLabel={(option) => option.first_name + " " + option.last_name}
+                            />
+                        )}
                     </div>
                     <div className="p-4 space-y-4">
                         <InputWithLabel

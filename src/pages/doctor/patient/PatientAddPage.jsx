@@ -93,7 +93,7 @@ const PatientAddPage = () => {
         patientName: `${patient.first_name || ""} ${patient.last_name || ""
           }`.trim(),
         email: patient.email || "",
-        mobileNumber: patient.phone_number || "",
+        phone_number: patient.phone_number || "",
         dob: patient.dob || "",
         gender: patient.gender || "male",
         doctor: patient.doctor || "",
@@ -207,7 +207,7 @@ const PatientAddPage = () => {
         first_name: form.patientName?.split(" ")[0] || form.patientName,
         last_name: form.patientName?.split(" ").slice(1).join(" ") || "",
         email: form.email,
-        phone_number: form.mobileNumber,
+        phone_number: form.phone_number,
         dob: form.dob,
         gender: form.gender,
         blood_group: form.bloodGroup,
@@ -229,7 +229,7 @@ const PatientAddPage = () => {
       const data = validateForm(AddPatient, {
         patientName: form.patientName,
         email: form.email,
-        mobileNumber: form.mobileNumber,
+        phone_number: form.phone_number,
         dob: form.dob ? new Date(form.dob) : new Date("1993-10-14"),
         gender: form.gender || "male",
         doctor: doctorLoggedIn?.id || form.doctor || "",
@@ -267,7 +267,7 @@ const PatientAddPage = () => {
             gender: data.gender,
             dob: data.dob.toISOString().split("T")[0],
             blood_group: data.bloodGroup,
-            phone_number: data.mobileNumber || "",
+            phone_number: data.phone_number || "",
             address: data.patientAddress || "",
             height_feet: data.heightFeet,
             height_inches: data.heightInches,
@@ -375,10 +375,10 @@ const PatientAddPage = () => {
           />
           <InputWithLabel
             label={"Mobile Number:"}
-            id={"mobileNumber"}
+            id={"phone_number"}
             type={"text"}
-            value={form.mobileNumber || ""}
-            onChange={(e) => handleFormChange("mobileNumber", e, setForm)}
+            value={form.phone_number || ""}
+            onChange={(e) => handleFormChange("phone_number", e, setForm)}
             wrapperClassName="p-4"
             style={getFontStyle(theme, "body1")}
             labelStyle={getFontStyle(theme, "body1")}

@@ -25,7 +25,7 @@ export const AddPatient = z
     weightFeet: z.number().min(1, "Weight (kg) is required"),
     weightInches: z.number().min(0),
     patientAddress: z.string().min(1, "Patient address is required"),
-    disease: z.string().min(1, "Disease is required"),
+    diagnosis: z.string().min(1, "Diagnosis is required"),
     password: z.string().min(6, "Password is required"),
     confirmPassword: z.string().min(6, "Confirm Password is required"),
   })
