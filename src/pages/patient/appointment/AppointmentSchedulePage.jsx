@@ -24,7 +24,7 @@ const AppointmentSchedulePage = ({ onSubmit, currentStep, showModalFirst }) => {
 
     const { data, isSuccess } = useQuery({
         queryKey: ["doctors"],
-        queryFn: () => getUsers({ role: RoleId.DOCTOR }),
+        queryFn: () => getUsers({ role: 2 }),
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
     });
@@ -57,13 +57,13 @@ const AppointmentSchedulePage = ({ onSubmit, currentStep, showModalFirst }) => {
     const memoizedDoctorList = useMemo(() => doctorList, [doctorList]);
 
     const handleGetDoctorList = (search) => {
-        searchDoctor({ search, role: RoleId.DOCTOR });
+        searchDoctor({ search, role: 2 });
     };
 
     const validateForm = () => {
         const date = form.visitDate;
         const time = form.visitTime;
-        const doctorId = (user?.created_by && user.created_by.id) || form.doctor || null;
+        const doctorId = form.doctor || null;
         const diagnosis = form.diagnosis || form.disease || ""; // backward compatibility
 
         if (!date) {
@@ -213,29 +213,19 @@ const AppointmentSchedulePage = ({ onSubmit, currentStep, showModalFirst }) => {
                             <option value="Iatrogenic">Iatrogenic</option>
                             <option value="Idiopathic">Idiopathic</option>
                         </InputWithLabel>
-                        {user?.created_by && (
-                            <InputWithLabel
-                                label={"Doctor:"}
-                                id={"doctorDisplay"}
-                                type={"text"}
-                                value={`${user.created_by.first_name || ""} ${user.created_by.last_name || ""} (${user.created_by.email || ""})`}
-                                onChange={() => {}}
-                                disabled
-                            />
-                        )}
-                        {!user?.created_by && (
-                            <InputWithLabel
-                                label={"Doctor Name:"}
-                                id={"doctor"}
-                                type={"searchable-select"}
-                                onSearch={(search) => handleGetDoctorList(search)}
-                                options={memoizedDoctorList}
-                                defaultValue={form.doctor || ""}
-                                onChange={(option) => handleFormChange("doctor", option.id, setForm)}
-                                keyValue={"id"}
-                                keyLabel={(option) => option.first_name + " " + option.last_name}
-                            />
-                        )}
+                        <InputWithLabel
+                            label={"Doctor Name:"}
+                            id={"doctor"}
+                            type={"select"}
+                            value={form.doctor || ""}
+                            onChange={(e) => handleFormChange("doctor", e, setForm)}>
+                            <option value="">Select a doctor</option>
+                            {memoizedDoctorList.map((doctor) => (
+                                <option key={doctor.id} value={doctor.id}>
+                                    {doctor.first_name} {doctor.last_name} ({doctor.email})
+                                </option>
+                            ))}
+                        </InputWithLabel>
                     </div>
                     <div className="p-4 space-y-4">
                         <InputWithLabel
