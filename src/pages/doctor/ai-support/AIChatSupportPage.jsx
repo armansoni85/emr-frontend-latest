@@ -63,9 +63,9 @@ const AIChatSupportPage = () => {
                                 <div className="p-4 text-center text-muted">Error loading chat history</div>
                             ) : aiChats?.data?.results?.length > 0 ? (
                                 aiChats.data.results.map((chat) => (
-                                    <div 
-                                        key={chat.id} 
-                                        className={`flex justify-content-between border-b px-3 pt-4 pb-2 cursor-pointer hover:bg-black hover:bg-opacity-[0.1] ${selectedChat?.id === chat.id ? 'bg-blue-50' : ''}`} 
+                                    <div
+                                        key={chat.id}
+                                        className={`flex justify-content-between border-b px-3 pt-4 pb-2 cursor-pointer hover:bg-black hover:bg-opacity-[0.1] ${selectedChat?.id === chat.id ? 'bg-blue-50' : ''}`}
                                         onClick={() => handleChatClick(chat)}
                                     >
                                         <div className="flex gap-2 w-full">
@@ -85,7 +85,7 @@ const AIChatSupportPage = () => {
                         </div>
                     </div>
                     <div className="p-3">
-                        <button 
+                        <button
                             className="bg-primary w-full border border-primary text-white px-8 py-2 rounded-full text-sm font-light hover:bg-opacity-[0.9] transition-all duration-150"
                             onClick={handleNewConversation}
                         >
@@ -125,9 +125,9 @@ const AIChatSupportPage = () => {
                                         <div className="bg-grey text-body p-4 rounded-2xl max-w-lg">
                                             {selectedChat.reply.split('\n').map((line, index) => (
                                                 <span key={index}>
-                                                    {line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').split(/(<strong>.*?<\/strong>)/).map((part, partIndex) => 
-                                                        part.startsWith('<strong>') && part.endsWith('</strong>') ? 
-                                                            <strong key={partIndex}>{part.replace(/<\/?strong>/g, '')}</strong> : 
+                                                    {line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').split(/(<strong>.*?<\/strong>)/).map((part, partIndex) =>
+                                                        part.startsWith('<strong>') && part.endsWith('</strong>') ?
+                                                            <strong key={partIndex}>{part.replace(/<\/?strong>/g, '')}</strong> :
                                                             part
                                                     )}
                                                     {index < selectedChat.reply.split('\n').length - 1 && <br />}
@@ -148,8 +148,8 @@ const AIChatSupportPage = () => {
                                         <div className="animate-pulse">AI is typing...</div>
                                         <div className="flex space-x-1">
                                             <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                                         </div>
                                     </div>
                                 </div>
@@ -175,14 +175,14 @@ const AIChatSupportPage = () => {
                                             <i className="material-icons text-body">attach_file</i>
                                         </button>
                                     </div>
-                                    <div className="absolute right-2 top-2">
+                                    {/* <div className="absolute right-2 top-2">
                                         <button className="rounded-full p-2 pb-1">
                                             <i className="material-icons text-body">mic</i>
                                         </button>
-                                    </div>
+                                    </div> */}
                                 </div>
                                 <div className="relative pt-1">
-                                    <button 
+                                    <button
                                         className="bg-primary w-full px-3 py-2 border border-primary text-white rounded-full text-sm font-light hover:bg-opacity-[0.9] transition-all duration-150 disabled:opacity-50"
                                         onClick={handleSendMessage}
                                         disabled={isSending || !question.trim()}
