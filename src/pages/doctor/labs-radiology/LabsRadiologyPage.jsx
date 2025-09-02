@@ -10,9 +10,9 @@ const LabsRadiologyPage = () => {
 
 
   const getButtonStyle = (filled = false) => ({
-    backgroundColor: filled ? customTheme.primaryColor : "#fff",
-    color: filled ? "#fff" : customTheme.primaryColor,
-    border: `1.5px solid ${customTheme.primaryColor}`,
+    backgroundColor: filled ? theme.primaryColor : "#fff",
+    color: filled ? "#fff" : theme.primaryColor,
+    border: `1.5px solid ${theme.primaryColor}`,
     fontFamily: theme.fontFamily || "inherit",
     fontWeight: theme.fontWeight || 400,
     fontSize: theme.fontSize || "16px",
@@ -21,8 +21,8 @@ const LabsRadiologyPage = () => {
 
   const getIconButtonStyle = () => ({
     backgroundColor: "#fff",
-    color: customTheme.primaryColor,
-    border: `1.5px solid ${customTheme.primaryColor}`,
+    color: theme.primaryColor,
+    border: `1.5px solid ${theme.primaryColor}`,
     fontFamily: theme.fontFamily || "inherit",
     fontWeight: theme.fontWeight || 400,
     fontSize: theme.fontSize || "16px",
@@ -30,7 +30,7 @@ const LabsRadiologyPage = () => {
   });
 
   const getIconStyle = () => ({
-    color: customTheme.primaryColor,
+    color: theme.primaryColor,
     fontSize: theme.fontSize || "20px",
     fontFamily: theme.fontFamily || "inherit",
     fontWeight: theme.fontWeight || 400,

@@ -64,6 +64,8 @@ import DiagnosisInfoPage from "./pages/patient/diagnosis/DiagnosisInfoPage";
 import DoctorPage from "./pages/doctor/DoctorPage";
 import DoctorProfileLayout from "./pages/doctor/profile/DoctorProfileLayout";
 import DocumentPage from "./pages/patient/document/DocumentPage";
+import DocumentUploadPage from "./pages/patient/document/DocumentUploadPage";
+import DocumentUploaded from "./pages/patient/document/DocumentUploaded";
 import HealthProfilePage from "./pages/patient/health/HealthProfilePage";
 import LabResultsPage from "./pages/patient/lab/LabResultsPage";
 import { LabsRadiologyPage } from "./pages/doctor/labs-radiology";
@@ -122,7 +124,20 @@ const privateRoutes = {
       },
       documents: {
         path: "documents",
-        element: <DocumentPage />,
+        childRoutes: {
+          received: {
+            index: true,
+            element: <DocumentPage />,
+          },
+          uploaded: {
+            path: "uploaded",
+            element: <DocumentUploaded />,
+          },
+          upload: {
+            path: "upload",
+            element: <DocumentUploadPage />,
+          },
+        },
       },
       diagnosis_info: {
         path: "diagnosis-info",
