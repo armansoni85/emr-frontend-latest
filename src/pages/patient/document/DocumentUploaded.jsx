@@ -15,14 +15,15 @@ const DocumentUploaded = () => {
         try {
             setLoading(true);
             const response = await getMedicalDocuments();
+            const documents = response.data
             console.log("API Response:", response); // Debug log
             // Ensure we always have an array
-            const documentsArray = Array.isArray(response)
-                ? response
-                : Array.isArray(response?.results)
-                    ? response.results
-                    : Array.isArray(response?.data)
-                        ? response.data
+            const documentsArray = Array.isArray(documents)
+                ? documents
+                : Array.isArray(documents?.results)
+                    ? documents.results
+                    : Array.isArray(documents?.data)
+                        ? documents.data
                         : [];
             console.log("Documents Array:", documentsArray); // Debug log
             setDocuments(documentsArray);
@@ -42,9 +43,55 @@ const DocumentUploaded = () => {
         navigate("/patient/documents");
     };
 
+    const renderFilePreview = (document) => {
+        const fileUrl = document.file;
+        const fileName = document.file_name;
+        
+        if (!fileUrl) {
+            return (
+                <div className="h-48 w-full bg-gray-200 rounded-lg flex items-center justify-center">
+                    <i className="material-icons text-4xl text-gray-400">description</i>
+                </div>
+            );
+        }
+
+        // Check if it's an image file
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+        const isImage = imageExtensions.some(ext => 
+            fileName?.toLowerCase().includes(ext) || 
+            fileUrl.toLowerCase().includes(ext)
+        );
+
+        if (isImage) {
+            return (
+                <img
+                    className="h-48 w-full object-cover rounded-lg"
+                    src={fileUrl}
+                    alt={fileName || "Document"}
+                    onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                    }}
+                />
+            );
+        }
+
+        // For PDF and other file types, show icon
+        return (
+            <div className="h-48 w-full bg-gray-100 rounded-lg flex flex-col items-center justify-center">
+                <i className="material-icons text-4xl text-red-500 mb-2">
+                    {fileName?.toLowerCase().includes('.pdf') ? 'picture_as_pdf' : 'description'}
+                </i>
+                <span className="text-sm text-gray-600 text-center px-2">
+                    {fileName || "Document"}
+                </span>
+            </div>
+        );
+    };
+
     return (
         <>
-            <div className="flex justify-between">
+            <div className="flex justify-between md:flex-row flex-col">
                 <div className="flex gap-3 overflow-x-auto mb-4 text-nowrap">
                     <button
                         onClick={handleReceivedClick}
@@ -97,12 +144,12 @@ const DocumentUploaded = () => {
                         <div className="grid 2xl:grid-cols-4 lg:grid-cols-3 grid-cols-1 gap-2">
                             {Array.isArray(documents) && documents.map((document) => (
                                 <div key={document.id} className="bg-white rounded-[20px] shadow-lg p-3 space-y-1">
-                                    <div className="p-0">
-                                        <img
-                                            className="h-46 w-full object-cover rounded-lg"
-                                            src={document.file_url || "../assets/images/image 1 (4).png"}
-                                            alt={document.title || "Document"}
-                                        />
+                                    <div className="p-0 relative">
+                                        {renderFilePreview(document)}
+                                        <div className="h-48 w-full bg-gray-200 rounded-lg flex-col items-center justify-center hidden">
+                                            <i className="material-icons text-4xl text-gray-400">broken_image</i>
+                                            <span className="text-sm text-gray-500 mt-2">Preview unavailable</span>
+                                        </div>
                                     </div>
                                     <div className="flex justify-between text-muted text-xs">
                                         <span className="text-xs">Department: {document.belonging_department || "N/A"}</span>
@@ -117,9 +164,14 @@ const DocumentUploaded = () => {
                                         {document.description || "No description available."}
                                     </p>
                                     <div className="flex justify-end mt-2">
-                                        <button className="bg-primary border border-primary text-white px-4 py-1 rounded-full text-sm font-light hover:bg-opacity-[0.9] transition-all duration-150">
+                                        <a 
+                                            href={document.file}
+                                            download={document.file_name}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="bg-primary border border-primary text-white px-4 py-1 rounded-full text-sm font-light hover:bg-opacity-[0.9] transition-all duration-150">
                                             Download
-                                        </button>
+                                        </a>
                                     </div>
                                 </div>
                             ))}

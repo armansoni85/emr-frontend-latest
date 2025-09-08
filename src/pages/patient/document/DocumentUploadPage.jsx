@@ -10,7 +10,7 @@ const DocumentUploadPage = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         file: null,
-        belonging_department: "general",
+        belonging_department: "GENERAL",
         uploaded_to: "",
         title: "",
         description: ""
@@ -18,6 +18,7 @@ const DocumentUploadPage = () => {
     const [loading, setLoading] = useState(false);
     const [doctors, setDoctors] = useState([]);
     const [loadingDoctors, setLoadingDoctors] = useState(true);
+    const [filePreview, setFilePreview] = useState(null);
 
     useEffect(() => {
         fetchDoctors();
@@ -26,8 +27,10 @@ const DocumentUploadPage = () => {
     const fetchDoctors = async () => {
         try {
             setLoadingDoctors(true);
-            const response = await getUsers({ role: 2 });
+            const users = await getUsers({ role: 2 });
+            const response = users.data
             // Ensure we always have an array
+            
             const doctorsArray = Array.isArray(response)
                 ? response
                 : Array.isArray(response?.results)
@@ -51,6 +54,33 @@ const DocumentUploadPage = () => {
         }));
     };
 
+    const generateFilePreview = (file) => {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setFilePreview({
+                    type: 'image',
+                    url: e.target.result,
+                    name: file.name,
+                    size: (file.size / 1024 / 1024).toFixed(2) + ' MB'
+                });
+            };
+            reader.readAsDataURL(file);
+        } else if (file.type === 'application/pdf') {
+            setFilePreview({
+                type: 'pdf',
+                name: file.name,
+                size: (file.size / 1024 / 1024).toFixed(2) + ' MB'
+            });
+        } else {
+            setFilePreview({
+                type: 'other',
+                name: file.name,
+                size: (file.size / 1024 / 1024).toFixed(2) + ' MB'
+            });
+        }
+    };
+
     const handleFileChange = (event) => {
         const file = event.target.files[0];
         if (file) {
@@ -59,6 +89,21 @@ const DocumentUploadPage = () => {
                 file: file,
                 title: file.name
             }));
+            generateFilePreview(file);
+        }
+    };
+
+    const clearFile = () => {
+        setFormData(prev => ({
+            ...prev,
+            file: null,
+            title: ""
+        }));
+        setFilePreview(null);
+        // Clear the file input
+        const fileInput = document.getElementById('file-upload');
+        if (fileInput) {
+            fileInput.value = '';
         }
     };
 
@@ -130,36 +175,79 @@ const DocumentUploadPage = () => {
             <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-3 my-3">
                 <div id="dropzone">
                     <div className="border border-dashed rounded-xl flex justify-center" style={{ borderColor: theme.borderColor }}>
-                        <div className="flex flex-col items-center gap-2 py-24">
-                            <img
-                                className="w-12"
-                                src="../assets/icons/Upload.svg"
-                                alt=""
-                            />
-                            <div className="text-center">
-                                <span>
-                                    {formData.file ? formData.file.name : "Drag and Drop File Here or "}
-                                </span>
-                                <label htmlFor="file-upload" className="cursor-pointer">
-                                    <u className="text-primary hover:text-primary-dark">
-                                        {formData.file ? "Change File" : "Choose File"}
-                                    </u>
-                                </label>
-                                <input
-                                    id="file-upload"
-                                    type="file"
-                                    accept=".pdf,.jpg,.jpeg,.png"
-                                    onChange={handleFileChange}
-                                    className="hidden"
+                        {!filePreview ? (
+                            <div className="flex flex-col items-center gap-2 py-24">
+                                <img
+                                    className="w-12"
+                                    src="../assets/icons/Upload.svg"
+                                    alt=""
                                 />
+                                <div className="text-center">
+                                    <span>Drag and Drop File Here or </span>
+                                    <label htmlFor="file-upload" className="cursor-pointer">
+                                        <u className="text-primary hover:text-primary-dark">
+                                            Choose File
+                                        </u>
+                                    </label>
+                                    <input
+                                        id="file-upload"
+                                        type="file"
+                                        accept=".pdf,.jpg,.jpeg,.png"
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="flex flex-col items-center gap-4 py-8 px-4">
+                                {filePreview.type === 'image' && (
+                                    <img
+                                        src={filePreview.url}
+                                        alt="File preview"
+                                        className="max-w-full max-h-32 object-contain rounded-lg border"
+                                    />
+                                )}
+                                
+                                {filePreview.type === 'pdf' && (
+                                    <i className="material-icons text-red-500 text-5xl">picture_as_pdf</i>
+                                )}
+                                
+                                {filePreview.type === 'other' && (
+                                    <i className="material-icons text-gray-500 text-5xl">description</i>
+                                )}
+                                
+                                <div className="text-center">
+                                    <p className="font-medium text-gray-700">{filePreview.name}</p>
+                                    <p className="text-sm text-gray-500">{filePreview.size}</p>
+                                </div>
+                                
+                                <div className="flex gap-2">
+                                    <label htmlFor="file-upload" className="cursor-pointer px-3 py-1 text-sm bg-primary text-white rounded-full hover:bg-opacity-90">
+                                        Change File
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={clearFile}
+                                        className="px-3 py-1 text-sm bg-red-500 text-white rounded-full hover:bg-red-600">
+                                        Remove
+                                    </button>
+                                    <input
+                                        id="file-upload"
+                                        type="file"
+                                        accept=".pdf,.jpg,.jpeg,.png"
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div className="flex justify-between text-body py-2">
                         <span>Supported Files (PDF, JPG, PNG)</span>
                         <span>Maximum Size: 25MB</span>
                     </div>
                 </div>
+
                 <div className="grid w-full">
                     <div className="flex flex-col lg:flex-row w-full">
                         <div className="p-4 flex gap-2 w-full lg:flex-row flex-col">
@@ -191,7 +279,7 @@ const DocumentUploadPage = () => {
                                     value={formData.belonging_department}
                                     onChange={(e) => handleInputChange("belonging_department", e.target.value)}
                                     className="focus:outline-none w-full mt-1 px-5 py-3 bg-grey text-muted border rounded-full">
-                                    <option value="general">General Medicine</option>
+                                    <option value="GENERAL">General Medicine</option>
                                     <option value="cardiology">Cardiology</option>
                                     <option value="dermatology">Dermatology</option>
                                     <option value="neurology">Neurology</option>
