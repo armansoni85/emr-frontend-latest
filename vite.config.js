@@ -8,9 +8,11 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 export default defineConfig({
-  plugins: [react(), nodePolyfills()],
+  plugins: [
+    react(),
+    nodePolyfills(),
+  ],
   resolve: {
-    mainFields: [],
     alias: {
       '@root': path.resolve(__dirname, './'),
       '@public': path.resolve(__dirname, './public'),
@@ -18,14 +20,10 @@ export default defineConfig({
       '@components': path.resolve(__dirname, './src/components'),
       '@utils': path.resolve(__dirname, './src/utils'),
 
-      stream: 'stream-browserify',
-      util: 'util',
-      // 'axios': 'axios/dist/browser/axios.cjs'
-      // Allow moment.js to be used as an ESM module
+      // ✅ ADD THIS LINE:
+      // This forces Vite to use the CJS-compatible dist file for moment,
+      // which is more reliable in production builds.
+      'moment': path.resolve(__dirname, 'node_modules/moment/moment.js'),
     },
-
   },
-  optimizeDeps: {
-    include: ['stream', 'util']
-  }
 })
